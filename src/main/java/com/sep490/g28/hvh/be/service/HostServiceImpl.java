@@ -8,7 +8,7 @@ import com.sep490.g28.hvh.be.entity.Host;
 import com.sep490.g28.hvh.be.entity.OrganizationManager;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.HostErrorCode;
-import com.sep490.g28.hvh.be.integration.authServer.AuthService;
+import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.mail.EmailService;
 import com.sep490.g28.hvh.be.repository.HostRepository;
 import com.sep490.g28.hvh.be.repository.OrganizationManagerRepository;
@@ -35,7 +35,7 @@ public class HostServiceImpl implements HostService{
     OrganizationManagerRepository organizationManagerRepository;
     UserRepository userRepository;
 
-    AuthService authService;
+    AuthClient authClient;
     EmailService emailService;
 
     CurrentUserProvider currentUserProvider;
@@ -56,7 +56,7 @@ public class HostServiceImpl implements HostService{
             String defaultPassword = RandomStringUtil.random8AlphaNumeric();
             try {
                 //create host account in auth server
-                UUID hostId = authService.createAccount(ERole.HOST, r.getEmail(), defaultPassword, r.getPhone());
+                UUID hostId = authClient.createAccount(ERole.HOST, r.getEmail(), defaultPassword, r.getPhone());
 
                 Host host = new Host();
                 host.setId(hostId);
