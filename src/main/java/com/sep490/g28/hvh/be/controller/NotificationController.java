@@ -1,9 +1,6 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.constant.ENotificationType;
-import com.sep490.g28.hvh.be.entity.User;
 import com.sep490.g28.hvh.be.notification.dto.RegisterNotificationTokenRequest;
-import com.sep490.g28.hvh.be.notification.entity.Notification;
 import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
@@ -12,9 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Controller for notification
