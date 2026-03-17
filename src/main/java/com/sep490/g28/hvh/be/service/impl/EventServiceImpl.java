@@ -935,5 +935,98 @@ public class EventServiceImpl implements EventService {
         });
     }
 
+    @Override
+    public EventDetailsResponseForHost getEventDetailsByHost(UUID id) {
+        //check id exist
+        Event event = eventRepository.findById(id).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        StringBuilder note = new StringBuilder();
+
+        //get regular information of event
+        EEventStatus eventStatus = event.getStatus();
+
+        //get signed URL of file
+        List<CompletableFuture<String>> imagesFutures = new ArrayList<>();
+        if (event.getImages() != null) {
+            List<EventImage> imagesList = event.getImages();
+            for (EventImage image : imagesList) {
+                CompletableFuture<String> imageFuture =
+                        storageService.getSignedUrlAsync(image.getImagePath());
+                imagesFutures.add(imageFuture);
+            }
+        }
+
+        List<String> imagesUrls = new ArrayList<>();
+        try {
+
+            CompletableFuture.allOf(imagesFutures.toArray(new CompletableFuture[0])).join();
+            for (CompletableFuture<String> imageFuture : imagesFutures) {
+                imagesUrls.add(imageFuture.join());
+            }
+
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof AppException ae) {
+                //todo: handle exception at getEventDetails
+            } else {
+                throw cause instanceof RuntimeException re ? re : e;
+            }
+        }
+
+        String activitySubDomainName = "";
+        if (event.getActivitySubDomain() != null) {
+            activitySubDomainName = event.getActivitySubDomain().getName();
+        }
+
+        //Map event sessions to response
+        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+                .map(es -> new EventSessionDetailsResponse(
+                        es.getId(),
+                        es.getStartDateTime(),
+                        es.getEndDateTime(),
+                        es.getExpectedVolAmount(),
+                        es.getExpectedSerAmount()
+                )).toList();
+
+        //get lat and lng of check in location
+        Double lat = 0.0;
+        Double lng = 0.0;
+
+        if(event.getCheckInLocation() != null) {
+            lat = GeoUtils.getLat(event.getCheckInLocation());
+            lng = GeoUtils.getLng(event.getCheckInLocation());
+        }
+
+        LocalDate startDate = null;
+        LocalDate recruitmentEndDate = null;
+
+        startDate = event.getStartDate();
+        recruitmentEndDate = event.getRecruitmentEndDate();
+
+        return EventDetailsResponseForHost.builder()
+                .id(event.getId())
+                .name(event.getName())
+                .imageUrls(imagesUrls)
+                .description(event.getDescription())
+                .address(event.getAddress())
+                .activitySubDomain(activitySubDomainName)
+                .servedTarget(event.getServedTarget())
+                .servingPlaceType(event.getServingPlaceType())
+                .startDate(startDate)
+                .recruitmentEndDate(recruitmentEndDate)
+                .autoApprove(event.isAutoApprove())
+                .latCheckInLocation(lat)
+                .lngCheckInLocation(lng)
+                .checkInAccuracyMeters(event.getCheckInAccuracyMeters())
+                .createdAt(event.getCreatedAt())
+                .updatedAt(event.getUpdatedAt())
+                .status(eventStatus)
+                .eventSessions(eventSessions)
+                .note(note.toString())
+                .build();
+    }
+
 }
 

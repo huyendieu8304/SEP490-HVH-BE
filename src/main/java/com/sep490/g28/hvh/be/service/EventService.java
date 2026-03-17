@@ -51,4 +51,6 @@ public interface EventService {
     EventDetailsResponseForSystemAdmin getEventDetailsBySystemAdmin(UUID eventId);
 
     Page<EventSimpleResponseForHost> getEventsByHost(int pageNumber, int pageSize, String eventName, String status);
+
+    EventDetailsResponseForHost getEventDetailsByHost(UUID eventId);
 }
