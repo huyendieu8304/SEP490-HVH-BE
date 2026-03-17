@@ -78,6 +78,9 @@ public class Event {
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
+    @Column(name = "end_date", nullable = true)
+    private LocalDate endDate;
+
     @Column(name = "recruitment_end_date", nullable = false)
     private LocalDate recruitmentEndDate;
 
