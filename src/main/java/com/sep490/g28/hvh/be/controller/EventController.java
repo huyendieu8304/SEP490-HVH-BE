@@ -126,7 +126,7 @@ public class EventController {
 
     ) {
 
-        return ResponseEntity.ok(eventService.getPendingEventsForManager(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getPendingEventsByManager(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER')")
@@ -144,7 +144,7 @@ public class EventController {
             @RequestParam(required = false)
             String name
     ) {
-        return ResponseEntity.ok(eventService.getApprovedEventsForManager(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getApprovedEventsByManager(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
@@ -181,7 +181,7 @@ public class EventController {
 
     ) {
 
-        return ResponseEntity.ok(eventService.getPendingEventsForAdmin(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getPendingEventsByAdmin(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
@@ -199,7 +199,7 @@ public class EventController {
             @RequestParam(required = false)
             String name
     ) {
-        return ResponseEntity.ok(eventService.getRunningEventsForAdmin(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getRunningEventsByAdmin(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER')")

@@ -38,13 +38,13 @@ public interface EventService {
 
     void rejectEventByAdmin(UUID eventId, RejectEventRequest request);
 
-    Page<EventSimpleResponseForManager> getPendingEventsForManager(int pageNumber, int pageSize, String eventName);
+    Page<EventSimpleResponseForManager> getPendingEventsByManager(int pageNumber, int pageSize, String eventName);
 
-    Page<EventSimpleResponseForManager> getApprovedEventsForManager(int pageNumber, int pageSize, String eventName);
+    Page<EventSimpleResponseForManager> getApprovedEventsByManager(int pageNumber, int pageSize, String eventName);
 
-    Page<EventSimpleResponseForAdmin> getPendingEventsForAdmin(int pageNumber, int pageSize, String eventName);
+    Page<EventSimpleResponseForAdmin> getPendingEventsByAdmin(int pageNumber, int pageSize, String eventName);
 
-    Page<EventSimpleResponseForAdmin> getRunningEventsForAdmin(int pageNumber, int pageSize, String eventName);
+    Page<EventSimpleResponseForAdmin> getRunningEventsByAdmin(int pageNumber, int pageSize, String eventName);
 
     EventDetailsResponseForManager getEventDetailsByManager(UUID eventId);
 

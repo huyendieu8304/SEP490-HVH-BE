@@ -518,7 +518,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForManager> getPendingEventsForManager(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForManager> getPendingEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -544,7 +544,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForManager> getApprovedEventsForManager(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForManager> getApprovedEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -573,7 +573,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForAdmin> getPendingEventsForAdmin(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForAdmin> getPendingEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -593,7 +593,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForAdmin> getRunningEventsForAdmin(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForAdmin> getRunningEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
