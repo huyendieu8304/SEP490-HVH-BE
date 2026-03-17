@@ -10,7 +10,7 @@ public enum EEventStatus {
     UPCOMING,
     ONGOING,
     ENDED,
-    FINISHED,
+    COMPLETED,
     CANCELLED;
 
     public static boolean editable(EEventStatus status) {

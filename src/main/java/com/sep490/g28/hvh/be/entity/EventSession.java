@@ -52,6 +52,9 @@ public class EventSession {
     @Column(name = "expected_ser_amount", nullable = false)
     private int expectedSerAmount;
 
+    @Column(name = "approved_application_count", nullable = false)
+    private int approvedApplicationCount = 0; //increase when an application is approved
+
     //--------------------------------------------------------
     @CreationTimestamp
     @Column(

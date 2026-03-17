@@ -14,11 +14,11 @@ import org.springframework.http.HttpStatus;
 public enum EventErrorCode implements ErrorCode {
 
     EVENT_NOT_EXISTED(7001, "Event not found", HttpStatus.NOT_FOUND),
-    EVENT_NOT_EDITABLE(7002, "Sự kiện đang ở trong trạng thái không thể chỉnh sửa được", HttpStatus.NOT_FOUND),
+    EVENT_NOT_EDITABLE(7002, "Sự kiện đang ở trong trạng thái không thể chỉnh sửa được", HttpStatus.CONFLICT),
     INVALID_IMAGES_AMOUNT(7003, "Số lượng ảnh giới hạn tối đa 5 ảnh", HttpStatus.BAD_REQUEST),
     INVALID_DATE_TIME_AMOUNT(7004, "Phải có ít nhất 1 ngày và thời gian diễn ra sự kiện", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_DATE_TIME_RANGE(7005, "Thời gian bắt đầu sự kiện phải trước thời gian kết thúc trong ngày", HttpStatus.BAD_REQUEST),
-    DUPLICATE_SESSION_DAY(7006, "Trong 1 ngày chỉ có 1 thời gian bắt đầu và thời gian kết thúc", HttpStatus.BAD_REQUEST),
+    DUPLICATE_SESSION_DAY(7006, "Trong 1 ngày chỉ có 1 buổi tình nguyện", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_RECRUITMENT_END_DATE(7007, "Ngày kết thúc tuyển người phải cách ngày hôm nay ít nhất 3 ngày và trước ngày bắt đầu sự kiện ít nhất 3 ngày.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_START_DATE(7008, "Ngày bắt đầu tổ chức sự kiện phải cách ngày hôm nay ít nhất 15 ngày.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_END_DATE(7009, "Ngày kết thúc sự kiện phải sau ngày bắt đầu sự kiện.", HttpStatus.BAD_REQUEST),
@@ -26,7 +26,12 @@ public enum EventErrorCode implements ErrorCode {
     ACTION_NOT_EXECUTABLE(7011, "Trạng thái của sự kiện không cho phép bạn thực hiện hành động này.", HttpStatus.BAD_REQUEST),
     DUPLICATE_HOSTED_DATE(7012, "Trùng ngày tổ chức sự kiện của host với một sự kiện khác.", HttpStatus.BAD_REQUEST),
 
-    ;
+    EVENT_SESSION_NOT_EXISTED(7013, "Event session not found", HttpStatus.NOT_FOUND),
+    ALREADY_APPLIED(7014, "Tình nguyện viên đã đăng kí tham gia buổi tình nguyện này của sự kiện.", HttpStatus.CONFLICT),
+    EVENT_SESSION_FULL(7015, "Buổi tình nguyện đã đủ số lượng tình nguyện viên đăng kí tham gia.", HttpStatus.CONFLICT),
+    EVENT_RECRUITMENT_CLOSED(7016, "Sự kiện đã ngừng tiếp nhận đơn đăng kí.", HttpStatus.CONFLICT),
+    APPLYING_SESSION_TIME_CONFLICT(7017, "Buổi tình nguyện này đã trùng với thời gian của một buổi khác mà bạn đã đăng kí trước đó", HttpStatus.CONFLICT),
+    EVENT_NOT_RECRUITING(7018, "Sự kiện đang không trong trạng thái tiếp nhận đơn đăng kí.", HttpStatus.CONFLICT ),;
 
     private final int code;
     private final String message;

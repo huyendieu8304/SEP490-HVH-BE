@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -39,6 +40,9 @@ public class EventApplication {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", referencedColumnName = "id")
     private EventSession session;
+
+    @Column(name = "session_date", nullable = false)
+    private LocalDate sessionDate;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 30, nullable = false)
