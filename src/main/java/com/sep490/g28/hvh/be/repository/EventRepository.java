@@ -121,4 +121,17 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             WHERE :orgId IS NULL OR e.organization.id = :orgId
             """)
     List<Event> findAllByOrganizationId(UUID orgId);
+
+    @Query("""
+            SELECT e
+            FROM Event e
+            WHERE e.host.id = :hostId
+            AND (e.status = :status)
+            AND (:name IS NULL OR e.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+            """)
+    Page<Event> findEventsByHostId(
+            @Param("hostId") UUID hostId,
+            @Param("status") String status,
+            @Param("name") String name,
+            Pageable pageable);
 }

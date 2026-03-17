@@ -130,6 +130,7 @@ public class EventServiceImpl implements EventService {
                                     }
 
                                     return new EventSimpleResponse(
+                                            e.getId(),
                                             e.getOrganization().getName(),
                                             e.getName(),
                                             firstEventImageUrl,
@@ -559,7 +560,7 @@ public class EventServiceImpl implements EventService {
                 EEventStatus.ONGOING,
                 EEventStatus.UPCOMING,
                 EEventStatus.ENDED,
-                EEventStatus.FINISHED,
+                EEventStatus.COMPLETED,
                 EEventStatus.CANCELLED
         ).map(Enum::name).toList();
 
@@ -876,6 +877,62 @@ public class EventServiceImpl implements EventService {
                 .conflictSessions(conflictSessions)
                 .note(note.toString())
                 .build();
+    }
+
+    @Override
+    public Page<EventSimpleResponseForHost> getEventsByHost(int pageNumber, int pageSize, String eventName, String status) {
+        //get current logged in host Id
+        UUID hostId = currentUserProvider.getId();
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.ASC, "createdAt")
+        );
+
+        Page<Event> events = eventRepository.findEventsByHostId(hostId, status, eventName, pageable);
+
+        if(events.getContent().isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, events.getTotalElements());
+        }
+
+        //map Event to EventSimpleResponseForHost
+        return events.map(e -> {
+
+            String firstEventImageUrl = null;
+
+            //get signed URL of file
+            if (e.getImages() != null && !e.getImages().isEmpty()) {
+
+                List<EventImage> eventImageList = e.getImages();
+
+                CompletableFuture<String> firstEventImageFuture =
+                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
+
+                try {
+                    CompletableFuture.allOf(firstEventImageFuture).join();
+                    firstEventImageUrl = firstEventImageFuture.join();
+                } catch (CompletionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof AppException ae) {
+                        //todo: handle app exception in viewEventFeeds
+                    } else {
+                        throw cause instanceof RuntimeException re ? re : ex;
+                    }
+                }
+            }
+
+            return new EventSimpleResponseForHost(
+                    e.getId(),
+                    e.getName(),
+                    firstEventImageUrl,
+                    e.getAddress(),
+                    e.getStartDate(),
+                    e.getRecruitmentEndDate(),
+                    e.getCreatedAt(),
+                    e.getUpdatedAt()
+            );
+        });
     }
 
 }
