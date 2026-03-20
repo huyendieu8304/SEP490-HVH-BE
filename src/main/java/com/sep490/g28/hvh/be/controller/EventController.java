@@ -77,7 +77,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.submitEvent(request));
     }
 
-    @GetMapping("/volunteer/event/event-details/{id}")
+    @GetMapping("/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponse> getEventDetails(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
