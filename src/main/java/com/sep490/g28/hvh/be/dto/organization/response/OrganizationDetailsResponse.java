@@ -20,12 +20,12 @@ public class OrganizationDetailsResponse {
     private Boolean dhaRegistered;
     private EOrgType orgType;
     private String orgIntroduction;
-    private List<String> images;
+    private String avatarImageUrl;
+    private String coverImageUrl;
     private OffsetDateTime createdAt;
     private UUID managerId;
     private String managerEmail;
     private String managerPhone;
-    private Long totalHosts;
     private Long totalHonorHours;
     private String note;
 }

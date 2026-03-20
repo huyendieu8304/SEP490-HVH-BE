@@ -24,4 +24,6 @@ public interface OrganizationService {
             int pageNumber, int pageSize, String name, List<String> orgTypeLists);
 
     OrganizationDetailsResponseForSystemAdmin getOrganizationDetailsBySystemAdmin(UUID ordId);
+
+    OrganizationDetailsResponse getOrganizationDetails(UUID ordId);
 }
