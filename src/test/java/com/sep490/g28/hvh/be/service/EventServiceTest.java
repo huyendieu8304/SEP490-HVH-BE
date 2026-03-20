@@ -805,5 +805,67 @@ public class EventServiceTest {
         assertNull(response.getContent().getFirst().getImageUrl());
     }
 
+    // ==== getEventDetailsByHost ===================================
+    // ===== TC1 =====
+    @Test
+    void getEventDetailsByHost_success() {
+
+        Event event = mockEvent();
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        when(storageService.getSignedUrlAsync("img1"))
+                .thenReturn(CompletableFuture.completedFuture("url1"));
+
+        when(storageService.getSignedUrlAsync("img2"))
+                .thenReturn(CompletableFuture.completedFuture("url2"));
+
+        EventDetailsResponseForHost response =
+                eventService.getEventDetailsByHost(eventId);
+
+        assertEquals("Charity Event", response.getName());
+        assertEquals(2, response.getImageUrls().size());
+        assertEquals(1, response.getEventSessions().size());
+
+        verify(eventRepository).findById(eventId);
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getEventDetailsByHost_event_not_exist() {
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(
+                AppException.class,
+                () -> eventService.getEventDetailsByHost(eventId)
+        );
+
+        assertEquals(
+                EventErrorCode.EVENT_NOT_EXISTED.getCode(),
+                ex.getCode()
+        );
+    }
+
+    // ===== TC3 =====
+    @Test
+    void getEventDetailsByHost_null_activity_sub_domain() {
+
+        Event event = mockEvent();
+
+        event.setActivitySubDomain(null);
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        when(storageService.getSignedUrlAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture("url"));
+
+        EventDetailsResponseForHost response = eventService.getEventDetailsByHost(eventId);
+
+        assertEquals("", response.getActivitySubDomain());
+    }
 
 }
