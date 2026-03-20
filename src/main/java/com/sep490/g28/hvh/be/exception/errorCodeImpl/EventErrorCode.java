@@ -31,7 +31,11 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_SESSION_FULL(7015, "Buổi tình nguyện đã đủ số lượng tình nguyện viên đăng kí tham gia.", HttpStatus.CONFLICT),
     EVENT_RECRUITMENT_CLOSED(7016, "Sự kiện đã ngừng tiếp nhận đơn đăng kí.", HttpStatus.CONFLICT),
     APPLYING_SESSION_TIME_CONFLICT(7017, "Buổi tình nguyện này đã trùng với thời gian của một buổi khác mà bạn đã đăng kí trước đó", HttpStatus.CONFLICT),
-    EVENT_NOT_RECRUITING(7018, "Sự kiện đang không trong trạng thái tiếp nhận đơn đăng kí.", HttpStatus.CONFLICT ),;
+    EVENT_NOT_RECRUITING(7018, "Sự kiện đang không trong trạng thái tiếp nhận đơn đăng kí.", HttpStatus.CONFLICT ),
+
+    EVENT_APPLICATION_NOT_EXISTED(7019, "Event application not found", HttpStatus.NOT_FOUND),
+    EVENT_APPLICATION_NOT_PENDING(7020, "Đơn đăng kí không ở trong trạng thái chờ phê duyệt", HttpStatus.CONFLICT),
+    ;
 
     private final int code;
     private final String message;
