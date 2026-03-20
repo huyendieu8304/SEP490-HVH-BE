@@ -42,8 +42,11 @@ public class Organization {
     @Column(name = "other_evidences", length = 500)
     private String otherEvidences;
 
-    @Column(name = "images", length = 500)
-    private String images;
+    @Column(name = "avatar_image", length = 150)
+    private String avatarImage;
+
+    @Column(name = "cover_image", length = 150)
+    private String coverImage;
 
     @CreationTimestamp
     @Column(
