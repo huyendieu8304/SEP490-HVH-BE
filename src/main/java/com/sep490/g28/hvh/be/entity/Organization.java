@@ -42,6 +42,9 @@ public class Organization {
     @Column(name = "other_evidences", length = 500)
     private String otherEvidences;
 
+    @Column(name = "images", length = 500)
+    private String images;
+
     @CreationTimestamp
     @Column(
             name = "created_at",
