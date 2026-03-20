@@ -1,9 +1,9 @@
 package com.sep490.g28.hvh.be.service;
 
-import com.sep490.g28.hvh.be.entity.Event;
-import com.sep490.g28.hvh.be.entity.Host;
-import com.sep490.g28.hvh.be.entity.OrganizationManager;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.dto.RegisterNotificationTokenRequest;
+
+import java.util.UUID;
 
 public interface NotificationService {
 
@@ -19,4 +19,7 @@ public interface NotificationService {
 
     void sendEventApprovedByAdminNotification(Event event);
     void sendEventRejectedByAdminNotification(Event event, String reason);
+
+    void sendEventApplicationApproved(UUID volunteerId, Event event, EventApplication application);
+    void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application);
 }

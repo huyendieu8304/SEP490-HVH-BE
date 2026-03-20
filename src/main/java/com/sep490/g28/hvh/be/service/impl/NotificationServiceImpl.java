@@ -4,9 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ENotificationDataAction;
 import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.constant.ERole;
-import com.sep490.g28.hvh.be.entity.Event;
-import com.sep490.g28.hvh.be.entity.Host;
-import com.sep490.g28.hvh.be.entity.User;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
 import com.sep490.g28.hvh.be.notification.entity.UserNotification;
 import com.sep490.g28.hvh.be.notification.entity.NotificationToken;
@@ -138,14 +136,14 @@ public class NotificationServiceImpl implements NotificationService {
 //    }
 
     //only used for send notification to user
-    private Notification saveNotificationForUser(Notification notification, User user) {
+    private Notification saveNotificationForUser(Notification notification, UUID userId) {
         //save notification
         notification = notificationRepository.save(notification);
 
         //link the notification to user in the db
         UserNotification userNotification = new UserNotification();
         userNotification.setNotification(notification);
-        userNotification.setUser(user);
+        userNotification.setUser(userRepository.getReferenceById(userId));
 
         userNotificationRepository.save(userNotification);
         return notification;
@@ -154,7 +152,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void sendEventCreatedNotification(Event event, Host host) {
         Notification notification = new Notification();
-        User orgManager = userRepository.getReferenceById(host.getCreatedBy().getId());
+        UUID orgManagerId = host.getCreatedBy().getId();
 
         notification.setType(ENotificationType.MNG_EVENT_CREATED);
         notification.setTitle("Sự kiện mới được tạo");
@@ -165,9 +163,9 @@ public class NotificationServiceImpl implements NotificationService {
                 DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
         ));
 
-        notification = saveNotificationForUser(notification, orgManager);
+        notification = saveNotificationForUser(notification, orgManagerId);
 
-        notificationPublisher.enqueueNotification(notification, orgManager.getId());
+        notificationPublisher.enqueueNotification(notification, orgManagerId);
     }
 
     @Override
@@ -175,7 +173,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendEventApprovedByOrgManagerNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
-        User host = userRepository.getReferenceById(event.getHost().getId());
+        UUID hostId = event.getHost().getId();
 
         notificationForHost.setTitle("Sự kiện đã được Quản lí tổ chức phê duyệt");
         notificationForHost.setBody(String.format("Sự kiện %s đã được phê duyệt bởi quản lí tổ chức và đang chờ duyệt từ Admin.", event.getName()));
@@ -187,7 +185,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForHost.setType(ENotificationType.HOST_EVENT_APPROVED_BY_MNG);
 
         //save notification
-        notificationForHost = saveNotificationForUser(notificationForHost, host);
+        notificationForHost = saveNotificationForUser(notificationForHost, hostId);
 
         //send notification to admin
         Notification notificationForAdmin = new Notification();
@@ -203,7 +201,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notificationForAdmin);
 
         //send notification
-        notificationPublisher.enqueueNotification(notificationForHost, host.getId());
+        notificationPublisher.enqueueNotification(notificationForHost, hostId);
         notificationPublisher.enqueueNotification(notificationForAdmin, null);
     }
 
@@ -211,7 +209,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendEventRejectedByOrgManagerNotification(Event event, String reason) {
         //send notification to host
         Notification notification = new Notification();
-        User host = userRepository.getReferenceById(event.getHost().getId());
+        UUID hostId = event.getHost().getId();
 
         notification.setTitle("Sự kiện không được chấp thuận bởi Quản lí tổ chức");
         notification.setBody(String.format("Quản lí tổ chức đã không chấp thuận tạo sự kiện %s. Lí do: %s", event.getName(), reason));
@@ -223,16 +221,16 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setType(ENotificationType.HOST_EVENT_REJECTED_BY_MNG);
 
         //save notification
-        notification = saveNotificationForUser(notification, host);
+        notification = saveNotificationForUser(notification, hostId);
 
-        notificationPublisher.enqueueNotification(notification, host.getId());
+        notificationPublisher.enqueueNotification(notification, hostId);
     }
 
     @Override
     public void sendEventApprovedByAdminNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
-        User host = userRepository.getReferenceById(event.getHost().getId());
+        UUID hostId = event.getHost().getId();
 
         notificationForHost.setTitle("Sự kiện đã được Admin phê duyệt");
         notificationForHost.setBody(String.format("Sự kiện %s đã được phê duyệt bởi Admin và bước vào tranng thái tuyển người.", event.getName()));
@@ -244,11 +242,11 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForHost.setType(ENotificationType.HOST_EVENT_APPROVED_BY_AD);
 
         //save notification
-        notificationForHost = saveNotificationForUser(notificationForHost, host);
+        notificationForHost = saveNotificationForUser(notificationForHost, hostId);
 
         //send notification to manager
         Notification notificationForManager = new Notification();
-        User orgManager = userRepository.getReferenceById(event.getHost().getCreatedBy().getId());
+        UUID orgManagerId = event.getHost().getCreatedBy().getId();
         notificationForManager.setTitle("Sự kiện đã được Admin phê duyệt");
         notificationForManager.setBody(String.format("Sự kiện %s đã được phê duyệt bởi Admin và bước vào tranng thái tuyển người.", event.getName()));
         notificationForManager.setData(Map.of(
@@ -259,18 +257,18 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForManager.setType(ENotificationType.MNG_EVENT_APPROVED_BY_AD);
 
         //save notification
-        notificationForManager = saveNotificationForUser(notificationForManager, orgManager);
+        notificationForManager = saveNotificationForUser(notificationForManager, orgManagerId);
 
 
-        notificationPublisher.enqueueNotification(notificationForHost, host.getId());
-        notificationPublisher.enqueueNotification(notificationForManager, orgManager.getId());
+        notificationPublisher.enqueueNotification(notificationForHost, hostId);
+        notificationPublisher.enqueueNotification(notificationForManager, orgManagerId);
     }
 
     @Override
     public void sendEventRejectedByAdminNotification(Event event, String reason) {
         //send notification to host
         Notification notificationForHost = new Notification();
-        User host = userRepository.getReferenceById(event.getHost().getId());
+        UUID hostId = event.getHost().getId();
 
         notificationForHost.setTitle("Sự kiện không được chấp thuận bởi Admin");
         notificationForHost.setBody(String.format("Sự kiện %s đã không được chấp thuận bởi admin với lí do: %s.", event.getName(), reason));
@@ -282,11 +280,12 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForHost.setType(ENotificationType.HOST_EVENT_REJECTED_BY_AD);
 
         //save notification
-        notificationForHost = saveNotificationForUser(notificationForHost, host);
+        notificationForHost = saveNotificationForUser(notificationForHost, hostId);
 
         //send notification to manager
         Notification notificationForManager = new Notification();
-        User orgManager = userRepository.getReferenceById(event.getHost().getCreatedBy().getId());
+        UUID orgManagerId = event.getHost().getCreatedBy().getId();
+
         notificationForManager.setTitle("Sự kiện không được chấp thuận bởi Admin");
         notificationForManager.setBody(String.format("Sự kiện %s đã không được chấp thuận bởi admin với lí do: %s.", event.getName(), reason));
         notificationForManager.setData(Map.of(
@@ -297,9 +296,50 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForManager.setType(ENotificationType.MNG_EVENT_REJECTED_BY_AD);
 
         //save notification
-        notificationForManager = saveNotificationForUser(notificationForManager, orgManager);
+        notificationForManager = saveNotificationForUser(notificationForManager, orgManagerId);
 
-        notificationPublisher.enqueueNotification(notificationForHost, host.getId());
-        notificationPublisher.enqueueNotification(notificationForManager, orgManager.getId());
+        notificationPublisher.enqueueNotification(notificationForHost, hostId);
+        notificationPublisher.enqueueNotification(notificationForManager, orgManagerId);
     }
+
+    @Override
+    public void sendEventApplicationApproved(UUID volunteerId, Event event, EventApplication application) {
+        //send notification to host
+        Notification notification = new Notification();
+
+        notification.setTitle("Đơn đăng kí tham gia sự kiện tình nguyện đã được phê duyệt");
+        notification.setBody(String.format("Quản lí sự kiện %s đã phê duyệt đơn đăng kí tham gia tình nguyện ngày %s của bạn.", event.getName(), application.getSessionDate()));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_APPLICATION_APPROVED.name(),
+                DATA_REF_ID_KEY, application.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_APPLICATION_APPROVED);
+
+        //save notification
+        notification = saveNotificationForUser(notification, volunteerId);
+
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
+    @Override
+    public void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application) {
+        //send notification to host
+        Notification notification = new Notification();
+
+        notification.setTitle("Đơn đăng kí tham gia sự kiện tình nguyện không được chấp thuận");
+        notification.setBody(String.format("Quản lí sự kiện %s đã không chấp thuận đơn đăng kí tham gia tình nguyện ngày %s của bạn.", event.getName(), application.getSessionDate()));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_APPLICATION_REJECTED.name(),
+                DATA_REF_ID_KEY, application.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_APPLICATION_REJECTED);
+
+        //save notification
+        notification = saveNotificationForUser(notification, volunteerId);
+
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
 }
