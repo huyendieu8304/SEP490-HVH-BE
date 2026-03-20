@@ -20,6 +20,8 @@ public class OrganizationDetailsResponseForSystemAdmin {
     private Boolean dhaRegistered;
     private EOrgType orgType;
     private String orgIntroduction;
+    private String avatarImageUrl;
+    private String coverImageUrl;
     private List<String> legalDocumentUrls;
     private List<String> otherEvidencesUrls;
     private OffsetDateTime createdAt;
