@@ -3,13 +3,13 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
-import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
@@ -83,14 +83,18 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         eventApplication.setSessionDate(session.getStartDateTime().toLocalDate());
 
         //check auto approve
-        if (event.isAutoApprove()){
+        if (event.isAutoApprove()) {
             eventApplication.setStatus(EEventApplicationStatus.APPROVED);
-            session.setApprovedApplicationCount(session.getApprovedApplicationCount()+1);
+            session.setApprovedApplicationCount(session.getApprovedApplicationCount() + 1);
+
+            eventApplication = eventApplicationRepository.save(eventApplication);
             eventSessionRepository.save(session);
+            log.info("Volunteer application is approved automatically eventApplicationId={}", eventApplication.getId());
         } else {
             eventApplication.setStatus(EEventApplicationStatus.PENDING);
+            eventApplication = eventApplicationRepository.save(eventApplication);
+            log.info("Volunteer application is created with PENDING status eventApplicationId={}", eventApplication.getId());
         }
-        eventApplicationRepository.save(eventApplication);
     }
 
     @Transactional
@@ -122,13 +126,13 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()+1);
         eventSessionRepository.save(eventSession);
-
+        log.info("Approved event application eventApplicationId={}", eventApplication.getId());
         //send notification to vol
         notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
     }
 
     @Override
-    public void rejectApplication(UUID applicationId) {
+    public void rejectApplication(UUID applicationId, RejectApplicationRequest request) {
         //find the application
         EventApplication eventApplication = eventApplicationRepository.findById(applicationId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
@@ -141,10 +145,16 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         eventApplication.setStatus(EEventApplicationStatus.REJECTED);
         eventApplicationRepository.save(eventApplication);
+        log.info("Reject event application eventApplicationId={}", eventApplication.getId());
 
         Event event = eventApplication.getSession().getEvent();
 
         //send notification to vol
-        notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
+        notificationService.sendEventApplicationRejected(
+                eventApplication.getVolunteer().getId(),
+                event,
+                eventApplication,
+                request.getRejectionReason()
+        );
     }
 }

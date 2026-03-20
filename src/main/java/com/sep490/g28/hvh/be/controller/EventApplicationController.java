@@ -1,6 +1,8 @@
 package com.sep490.g28.hvh.be.controller;
 
+import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -28,16 +30,19 @@ public class EventApplicationController {
     }
 
     @PreAuthorize("hasRole('HOST')")
-    @PutMapping("/event-application/{id}/approve")
+    @PutMapping("/host/event-applications/{id}/approve")
     ResponseEntity<Void> approveApplication(@PathVariable UUID id) {
         eventApplicationService.approveApplication(id);
         return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('HOST')")
-    @PutMapping("/event-application/{id}/reject")
-    ResponseEntity<Void> rejectApplication(@PathVariable UUID id) {
-        eventApplicationService.rejectApplication(id);
+    @PutMapping("/host/event-applications/{id}/reject")
+    ResponseEntity<Void> rejectApplication(
+            @PathVariable UUID id,
+            @RequestBody @Valid RejectApplicationRequest request
+    ) {
+        eventApplicationService.rejectApplication(id, request);
         return ResponseEntity.ok().build();
     }
 }

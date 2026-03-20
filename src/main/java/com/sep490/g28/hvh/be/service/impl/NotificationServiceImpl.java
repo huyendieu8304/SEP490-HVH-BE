@@ -323,12 +323,16 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application) {
+    public void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason) {
         //send notification to host
         Notification notification = new Notification();
 
         notification.setTitle("Đơn đăng kí tham gia sự kiện tình nguyện không được chấp thuận");
-        notification.setBody(String.format("Quản lí sự kiện %s đã không chấp thuận đơn đăng kí tham gia tình nguyện ngày %s của bạn.", event.getName(), application.getSessionDate()));
+        notification.setBody(String.format("Quản lí sự kiện %s đã không chấp thuận đơn đăng kí tham gia tình nguyện ngày %s với lí do: %s",
+                event.getName(),
+                application.getSessionDate(),
+                rejectionReason)
+        );
         notification.setData(Map.of(
                 DATA_NOTIFICATION_TYPE, ENotificationType.VOL_APPLICATION_REJECTED.name(),
                 DATA_REF_ID_KEY, application.getId().toString(),
