@@ -9,9 +9,11 @@ import com.sep490.g28.hvh.be.entity.EventSession;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
+import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
+import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -33,6 +35,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
     CurrentUserProvider currentUserProvider;
 
+    NotificationService notificationService;
+
     @Transactional
     @Override
     public void applyEventSession(UUID sessionId) {
@@ -46,6 +50,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
         }
 
+        //todo check again after finish all event status, might not need to check the bellow
         //check registration deadline
         if (LocalDate.now().isAfter(event.getRecruitmentEndDate())) {
             throw new AppException(EventErrorCode.EVENT_RECRUITMENT_CLOSED);
@@ -86,5 +91,60 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             eventApplication.setStatus(EEventApplicationStatus.PENDING);
         }
         eventApplicationRepository.save(eventApplication);
+    }
+
+    @Transactional
+    @Override
+    public void approveApplication(UUID applicationId) {
+        //find the application
+        EventApplication eventApplication = eventApplicationRepository.findById(applicationId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
+        );
+
+        //check the status of the application
+        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)){
+             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
+        }
+        //check the expected amount
+        EventSession eventSession = eventApplication.getSession();
+        if (eventSession.getApprovedApplicationCount() >= eventSession.getExpectedVolAmount()){
+            throw new AppException(EventErrorCode.EVENT_SESSION_FULL);
+        }
+
+        //check the status of the event
+        Event event = eventSession.getEvent();
+        if (event.getStatus() != EEventStatus.RECRUITING){
+            throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
+        }
+
+        eventApplication.setStatus(EEventApplicationStatus.APPROVED);
+        eventApplicationRepository.save(eventApplication);
+
+        eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()+1);
+        eventSessionRepository.save(eventSession);
+
+        //send notification to vol
+        notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
+    }
+
+    @Override
+    public void rejectApplication(UUID applicationId) {
+        //find the application
+        EventApplication eventApplication = eventApplicationRepository.findById(applicationId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
+        );
+
+        //check the status of the application
+        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
+        }
+
+        eventApplication.setStatus(EEventApplicationStatus.REJECTED);
+        eventApplicationRepository.save(eventApplication);
+
+        Event event = eventApplication.getSession().getEvent();
+
+        //send notification to vol
+        notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
     }
 }

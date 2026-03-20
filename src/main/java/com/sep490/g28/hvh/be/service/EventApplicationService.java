@@ -4,4 +4,8 @@ import java.util.UUID;
 
 public interface EventApplicationService {
     void applyEventSession(UUID sessionId);
+
+    void approveApplication(UUID applicationId);
+
+    void rejectApplication(UUID applicationId);
 }

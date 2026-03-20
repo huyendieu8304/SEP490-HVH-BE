@@ -26,4 +26,18 @@ public class EventApplicationController {
         eventApplicationService.applyEventSession(sessionId);
         return ResponseEntity.ok().build();
     }
+
+    @PreAuthorize("hasRole('HOST')")
+    @PutMapping("/event-application/{id}/approve")
+    ResponseEntity<Void> approveApplication(@PathVariable UUID id) {
+        eventApplicationService.approveApplication(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('HOST')")
+    @PutMapping("/event-application/{id}/reject")
+    ResponseEntity<Void> rejectApplication(@PathVariable UUID id) {
+        eventApplicationService.rejectApplication(id);
+        return ResponseEntity.ok().build();
+    }
 }
