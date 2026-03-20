@@ -649,6 +649,8 @@ public class OrganizationServiceTest {
     void getOrganizationDetailsBySystemAdmin_success() {
 
         Organization org = mockOrganization();
+        org.setAvatarImage("avatar");
+        org.setCoverImage("cover");
         org.setLegalDocument("doc1 doc2");
         org.setOtherEvidences("ev1 ev2");
         OrganizationManager manager = mockManager();
@@ -673,6 +675,8 @@ public class OrganizationServiceTest {
 
         assertEquals(manager.getFullName(), response.getManagerName());
         assertEquals(manager.getEmail(), response.getManagerEmail());
+        assertEquals("signed-url", response.getAvatarImageUrl());
+        assertEquals("signed-url", response.getCoverImageUrl());
         assertEquals(5L, response.getTotalHosts());
     }
 
@@ -745,5 +749,104 @@ public class OrganizationServiceTest {
                 organizationService.getOrganizationDetailsBySystemAdmin(orgId);
 
         assertEquals(3, response.getTotalHonorHours());
+        assertNull(response.getAvatarImageUrl());
+        assertNull(response.getCoverImageUrl());
+    }
+
+    // ===== getOrganizationDetails ============================================
+    // ===== TC1 =====
+    @Test
+    void getOrganizationDetails_success() {
+
+        Organization org = mockOrganization();
+        org.setAvatarImage("avatar");
+        org.setCoverImage("cover");
+        OrganizationManager manager = mockManager();
+
+        when(organizationRepository.findById(orgId))
+                .thenReturn(Optional.of(org));
+
+        when(organizationManagerRepository.findByOrganizationId(orgId))
+                .thenReturn(manager);
+
+        when(eventRepository.findAllByOrganizationId(orgId))
+                .thenReturn(Collections.emptyList());
+
+        when(storageService.getSignedUrlAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        OrganizationDetailsResponse response =
+                organizationService.getOrganizationDetails(orgId);
+
+        assertEquals(manager.getEmail(), response.getManagerEmail());
+        assertEquals("signed-url", response.getAvatarImageUrl());
+        assertEquals("signed-url", response.getCoverImageUrl());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getOrganizationDetails_org_not_exist() {
+
+        when(organizationRepository.findById(orgId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                AppException.class,
+                () -> organizationService.getOrganizationDetails(orgId)
+        );
+    }
+
+    // ===== TC3 =====
+    @Test
+    void getOrganizationDetails_no_manager_found() {
+
+        Organization org = mockOrganization();
+
+        when(organizationRepository.findById(orgId))
+                .thenReturn(Optional.of(org));
+
+        when(organizationManagerRepository.findByOrganizationId(orgId))
+                .thenReturn(null);
+
+        when(eventRepository.findAllByOrganizationId(orgId))
+                .thenReturn(Collections.emptyList());
+
+        OrganizationDetailsResponse response =
+                organizationService.getOrganizationDetails(orgId);
+
+        assertNull(response.getManagerId());
+        assertTrue(response.getNote()
+                .contains(OrganizationErrorCode.NO_ORGANIZATION_MANAGER_FOUND.getMessage()));
+    }
+
+    // ===== TC4 =====
+    @Test
+    void getOrganizationDetails_calculate_honor_hours() {
+
+        Organization org = mockOrganization();
+        OrganizationManager manager = mockManager();
+
+        EventSession session = new EventSession();
+        session.setStartDateTime(OffsetDateTime.now());
+        session.setEndDateTime(OffsetDateTime.now().plusHours(3));
+
+        Event event = new Event();
+        event.setDateTimes(List.of(session));
+
+        when(organizationRepository.findById(orgId))
+                .thenReturn(Optional.of(org));
+
+        when(organizationManagerRepository.findByOrganizationId(orgId))
+                .thenReturn(manager);
+
+        when(eventRepository.findAllByOrganizationId(orgId))
+                .thenReturn(List.of(event));
+
+        OrganizationDetailsResponse response =
+                organizationService.getOrganizationDetails(orgId);
+
+        assertEquals(3, response.getTotalHonorHours());
+        assertNull(response.getAvatarImageUrl());
+        assertNull(response.getCoverImageUrl());
     }
 }
