@@ -1,10 +1,12 @@
 package com.sep490.g28.hvh.be.exception;
 
 import com.sep490.g28.hvh.be.dto.ExceptionResponse;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -40,8 +42,18 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
-    //todo thêm 1 caí resourceAccessException, SocketTimeoutException khi mình không thể gửi request cho bên thứ 3, third party unavailable
-
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ExceptionResponse> accessDeniedHandler(AuthorizationDeniedException ex) {
+        log.info("AuthorizationDeniedException is catch by accessDeniedHandler");
+        AppCommonErrorCode errorCode = AppCommonErrorCode.UNAUTHORIZED;
+        var response = new ExceptionResponse();
+        response.setCode(errorCode.getCode());
+        response.setMessage(errorCode.name());
+        response.setMoreInfo(Map.of("auth", errorCode.getMessage()));
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(response);
+    }
     /**
      * Catch-all handler for unexpected exceptions.
      *
