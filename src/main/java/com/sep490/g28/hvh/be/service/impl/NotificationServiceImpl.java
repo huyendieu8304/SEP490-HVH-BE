@@ -347,7 +347,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationCancelledSucessfuly(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
+    public void sendEventApplicationCancelledSuccessfully(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
         //send notification to volunteer
         Notification notification = new Notification();
 
