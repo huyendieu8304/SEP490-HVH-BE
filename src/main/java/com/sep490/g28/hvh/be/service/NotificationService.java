@@ -22,4 +22,5 @@ public interface NotificationService {
 
     void sendEventApplicationApproved(UUID volunteerId, Event event, EventApplication application);
     void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason);
+    void sendEventApplicationCancelledSucessfuly(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore);
 }

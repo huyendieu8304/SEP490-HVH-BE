@@ -324,7 +324,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason) {
-        //send notification to host
+        //send notification to volunteer
         Notification notification = new Notification();
 
         notification.setTitle("Đơn đăng kí tham gia sự kiện tình nguyện không được chấp thuận");
@@ -339,6 +339,34 @@ public class NotificationServiceImpl implements NotificationService {
                 DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
         ));
         notification.setType(ENotificationType.VOL_APPLICATION_REJECTED);
+
+        //save notification
+        notification = saveNotificationForUser(notification, volunteerId);
+
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
+    @Override
+    public void sendEventApplicationCancelledSucessfuly(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
+        //send notification to volunteer
+        Notification notification = new Notification();
+
+        notification.setTitle("Đơn đăng kí tham gia sự kiện tình nguyện đã được hủy thành công");
+        String body = String.format("Bạn đã hủy đơn đăng kí tham gia sự kiện %s ngày %s thành công.",
+                event.getName(),
+                application.getSessionDate()
+        );
+
+        if (isMinusScore) {
+            body = body.concat(" Tuy nhiên do thời gian tuyển người của sự kiện đã kết thúc và bạn đã hủy tham gia sự kiện trước thời gian diễn ra, nên chúng tôi sẽ trừ 3 điểm trong Điểm vinh dự của bạn.");
+        }
+        notification.setBody(body);
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_APPLICATION_CANCELLED.name(),
+                DATA_REF_ID_KEY, application.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_APPLICATION_CANCELLED);
 
         //save notification
         notification = saveNotificationForUser(notification, volunteerId);
