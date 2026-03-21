@@ -157,4 +157,60 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 request.getRejectionReason()
         );
     }
+
+    @Transactional
+    @Override
+    public void cancelApplication(UUID applicationId) {
+        //find the application
+        EventApplication eventApplication = eventApplicationRepository.findById(applicationId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
+        );
+
+        EventSession eventSession = eventApplication.getSession();
+        Event event = eventSession.getEvent();
+        Volunteer volunteer = eventApplication.getVolunteer();
+
+        //whether the event status allow volunteer to cancel application
+        if (!EEventStatus.volunteerCanCancelledApplication(event.getStatus())){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+        }
+
+        //check application status, only PENDING and APPROVED can cancel
+        if (eventApplication.getStatus().equals(EEventApplicationStatus.CANCELLED)
+                || eventApplication.getStatus().equals(EEventApplicationStatus.REJECTED)){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+        }
+
+        boolean isMinusScore = false;
+        //application is approved -> check the event timeline
+        if (eventApplication.getStatus().equals(EEventApplicationStatus.APPROVED)){
+            //check event status
+            /*
+            If an application is approved
+            and the volunteer cancels the applied event
+            after the recruitment end date
+            and before the  date of the event session,
+            volunteer's honor score will be minus for 3 scores.
+             */
+            LocalDate today = LocalDate.now();
+            if (today.isAfter(event.getRecruitmentEndDate())
+                    && today.isBefore(eventApplication.getSessionDate())) {
+                // volunteer's honor score will be minus for 3 scores
+                volunteer.setHonorScore((short) (volunteer.getHonorScore() - 3));
+                volunteerRepository.save(volunteer);
+                isMinusScore = true;
+            }
+
+            //decrease the approved amount of session
+            eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()-1);
+            eventSessionRepository.save(eventSession);
+        }
+
+        eventApplication.setStatus(EEventApplicationStatus.CANCELLED);
+        eventApplicationRepository.save(eventApplication);
+
+        log.info("Volunteer cancelled event application eventApplicationId={}", eventApplication.getId());
+        //send notification to the volunteer
+        notificationService.sendEventApplicationCancelledSucessfuly(volunteer.getId(), event, eventApplication, isMinusScore);
+    }
 }

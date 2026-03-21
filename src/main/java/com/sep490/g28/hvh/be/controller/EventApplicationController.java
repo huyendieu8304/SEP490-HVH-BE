@@ -46,4 +46,13 @@ public class EventApplicationController {
         eventApplicationService.rejectApplication(id, request);
         return ResponseEntity.ok().build();
     }
+
+    @PreAuthorize("hasRole('VOL') and @eventApplicationAuthorizer.isVolunteerOfEventApplication(#id)")
+    @PutMapping("/vol/event-applications/{id}/cancel")
+    ResponseEntity<Void> cancelApplication(
+            @PathVariable UUID id
+    ) {
+        eventApplicationService.cancelApplication(id);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -24,4 +24,16 @@ public enum EEventStatus {
 //    public static boolean cancellable(EEventStatus status) {
 //        return  (status.equals(RECRUITING) || status.equals(UPCOMING));
 //    }
+
+    public static boolean volunteerCanCancelledApplication(EEventStatus status) {
+        return  (status.equals(EDITING)
+                || status.equals(SUBMITTED)
+                || status.equals(APPROVED_BY_MNG)
+                || status.equals(REJECTED_BY_MNG)
+                || status.equals(REJECTED_BY_AD)
+                || status.equals(RECRUITING)
+                || status.equals(UPCOMING)
+                || status.equals(ONGOING)
+        );
+    }
 }

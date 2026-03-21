@@ -10,4 +10,6 @@ public interface EventApplicationService {
     void approveApplication(UUID applicationId);
 
     void rejectApplication(UUID applicationId, RejectApplicationRequest request);
+
+    void cancelApplication(UUID applicationId);
 }
