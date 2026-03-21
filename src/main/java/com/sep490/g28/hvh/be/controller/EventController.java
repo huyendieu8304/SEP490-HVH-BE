@@ -235,7 +235,7 @@ public class EventController {
             @RequestParam(required = false)
             String name,
 
-            @RequestParam(required = true)
+            @RequestParam()
             @EventStatus
             String status
     ) {

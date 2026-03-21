@@ -143,9 +143,9 @@ public class EventServiceImpl implements EventService {
                         ).toList())
                 .orElse(Collections.emptyList());
 
-        // If after load the slice with n size,
-        // and slice.hasNext() is true (the slice will auto check this)
-        // , move the cursor to the next page, which will load more content of the slice
+        // If after load the page with n size,
+        // and page.hasNext() is true (the slice will auto check this)
+        // , move the cursor to the next page, which will load more content
         // (equivalent to call the api one more time)
         return new EventFeedResponse(
                 eventSimpleResponseList,
@@ -941,6 +941,8 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(id).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
         );
+
+        //todo check if event belongs to host
 
         StringBuilder note = new StringBuilder();
 
