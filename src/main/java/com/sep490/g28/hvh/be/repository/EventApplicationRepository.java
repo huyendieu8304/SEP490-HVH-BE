@@ -13,12 +13,14 @@ import java.util.UUID;
 public interface EventApplicationRepository extends JpaRepository<EventApplication, UUID> {
     @Query(
             value = """
-                    SELECT e.*
-                    FROM event_applications e
-                    WHERE volunteer_id = :volunteerId AND session_id = :sessionId
-                    """,
+                SELECT e.*
+                FROM event_applications e
+                WHERE volunteer_id = :volunteerId
+                  AND session_id = :sessionId
+                  AND status IN ('PENDING', 'APPROVED')
+                """,
             nativeQuery = true)
-    Optional<EventApplication> getEventApplicationsByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
+    Optional<EventApplication> findApplicationPendingOrApproved(UUID volunteerId, UUID sessionId);
 
     @Query(
             value = """

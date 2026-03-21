@@ -110,7 +110,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))
@@ -140,7 +140,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))
@@ -213,7 +213,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.of(new EventApplication()));
 
         assertThrows(AppException.class,
@@ -231,7 +231,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         assertThrows(AppException.class,
@@ -248,7 +248,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))

@@ -7,6 +7,7 @@ import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
+import com.sep490.g28.hvh.be.entity.Volunteer;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
@@ -40,7 +41,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     @Transactional
     @Override
     public void applyEventSession(UUID sessionId) {
-        //check session existed?
+        //find the session
         EventSession session = eventSessionRepository.findById(sessionId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED));
 
@@ -57,8 +58,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         UUID volunteerId = currentUserProvider.getId();
+
         //Have ever the volunteer applied for this session yet?
-        if (eventApplicationRepository.getEventApplicationsByVolunteerIdAndSessionId(volunteerId, sessionId).isPresent()) {
+        if (eventApplicationRepository.findApplicationPendingOrApproved(volunteerId, sessionId).isPresent()) {
+            //rejected and cancelled still can apply again
+            //but pending and approve -> nah
             throw new AppException(EventErrorCode.ALREADY_APPLIED);
         }
         //check expected Vol amount
