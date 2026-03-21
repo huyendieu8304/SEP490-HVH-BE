@@ -249,7 +249,7 @@ public class EventServiceTest {
 
     // ===== TC4 =====
     @Test
-    void getEventFeeds_should_return_null_next_page_when_no_next_slice() {
+    void getEventFeeds_should_return_null_next_page() {
 
         Event event = mockEvent();
 
