@@ -184,6 +184,12 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 || eventApplication.getStatus().equals(EEventApplicationStatus.REJECTED)){
             throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
         }
+        LocalDate today = LocalDate.now();
+
+        // not allow to cancel on the date or after the session date
+        if (!today.isBefore(eventApplication.getSessionDate())) {
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+        }
 
         boolean isMinusScore = false;
         //application is approved -> check the event timeline
@@ -196,12 +202,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             and before the  date of the event session,
             volunteer's honor score will be minus for 3 scores.
              */
-            LocalDate today = LocalDate.now();
-            if (today.isAfter(event.getRecruitmentEndDate())
-                    && today.isBefore(eventApplication.getSessionDate())) {
+            if (today.isAfter(event.getRecruitmentEndDate())) {
                 // volunteer's honor score will be minus for 3 scores
                 volunteer.setHonorScore((short) (volunteer.getHonorScore() - 3));
                 volunteerRepository.save(volunteer);
+                log.info("Volunteer will be deduct 3 points of honor score after cancel application successfully");
                 isMinusScore = true;
             }
 
@@ -215,6 +220,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         log.info("Volunteer cancelled event application eventApplicationId={}", eventApplication.getId());
         //send notification to the volunteer
-        notificationService.sendEventApplicationCancelledSucessfuly(volunteer.getId(), event, eventApplication, isMinusScore);
+        notificationService.sendEventApplicationCancelledSuccessfully(volunteer.getId(), event, eventApplication, isMinusScore);
     }
 }
