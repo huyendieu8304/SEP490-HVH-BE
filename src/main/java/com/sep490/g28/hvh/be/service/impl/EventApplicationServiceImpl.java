@@ -93,6 +93,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
             eventApplication = eventApplicationRepository.save(eventApplication);
             eventSessionRepository.save(session);
+            //subscribe the volunteer to the topic of notification
+            notificationService.subscribeUserToTopicOfEvent(volunteerId, event.getId());
             log.info("Volunteer application is approved automatically eventApplicationId={}", eventApplication.getId());
         } else {
             eventApplication.setStatus(EEventApplicationStatus.PENDING);
@@ -130,6 +132,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()+1);
         eventSessionRepository.save(eventSession);
+        //subscribe the volunteer to the topic of notification
+        notificationService.subscribeUserToTopicOfEvent(eventApplication.getVolunteer().getId(), event.getId());
         log.info("Approved event application eventApplicationId={}", eventApplication.getId());
         //send notification to vol
         notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
@@ -219,6 +223,10 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         eventApplicationRepository.save(eventApplication);
 
         log.info("Volunteer cancelled event application eventApplicationId={}", eventApplication.getId());
+
+        //unsubscribe the volunteer to the topic of notification
+        notificationService.unsubscribeUserFromTopicOfEvent(currentUserProvider.getId(), event.getId());
+
         //send notification to the volunteer
         notificationService.sendEventApplicationCancelledSuccessfully(volunteer.getId(), event, eventApplication, isMinusScore);
     }

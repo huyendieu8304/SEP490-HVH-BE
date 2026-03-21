@@ -10,6 +10,11 @@ public interface NotificationService {
     void registerNotificationToken(RegisterNotificationTokenRequest request);
 
     void unregisterNotificationToken(String token);
+
+    void subscribeUserToTopicOfEvent(UUID userId, UUID eventId);
+
+    void unsubscribeUserFromTopicOfEvent(UUID userId, UUID eventId);
+
 //todo
 //    List<UserNotification> getLatestNotification(OffsetDateTime cursor);
 

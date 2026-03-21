@@ -6,6 +6,7 @@ import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
+import com.sep490.g28.hvh.be.notification.entity.NotificationTopicSubscription;
 import com.sep490.g28.hvh.be.notification.entity.UserNotification;
 import com.sep490.g28.hvh.be.notification.entity.NotificationToken;
 import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
@@ -121,6 +122,29 @@ public class NotificationServiceImpl implements NotificationService {
             topics.add(ADMIN_TOPIC);
         }
         notificationPublisher.enqueueUnsubscribeFromTopics(token, topics);
+    }
+
+    @Override
+    public void subscribeUserToTopicOfEvent(UUID userId, UUID eventId) {
+        NotificationTopicSubscription subscription = new NotificationTopicSubscription();
+        subscription.setUser(userRepository.getReferenceById(userId));
+        subscription.setTopic(EVENT_TOPIC_PRE + eventId);
+        notificationTopicSubscriptionRepository.save(subscription);
+
+        //todo push request to message queue
+        List<String> tokens = notificationTokenRepository.findTokensByUserId(userId);
+
+        log.info("Subscribed user to topic of event, userId={} evenId={}", userId, eventId);
+    }
+
+    @Transactional
+    @Override
+    public void unsubscribeUserFromTopicOfEvent(UUID userId, UUID eventId) {
+        notificationTopicSubscriptionRepository.deleteByUser_IdAndTopic(userId, EVENT_TOPIC_PRE + eventId);
+        //todo push request to message queue
+        List<String> tokens = notificationTokenRepository.findTokensByUserId(userId);
+
+        log.info("Unsubscribed user from topic of event, userId={} evenId={}", userId, eventId);
     }
 
     //    @Override
