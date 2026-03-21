@@ -168,6 +168,7 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(request.getEventId()).orElseThrow(
                     () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
             );
+            //todo check host of event
             return editEvent(request, event, EEventStatus.EDITING);
         } else {
             return createEvent(request, EEventStatus.EDITING);
@@ -182,6 +183,7 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(request.getEventId()).orElseThrow(
                     () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
             );
+            //todo check host of event
             return editEvent(request, event, EEventStatus.SUBMITTED);
         } else {
             return createEvent(request, EEventStatus.SUBMITTED);

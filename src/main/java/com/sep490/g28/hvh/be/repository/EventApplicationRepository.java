@@ -35,4 +35,15 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             nativeQuery = true
     )
     EventSession findOverlapSession(UUID volunteerId, LocalDate applyingDate, OffsetDateTime applyingStartDateTime, OffsetDateTime applyingEndDateTime);
+
+
+    @Query("""
+                SELECT COUNT(a) > 0
+                FROM EventApplication a
+                JOIN a.session s
+                JOIN s.event e
+                WHERE a.id = :applicationId
+                  AND e.host.id = :hostId
+            """)
+    boolean existsByIdAndHostId(UUID applicationId, UUID hostId);
 }

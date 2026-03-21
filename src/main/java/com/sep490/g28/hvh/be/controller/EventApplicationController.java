@@ -29,14 +29,15 @@ public class EventApplicationController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('HOST')")
-    @PutMapping("/host/event-applications/{id}/approve")
-    ResponseEntity<Void> approveApplication(@PathVariable UUID id) {
-        eventApplicationService.approveApplication(id);
+    @PreAuthorize("hasRole('HOST') and @eventApplicationAuthorizer.isHostOfEventApplication(#applicationId)")
+    @PutMapping("/host/event-applications/{applicationId}/approve")
+    ResponseEntity<Void> approveApplication(@PathVariable UUID applicationId) {
+        eventApplicationService.approveApplication(applicationId);
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('HOST')")
+
+    @PreAuthorize("hasRole('HOST') and @eventApplicationAuthorizer.isHostOfEventApplication(#id)")
     @PutMapping("/host/event-applications/{id}/reject")
     ResponseEntity<Void> rejectApplication(
             @PathVariable UUID id,
