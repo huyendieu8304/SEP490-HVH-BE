@@ -46,4 +46,6 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
                   AND e.host.id = :hostId
             """)
     boolean existsByIdAndHostId(UUID applicationId, UUID hostId);
+
+    boolean existsByIdAndVolunteer_Id(UUID applicationId, UUID volunteerId);
 }

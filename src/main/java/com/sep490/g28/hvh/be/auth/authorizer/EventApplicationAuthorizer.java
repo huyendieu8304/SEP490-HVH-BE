@@ -22,4 +22,10 @@ public class EventApplicationAuthorizer {
 
         return eventApplicationRepository.existsByIdAndHostId(applicationId, hostId);
     }
+
+    public boolean isVolunteerOfEventApplication(UUID applicationId){
+        UUID volunteerId = currentUserProvider.getId();
+
+        return eventApplicationRepository.existsByIdAndVolunteer_Id(applicationId, volunteerId);
+    }
 }
