@@ -131,7 +131,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             """)
     Page<Event> findEventsByHostId(
             @Param("hostId") UUID hostId,
-            @Param("status") String status,
+            @Param("status") EEventStatus status,
             @Param("name") String name,
             Pageable pageable);
 }

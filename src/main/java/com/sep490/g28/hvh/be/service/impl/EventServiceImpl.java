@@ -880,7 +880,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForHost> getEventsByHost(int pageNumber, int pageSize, String eventName, String status) {
+    public Page<EventSimpleResponseForHost> getEventsByHost(int pageNumber, int pageSize, String eventName, String inputStatus) {
         //get current logged in host Id
         UUID hostId = currentUserProvider.getId();
 
@@ -889,6 +889,11 @@ public class EventServiceImpl implements EventService {
                 pageSize,
                 Sort.by(Sort.Direction.ASC, "createdAt")
         );
+
+        EEventStatus status =
+                (inputStatus == null || inputStatus.isBlank())
+                        ? null
+                        : EEventStatus.valueOf(inputStatus);
 
         Page<Event> events = eventRepository.findEventsByHostId(hostId, status, eventName, pageable);
 
