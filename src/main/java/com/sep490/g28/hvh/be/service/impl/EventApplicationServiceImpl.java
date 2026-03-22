@@ -9,6 +9,7 @@ import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipant
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
+import com.sep490.g28.hvh.be.entity.Volunteer;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
