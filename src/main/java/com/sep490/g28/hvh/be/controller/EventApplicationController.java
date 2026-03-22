@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.controller;
 
+import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
@@ -27,6 +29,24 @@ public class EventApplicationController {
     @PostMapping("/event-session/{sessionId}/apply")
     ResponseEntity<Void> applyEvent(@PathVariable UUID sessionId) {
         eventApplicationService.applyEventSession(sessionId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('HOST') and @eventApplicationAuthorizer.isHostOfEventApplication(#applicationId)")
+    @PutMapping("/host/event-applications/{applicationId}/approve")
+    ResponseEntity<Void> approveApplication(@PathVariable UUID applicationId) {
+        eventApplicationService.approveApplication(applicationId);
+        return ResponseEntity.ok().build();
+    }
+
+
+    @PreAuthorize("hasRole('HOST') and @eventApplicationAuthorizer.isHostOfEventApplication(#id)")
+    @PutMapping("/host/event-applications/{id}/reject")
+    ResponseEntity<Void> rejectApplication(
+            @PathVariable UUID id,
+            @RequestBody @Valid RejectApplicationRequest request
+    ) {
+        eventApplicationService.rejectApplication(id, request);
         return ResponseEntity.ok().build();
     }
 

@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
 import com.sep490.g28.hvh.be.entity.Event;
@@ -52,6 +53,8 @@ public class EventApplicationServiceTest {
     @Mock
     StorageService storageService;
 
+    @Mock NotificationService notificationService;
+
     UUID volunteerId;
     UUID sessionId;
 
@@ -83,6 +86,28 @@ public class EventApplicationServiceTest {
         s.setApprovedApplicationCount(0);
 
         return s;
+    }
+
+    private EventApplication app() {
+
+        Event event = new Event();
+        event.setStatus(EEventStatus.RECRUITING);
+
+        EventSession session = new EventSession();
+        session.setEvent(event);
+        session.setExpectedVolAmount(10);
+        session.setApprovedApplicationCount(0);
+
+        Volunteer vol = new Volunteer();
+        vol.setId(UUID.randomUUID());
+
+        EventApplication app = new EventApplication();
+        app.setId(UUID.randomUUID());
+        app.setStatus(EEventApplicationStatus.PENDING);
+        app.setSession(session);
+        app.setVolunteer(vol);
+
+        return app;
     }
 
     private EventApplication application() {
@@ -119,6 +144,13 @@ public class EventApplicationServiceTest {
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))
                 .thenReturn(null);
 
+        when(eventApplicationRepository.save(any()))
+                .thenAnswer(invocation -> {
+                    EventApplication app = invocation.getArgument(0);
+                    app.setId(UUID.randomUUID());
+                    return app;
+                });
+
         service.applyEventSession(s.getId());
 
         verify(eventApplicationRepository).save(argThat(app ->
@@ -141,6 +173,13 @@ public class EventApplicationServiceTest {
 
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))
                 .thenReturn(null);
+
+        when(eventApplicationRepository.save(any()))
+                .thenAnswer(invocation -> {
+                    EventApplication app = invocation.getArgument(0);
+                    app.setId(UUID.randomUUID());
+                    return app;
+                });
 
         service.applyEventSession(s.getId());
 
@@ -245,6 +284,144 @@ public class EventApplicationServiceTest {
 
         assertThrows(AppException.class,
                 () -> service.applyEventSession(s.getId()));
+    }
+
+    //----- approveApplication ------------------------------------------
+    // TC01
+    @Test
+    void approveApplication_success() {
+
+        EventApplication app = app();
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        service.approveApplication(app.getId());
+
+        assertEquals(EEventApplicationStatus.APPROVED, app.getStatus());
+
+        assertEquals(1,
+                app.getSession().getApprovedApplicationCount());
+
+        verify(eventApplicationRepository).save(app);
+        verify(eventSessionRepository).save(app.getSession());
+
+        verify(notificationService).sendEventApplicationApproved(
+                eq(app.getVolunteer().getId()),
+                eq(app.getSession().getEvent()),
+                eq(app)
+        );
+    }
+
+    // TC02
+    @Test
+    void approveApplication_notExist_shouldThrow() {
+
+        when(eventApplicationRepository.findById(any()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.approveApplication(UUID.randomUUID()));
+    }
+
+    // TC03
+    @Test
+    void approveApplication_notPending_shouldThrow() {
+
+        EventApplication app = app();
+        app.setStatus(EEventApplicationStatus.APPROVED);
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        assertThrows(AppException.class,
+                () -> service.approveApplication(app.getId()));
+    }
+
+    // TC04
+    @Test
+    void approveApplication_sessionFull_shouldThrow() {
+
+        EventApplication app = app();
+        app.getSession().setApprovedApplicationCount(10);
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        assertThrows(AppException.class,
+                () -> service.approveApplication(app.getId()));
+    }
+
+    // TC05
+    @Test
+    void approveApplication_eventNotRecruiting_shouldThrow() {
+
+        EventApplication app = app();
+        app.getSession().getEvent().setStatus(EEventStatus.APPROVED_BY_MNG);
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        assertThrows(AppException.class,
+                () -> service.approveApplication(app.getId()));
+    }
+
+    // ----- rejectApplication---------------------------
+    // TC01
+    @Test
+    void rejectApplication_success() {
+
+        EventApplication app = app();
+
+        RejectApplicationRequest req = new RejectApplicationRequest();
+        req.setRejectionReason("invalid");
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        service.rejectApplication(app.getId(), req);
+
+        assertEquals(EEventApplicationStatus.REJECTED, app.getStatus());
+
+        verify(eventApplicationRepository).save(app);
+
+        verify(notificationService).sendEventApplicationRejected(
+                eq(app.getVolunteer().getId()),
+                eq(app.getSession().getEvent()),
+                eq(app),
+                eq(req.getRejectionReason())
+        );
+    }
+
+    // TC02
+    @Test
+    void rejectApplication_notExist_shouldThrow() {
+
+        when(eventApplicationRepository.findById(any()))
+                .thenReturn(Optional.empty());
+
+        RejectApplicationRequest req = new RejectApplicationRequest();
+        req.setRejectionReason("reason");
+
+        assertThrows(AppException.class,
+                () -> service.rejectApplication(UUID.randomUUID(), req));
+    }
+
+    // TC03
+    @Test
+    void rejectApplication_notPending_shouldThrow() {
+
+        EventApplication app = app();
+        app.setStatus(EEventApplicationStatus.APPROVED);
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        RejectApplicationRequest req = new RejectApplicationRequest();
+        req.setRejectionReason("reason");
+
+        assertThrows(AppException.class,
+                () -> service.rejectApplication(app.getId(), req));
     }
 
     //----- getRegisteredParticipants --------------------------

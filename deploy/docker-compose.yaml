@@ -1,0 +1,40 @@
+name: hvh-deploy
+services:
+  app:
+    container_name: hvh-app
+    image: huyendieu8304/hvh:latest
+    restart: unless-stopped
+#    ports:
+#      - "8080:8080"
+    env_file:
+      - .env.dev
+#      - .env.prod
+    # mount file firebase key vào container
+    volumes:
+      - ./FCM_SAKey.json:/app/FCM_SAKey.json
+    # override env in file env if need
+    environment:
+      - FIREBASE_SA_KEY_PATH=/app/FCM_SAKey.json
+    networks:
+      - internal
+  caddy:
+    image: caddy:2.9.1
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+    depends_on:
+      - app
+volumes:
+  caddy_data:
+  caddy_config:
+networks:
+  internal:
+    driver: bridge

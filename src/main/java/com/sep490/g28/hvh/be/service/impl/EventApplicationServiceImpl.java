@@ -3,9 +3,12 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
-import com.sep490.g28.hvh.be.entity.*;
+import com.sep490.g28.hvh.be.entity.Event;
+import com.sep490.g28.hvh.be.entity.EventApplication;
+import com.sep490.g28.hvh.be.entity.EventSession;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
@@ -13,6 +16,7 @@ import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
+import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -44,6 +48,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
     CurrentUserProvider currentUserProvider;
 
+    NotificationService notificationService;
+
     @Transactional
     @Override
     public void applyEventSession(UUID sessionId) {
@@ -57,6 +63,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
         }
 
+        //todo check again after finish all event status, might not need to check the bellow
         //check registration deadline
         if (LocalDate.now().isAfter(event.getRecruitmentEndDate())) {
             throw new AppException(EventErrorCode.EVENT_RECRUITMENT_CLOSED);
@@ -89,14 +96,79 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         eventApplication.setSessionDate(session.getStartDateTime().toLocalDate());
 
         //check auto approve
-        if (event.isAutoApprove()){
+        if (event.isAutoApprove()) {
             eventApplication.setStatus(EEventApplicationStatus.APPROVED);
-            session.setApprovedApplicationCount(session.getApprovedApplicationCount()+1);
+            session.setApprovedApplicationCount(session.getApprovedApplicationCount() + 1);
+
+            eventApplication = eventApplicationRepository.save(eventApplication);
             eventSessionRepository.save(session);
+            log.info("Volunteer application is approved automatically eventApplicationId={}", eventApplication.getId());
         } else {
             eventApplication.setStatus(EEventApplicationStatus.PENDING);
+            eventApplication = eventApplicationRepository.save(eventApplication);
+            log.info("Volunteer application is created with PENDING status eventApplicationId={}", eventApplication.getId());
         }
+    }
+
+    @Transactional
+    @Override
+    public void approveApplication(UUID applicationId) {
+        //find the application
+        EventApplication eventApplication = eventApplicationRepository.findById(applicationId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
+        );
+
+        //check the status of the application
+        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)){
+             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
+        }
+        //check the expected amount
+        EventSession eventSession = eventApplication.getSession();
+        if (eventSession.getApprovedApplicationCount() >= eventSession.getExpectedVolAmount()){
+            throw new AppException(EventErrorCode.EVENT_SESSION_FULL);
+        }
+
+        //check the status of the event
+        Event event = eventSession.getEvent();
+        if (event.getStatus() != EEventStatus.RECRUITING){
+            throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
+        }
+
+        eventApplication.setStatus(EEventApplicationStatus.APPROVED);
         eventApplicationRepository.save(eventApplication);
+
+        eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()+1);
+        eventSessionRepository.save(eventSession);
+        log.info("Approved event application eventApplicationId={}", eventApplication.getId());
+        //send notification to vol
+        notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
+    }
+
+    @Override
+    public void rejectApplication(UUID applicationId, RejectApplicationRequest request) {
+        //find the application
+        EventApplication eventApplication = eventApplicationRepository.findById(applicationId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
+        );
+
+        //check the status of the application
+        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
+        }
+
+        eventApplication.setStatus(EEventApplicationStatus.REJECTED);
+        eventApplicationRepository.save(eventApplication);
+        log.info("Reject event application eventApplicationId={}", eventApplication.getId());
+
+        Event event = eventApplication.getSession().getEvent();
+
+        //send notification to vol
+        notificationService.sendEventApplicationRejected(
+                eventApplication.getVolunteer().getId(),
+                event,
+                eventApplication,
+                request.getRejectionReason()
+        );
     }
 
     @Override

@@ -78,6 +78,7 @@ public class Event {
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
+    //todo, suưửa ve not null after fix create event
     @Column(name = "end_date", nullable = true)
     private LocalDate endDate;
 

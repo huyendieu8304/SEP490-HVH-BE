@@ -92,14 +92,14 @@ public class EventController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('ORG_MANAGER')")
+    @PreAuthorize("hasRole('ORG_MANAGER') and @eventAuthorizer.isOrgManagerOfEvent(#eventId)")
     @PutMapping("/org-manager/event/{eventId}/approve")
     public ResponseEntity<String> approveEventByManager(@PathVariable java.util.UUID eventId) {
         eventService.approveEventByManager(eventId);
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('ORG_MANAGER')")
+    @PreAuthorize("hasRole('ORG_MANAGER') and @eventAuthorizer.isOrgManagerOfEvent(#eventId)")
     @PutMapping("/org-manager/event/{eventId}/reject")
     public ResponseEntity<String> rejectEventByManager(
             @PathVariable java.util.UUID eventId,
