@@ -91,4 +91,12 @@ public class OrganizationController {
         java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(organizationService.getOrganizationDetailsBySystemAdmin(id));
     }
+
+    @GetMapping("/organization/organizations/{id}")
+    public ResponseEntity<OrganizationDetailsResponse> getOrganizationDetails(
+            @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
+    ) {
+        java.util.UUID id = java.util.UUID.fromString(inputId);
+        return ResponseEntity.ok(organizationService.getOrganizationDetails(id));
+    }
 }

@@ -5,10 +5,7 @@ import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
-import com.sep490.g28.hvh.be.dto.event.response.EventDetailsResponse;
-import com.sep490.g28.hvh.be.dto.event.response.EventDetailsResponseForManager;
-import com.sep490.g28.hvh.be.dto.event.response.EventDetailsResponseForSystemAdmin;
-import com.sep490.g28.hvh.be.dto.event.response.EventFeedResponse;
+import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
@@ -252,7 +249,7 @@ public class EventServiceTest {
 
     // ===== TC4 =====
     @Test
-    void getEventFeeds_should_return_null_next_page_when_no_next_slice() {
+    void getEventFeeds_should_return_null_next_page() {
 
         Event event = mockEvent();
 
@@ -729,4 +726,146 @@ public class EventServiceTest {
 
         assertEquals("", response.getActivitySubDomain());
     }
+
+    // ==== getEventsByHost ===================================
+    // ===== TC1 =====
+    @Test
+    void getEventsByHost_success() {
+
+        when(currentUserProvider.getId()).thenReturn(hostId);
+
+        Event event = mockEvent();
+
+        Page<Event> page = new PageImpl<>(List.of(event));
+
+        when(eventRepository.findEventsByHostId(
+                eq(hostId),
+                any(),
+                any(),
+                any()
+        )).thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("img1"))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        Page<EventSimpleResponseForHost> response =
+                eventService.getEventsByHost(0, 10, "Charity Event", "RECRUITING");
+
+        assertEquals(1, response.getContent().size());
+        assertEquals("signed-url",
+                response.getContent().getFirst().getImageUrl());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getEventsByHost_no_events() {
+
+        when(currentUserProvider.getId()).thenReturn(hostId);
+
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "createdAt"));
+
+        Page<Event> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(eventRepository.findEventsByHostId(
+                eq(hostId),
+                any(),
+                any(),
+                any()
+        )).thenReturn(emptyPage);
+
+        Page<EventSimpleResponseForHost> response =
+                eventService.getEventsByHost(0, 10, null, null);
+
+        assertTrue(response.getContent().isEmpty());
+        assertEquals(0, response.getTotalElements());
+    }
+
+    // ===== TC3 =====
+    @Test
+    void getEventsByHost_parse_null_and_without_image() {
+
+        when(currentUserProvider.getId()).thenReturn(hostId);
+
+        Event event = mockEvent();
+        event.setImages(null);
+
+        Page<Event> page = new PageImpl<>(List.of(event));
+
+        when(eventRepository.findEventsByHostId(
+                eq(hostId),
+                any(),
+                any(),
+                any()
+        )).thenReturn(page);
+
+        Page<EventSimpleResponseForHost> response =
+                eventService.getEventsByHost(0, 10, null, null);
+
+        assertEquals(1, response.getContent().size());
+        assertNull(response.getContent().getFirst().getImageUrl());
+    }
+
+    // ==== getEventDetailsByHost ===================================
+    // ===== TC1 =====
+    @Test
+    void getEventDetailsByHost_success() {
+
+        Event event = mockEvent();
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        when(storageService.getSignedUrlAsync("img1"))
+                .thenReturn(CompletableFuture.completedFuture("url1"));
+
+        when(storageService.getSignedUrlAsync("img2"))
+                .thenReturn(CompletableFuture.completedFuture("url2"));
+
+        EventDetailsResponseForHost response =
+                eventService.getEventDetailsByHost(eventId);
+
+        assertEquals("Charity Event", response.getName());
+        assertEquals(2, response.getImageUrls().size());
+        assertEquals(1, response.getEventSessions().size());
+
+        verify(eventRepository).findById(eventId);
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getEventDetailsByHost_event_not_exist() {
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(
+                AppException.class,
+                () -> eventService.getEventDetailsByHost(eventId)
+        );
+
+        assertEquals(
+                EventErrorCode.EVENT_NOT_EXISTED.getCode(),
+                ex.getCode()
+        );
+    }
+
+    // ===== TC3 =====
+    @Test
+    void getEventDetailsByHost_null_activity_sub_domain() {
+
+        Event event = mockEvent();
+
+        event.setActivitySubDomain(null);
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        when(storageService.getSignedUrlAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture("url"));
+
+        EventDetailsResponseForHost response = eventService.getEventDetailsByHost(eventId);
+
+        assertEquals("", response.getActivitySubDomain());
+    }
+
 }

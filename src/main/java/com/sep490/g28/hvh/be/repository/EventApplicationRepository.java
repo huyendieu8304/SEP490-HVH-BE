@@ -2,6 +2,8 @@ package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -46,4 +48,11 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
                   AND e.host.id = :hostId
             """)
     boolean existsByIdAndHostId(UUID applicationId, UUID hostId);
+
+    @Query("""
+            SELECT e
+            FROM EventApplication e
+            WHERE e.id = :sessionId
+            """)
+    Page<EventApplication> getEventApplicationsBySessionId(UUID sessionId, Pageable pageable);
 }

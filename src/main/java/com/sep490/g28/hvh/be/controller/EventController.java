@@ -5,6 +5,7 @@ import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.service.EventService;
+import com.sep490.g28.hvh.be.validation.EventStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.Valid;
@@ -33,16 +34,31 @@ public class EventController {
     @GetMapping("/event/new-feeds")
     public ResponseEntity<EventFeedResponse> getEventNewFeeds(
             @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = "INVALID_PAGE_NUMBER") int pageNumber,
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
             @RequestParam(defaultValue = "10")
             @Min(value = 1, message = "INVALID_PAGE_SIZE")
-            @Max(value = 100, message = "INVALID_PAGE_SIZE") int pageSize,
-            @RequestParam(defaultValue = "true") boolean refresh,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String address,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate,
-            @RequestParam(required = false) List<Short> activitySubDomainIds
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam(defaultValue = "true")
+            boolean refresh,
+
+            @RequestParam(required = false)
+            String name,
+
+            @RequestParam(required = false)
+            String address,
+
+            @RequestParam(required = false)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            LocalDate endDate,
+
+            @RequestParam(required = false)
+            List<Short> activitySubDomainIds
     ) {
         return ResponseEntity.ok(eventService.getEventFeeds(pageNumber, pageSize, refresh, name, address, startDate, endDate, activitySubDomainIds));
     }
@@ -61,7 +77,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.submitEvent(request));
     }
 
-    @GetMapping("/volunteer/event/event-details/{id}")
+    @GetMapping("/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponse> getEventDetails(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
@@ -110,7 +126,7 @@ public class EventController {
 
     ) {
 
-        return ResponseEntity.ok(eventService.getPendingEventsForManager(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getPendingEventsByManager(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER')")
@@ -128,7 +144,7 @@ public class EventController {
             @RequestParam(required = false)
             String name
     ) {
-        return ResponseEntity.ok(eventService.getApprovedEventsForManager(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getApprovedEventsByManager(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
@@ -165,7 +181,7 @@ public class EventController {
 
     ) {
 
-        return ResponseEntity.ok(eventService.getPendingEventsForAdmin(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getPendingEventsByAdmin(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
@@ -183,7 +199,7 @@ public class EventController {
             @RequestParam(required = false)
             String name
     ) {
-        return ResponseEntity.ok(eventService.getRunningEventsForAdmin(pageNumber, pageSize, name));
+        return ResponseEntity.ok(eventService.getRunningEventsByAdmin(pageNumber, pageSize, name));
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER')")
@@ -202,5 +218,37 @@ public class EventController {
     ) {
         java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventService.getEventDetailsBySystemAdmin(id));
+    }
+
+    @PreAuthorize("hasRole('HOST')")
+    @GetMapping("/host/event/my-events")
+    public ResponseEntity<Page<EventSimpleResponseForHost>> getEventsByHost(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam(required = false)
+            String name,
+
+            @RequestParam()
+            @EventStatus
+            String status
+    ) {
+
+        return ResponseEntity.ok(eventService.getEventsByHost(pageNumber, pageSize, name, status));
+    }
+
+    @PreAuthorize("hasRole('HOST')")
+    @GetMapping("/host/event/event-details/{id}")
+    public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
+            @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
+    ) {
+        java.util.UUID id = java.util.UUID.fromString(inputId);
+        return ResponseEntity.ok(eventService.getEventDetailsByHost(id));
     }
 }

@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.repository;
 
+import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.entity.Event;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -122,4 +123,17 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     boolean existsByIdAndHost_Id(UUID eventId, UUID hostId);
 
     boolean existsByIdAndOrganization_Id(UUID eventId, UUID orgId);
+
+    @Query("""
+            SELECT e
+            FROM Event e
+            WHERE e.host.id = :hostId
+            AND (e.status = :status)
+            AND (:name IS NULL OR e.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+            """)
+    Page<Event> findEventsByHostId(
+            @Param("hostId") UUID hostId,
+            @Param("status") EEventStatus status,
+            @Param("name") String name,
+            Pageable pageable);
 }

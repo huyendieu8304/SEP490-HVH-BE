@@ -130,6 +130,7 @@ public class EventServiceImpl implements EventService {
                                     }
 
                                     return new EventSimpleResponse(
+                                            e.getId(),
                                             e.getOrganization().getName(),
                                             e.getName(),
                                             firstEventImageUrl,
@@ -142,9 +143,9 @@ public class EventServiceImpl implements EventService {
                         ).toList())
                 .orElse(Collections.emptyList());
 
-        // If after load the slice with n size,
-        // and slice.hasNext() is true (the slice will auto check this)
-        // , move the cursor to the next page, which will load more content of the slice
+        // If after load the page with n size,
+        // and page.hasNext() is true (the slice will auto check this)
+        // , move the cursor to the next page, which will load more content
         // (equivalent to call the api one more time)
         return new EventFeedResponse(
                 eventSimpleResponseList,
@@ -519,7 +520,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForManager> getPendingEventsForManager(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForManager> getPendingEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -545,7 +546,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForManager> getApprovedEventsForManager(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForManager> getApprovedEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -574,7 +575,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForAdmin> getPendingEventsForAdmin(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForAdmin> getPendingEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -594,7 +595,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventSimpleResponseForAdmin> getRunningEventsForAdmin(int pageNumber, int pageSize, String eventName) {
+    public Page<EventSimpleResponseForAdmin> getRunningEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -876,6 +877,162 @@ public class EventServiceImpl implements EventService {
                 .status(eventStatus)
                 .eventSessions(eventSessions)
                 .conflictSessions(conflictSessions)
+                .note(note.toString())
+                .build();
+    }
+
+    @Override
+    public Page<EventSimpleResponseForHost> getEventsByHost(int pageNumber, int pageSize, String eventName, String inputStatus) {
+        //get current logged in host Id
+        UUID hostId = currentUserProvider.getId();
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.ASC, "createdAt")
+        );
+
+        EEventStatus status =
+                (inputStatus == null || inputStatus.isBlank())
+                        ? null
+                        : EEventStatus.valueOf(inputStatus);
+
+        Page<Event> events = eventRepository.findEventsByHostId(hostId, status, eventName, pageable);
+
+        if(events.getContent().isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, events.getTotalElements());
+        }
+
+        //map Event to EventSimpleResponseForHost
+        return events.map(e -> {
+
+            String firstEventImageUrl = null;
+
+            //get signed URL of file
+            if (e.getImages() != null && !e.getImages().isEmpty()) {
+
+                List<EventImage> eventImageList = e.getImages();
+
+                CompletableFuture<String> firstEventImageFuture =
+                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
+
+                try {
+                    CompletableFuture.allOf(firstEventImageFuture).join();
+                    firstEventImageUrl = firstEventImageFuture.join();
+                } catch (CompletionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof AppException ae) {
+                        //todo: handle app exception in viewEventFeeds
+                    } else {
+                        throw cause instanceof RuntimeException re ? re : ex;
+                    }
+                }
+            }
+
+            return new EventSimpleResponseForHost(
+                    e.getId(),
+                    e.getName(),
+                    firstEventImageUrl,
+                    e.getAddress(),
+                    e.getStartDate(),
+                    e.getRecruitmentEndDate(),
+                    e.getCreatedAt(),
+                    e.getUpdatedAt()
+            );
+        });
+    }
+
+    @Override
+    public EventDetailsResponseForHost getEventDetailsByHost(UUID id) {
+        //check id exist
+        Event event = eventRepository.findById(id).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //todo check if event belongs to host
+
+        StringBuilder note = new StringBuilder();
+
+        //get regular information of event
+        EEventStatus eventStatus = event.getStatus();
+
+        //get signed URL of file
+        List<CompletableFuture<String>> imagesFutures = new ArrayList<>();
+        if (event.getImages() != null) {
+            List<EventImage> imagesList = event.getImages();
+            for (EventImage image : imagesList) {
+                CompletableFuture<String> imageFuture =
+                        storageService.getSignedUrlAsync(image.getImagePath());
+                imagesFutures.add(imageFuture);
+            }
+        }
+
+        List<String> imagesUrls = new ArrayList<>();
+        try {
+
+            CompletableFuture.allOf(imagesFutures.toArray(new CompletableFuture[0])).join();
+            for (CompletableFuture<String> imageFuture : imagesFutures) {
+                imagesUrls.add(imageFuture.join());
+            }
+
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof AppException ae) {
+                //todo: handle exception at getEventDetails
+            } else {
+                throw cause instanceof RuntimeException re ? re : e;
+            }
+        }
+
+        String activitySubDomainName = "";
+        if (event.getActivitySubDomain() != null) {
+            activitySubDomainName = event.getActivitySubDomain().getName();
+        }
+
+        //Map event sessions to response
+        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+                .map(es -> new EventSessionDetailsResponse(
+                        es.getId(),
+                        es.getStartDateTime(),
+                        es.getEndDateTime(),
+                        es.getExpectedVolAmount(),
+                        es.getExpectedSerAmount()
+                )).toList();
+
+        //get lat and lng of check in location
+        Double lat = 0.0;
+        Double lng = 0.0;
+
+        if(event.getCheckInLocation() != null) {
+            lat = GeoUtils.getLat(event.getCheckInLocation());
+            lng = GeoUtils.getLng(event.getCheckInLocation());
+        }
+
+        LocalDate startDate = null;
+        LocalDate recruitmentEndDate = null;
+
+        startDate = event.getStartDate();
+        recruitmentEndDate = event.getRecruitmentEndDate();
+
+        return EventDetailsResponseForHost.builder()
+                .id(event.getId())
+                .name(event.getName())
+                .imageUrls(imagesUrls)
+                .description(event.getDescription())
+                .address(event.getAddress())
+                .activitySubDomain(activitySubDomainName)
+                .servedTarget(event.getServedTarget())
+                .servingPlaceType(event.getServingPlaceType())
+                .startDate(startDate)
+                .recruitmentEndDate(recruitmentEndDate)
+                .autoApprove(event.isAutoApprove())
+                .latCheckInLocation(lat)
+                .lngCheckInLocation(lng)
+                .checkInAccuracyMeters(event.getCheckInAccuracyMeters())
+                .createdAt(event.getCreatedAt())
+                .updatedAt(event.getUpdatedAt())
+                .status(eventStatus)
+                .eventSessions(eventSessions)
                 .note(note.toString())
                 .build();
     }
