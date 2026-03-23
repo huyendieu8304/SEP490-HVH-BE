@@ -20,13 +20,13 @@ public record RabbitMqNotificationProperties(
             String dlqUser,
             String dlqTopic,
 
-            String subscribe,
-            String subscribeRetry,
-            String subscribeDlq,
+            String subscribeTokenTopics,
+            String subscribeTokenTopicsRetry,
+            String subscribeTokenTopicsDlq,
 
-            String unsubscribe,
-            String unsubscribeRetry,
-            String unsubscribeDlq
+            String unsubscribeTokenTopics,
+            String unsubscribeTokenTopicsRetry,
+            String unsubscribeTokenTopicsDlq
 
 
             ) {}
@@ -39,13 +39,13 @@ public record RabbitMqNotificationProperties(
             String dlqUser,
             String dlqTopic,
 
-            String subscribe,
-            String subscribeRetry,
-            String subscribeDlq,
+            String subscribeTokenTopics,
+            String subscribeTokenTopicsRetry,
+            String subscribeTokenTopicsDlq,
 
-            String unsubscribe,
-            String unsubscribeRetry,
-            String unsubscribeDlq
+            String unsubscribeTokenTopics,
+            String unsubscribeTokenTopicsRetry,
+            String unsubscribeTokenTopicsDlq
     ) {}
 
     public record Retry(

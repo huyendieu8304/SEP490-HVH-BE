@@ -56,7 +56,7 @@ public class NotificationServiceImpl implements NotificationService {
         UUID userId = currentUserProvider.getId();
         NotificationToken notificationToken = registerNotificationTokenInternal(request, userId);
 
-        //subscribe token to topic
+        //subscribe token to topics
         subscribeTokenToTopicsAfterRegister(notificationToken.getToken(), userId);
     }
 

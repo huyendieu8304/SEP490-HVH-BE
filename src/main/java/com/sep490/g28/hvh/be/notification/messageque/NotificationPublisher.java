@@ -80,7 +80,7 @@ public class NotificationPublisher {
     }
 
     /**
-     * Enqueue a request to subscribe a device token to multiple topics.
+     * Enqueue a request to subscribeTokenTopics a device token to multiple topics.
      *
      * @param token  device token
      * @param topics collection of topic names
@@ -92,13 +92,13 @@ public class NotificationPublisher {
 
         rabbitTemplate.convertAndSend(
                 properties.exchange(),
-                properties.routing().subscribe(),
+                properties.routing().subscribeTokenTopics(),
                 payload
         );
     }
 
     /**
-     * Enqueue a request to unsubscribe a device token from multiple topics.
+     * Enqueue a request to unsubscribeTokenTopics a device token from multiple topics.
      *
      * @param token  device token
      * @param topics collection of topic names
@@ -110,7 +110,7 @@ public class NotificationPublisher {
 
         rabbitTemplate.convertAndSend(
                 properties.exchange(),
-                properties.routing().unsubscribe(),
+                properties.routing().unsubscribeTokenTopics(),
                 payload
         );
     }

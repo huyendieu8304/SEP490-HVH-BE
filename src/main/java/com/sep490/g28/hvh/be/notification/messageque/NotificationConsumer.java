@@ -206,13 +206,13 @@ public class NotificationConsumer {
      *   <li>Exceeded retry attempts</li>
      * </ul>
      */
-    @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe}")
-    public void consumeSubscribe(
+    @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe-token-topics}")
+    public void consumeSubscribeSingleTokenToTopics(
             Message message,
             TopicSubscriptionMessage msg) {
 
         int retryCount =
-                getRetryCountForQueue(message, properties.queue().subscribe());
+                getRetryCountForQueue(message, properties.queue().subscribeTokenTopics());
 
         try {
             pushNotificationSender.subscribeToTopics(msg.getToken(), msg.getTopics());
@@ -220,7 +220,7 @@ public class NotificationConsumer {
             // send to dlq immediately
             rabbitTemplate.send(
                     properties.exchange(),
-                    properties.routing().subscribeDlq(),
+                    properties.routing().subscribeTokenTopicsDlq(),
                     message
             );
 
@@ -229,7 +229,7 @@ public class NotificationConsumer {
                 // exceed max attempts -> send to dlq
                 rabbitTemplate.send(
                         properties.exchange(),
-                        properties.routing().subscribeDlq(),
+                        properties.routing().subscribeTokenTopicsDlq(),
                         message
                 );
             } else {
@@ -243,18 +243,18 @@ public class NotificationConsumer {
      *
      * <p>Logs final failure after retries exhausted.</p>
      */
-    @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe-dlq}")
-    public void consumeDlqSubscribe(Message message, TopicSubscriptionMessage msg) {
+    @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe-token-topics-dlq}")
+    public void consumeSubscribeSingleTokenToTopicsDlq(Message message, TopicSubscriptionMessage msg) {
         MessageProperties props = message.getMessageProperties();
 
-        int retryCount = getRetryCountForQueue(message, properties.queue().subscribeDlq());
+        int retryCount = getRetryCountForQueue(message, properties.queue().subscribeTokenTopicsDlq());
 
         log.error(
                 "SUBSCRIBE TO TOPIC FAIL after {} retries, reason={}",
                 retryCount,
                 props.getHeaders().get("x-first-death-reason")
         );
-        log.error("DLQ MESSAGE: topicSubscriptionMessage={}", msg);
+        log.error("Subscribe token to topics DLQ MESSAGE: topicSubscriptionMessage={}", msg);
     }
 
 
@@ -268,13 +268,13 @@ public class NotificationConsumer {
      *   <li>Exceeded retry attempts</li>
      * </ul>
      */
-    @RabbitListener(queues = "${rabbitmq.notification.queue.unsubscribe}")
-    public void consumeUnsubscribe(
+    @RabbitListener(queues = "${rabbitmq.notification.queue.unsubscribe-token-topics}")
+    public void consumeUnsubscribeSingleTokenToTopics(
             Message message,
             TopicSubscriptionMessage msg) {
 
         int retryCount =
-                getRetryCountForQueue(message, properties.queue().unsubscribe());
+                getRetryCountForQueue(message, properties.queue().unsubscribeTokenTopics());
 
         try {
             pushNotificationSender.unsubscribeFromTopics(msg.getToken(), msg.getTopics());
@@ -282,7 +282,7 @@ public class NotificationConsumer {
             // send to dlq immediately
             rabbitTemplate.send(
                     properties.exchange(),
-                    properties.routing().unsubscribeDlq(),
+                    properties.routing().unsubscribeTokenTopicsDlq(),
                     message
             );
 
@@ -291,7 +291,7 @@ public class NotificationConsumer {
                 // exceed max attempts -> send to dlq
                 rabbitTemplate.send(
                         properties.exchange(),
-                        properties.routing().unsubscribeDlq(),
+                        properties.routing().unsubscribeTokenTopicsDlq(),
                         message
                 );
             } else {
@@ -305,17 +305,17 @@ public class NotificationConsumer {
      *
      * <p>Logs permanent failure information.</p>
      */
-    @RabbitListener(queues = "${rabbitmq.notification.queue.unsubscribe-dlq}")
-    public void consumeDlqUnsubscribe(Message message, TopicSubscriptionMessage msg) {
+    @RabbitListener(queues = "${rabbitmq.notification.queue.unsubscribe-token-topics-dlq}")
+    public void consumeUnsubscribeSingleTokenToTopicsDlq(Message message, TopicSubscriptionMessage msg) {
         MessageProperties props = message.getMessageProperties();
 
-        int retryCount = getRetryCountForQueue(message, properties.queue().unsubscribeDlq());
+        int retryCount = getRetryCountForQueue(message, properties.queue().unsubscribeTokenTopicsDlq());
 
         log.error(
                 "UNSUBSCRIBE TO TOPIC FAIL after {} retries, reason={}",
                 retryCount,
                 props.getHeaders().get("x-first-death-reason")
         );
-        log.error("DLQ MESSAGE: topicSubscriptionMessage={}", msg);
+        log.error("Unsubscribe token to topics DLQ MESSAGE: topicSubscriptionMessage={}", msg);
     }
 }

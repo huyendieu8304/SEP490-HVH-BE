@@ -219,7 +219,7 @@ public class FcmPushNotificationSender implements PushNotificationSender {
             }
             log.info("Subscribed token={} to topics={}", token, topics);
         } catch (FirebaseMessagingException e) {
-            log.error("FCM subscribe failed token={} topics={}", token, topics, e);
+            log.error("FCM subscribe token to topics failed token={} topics={}", token, topics, e);
             EFcmFailureType type = classifyFcmFailureType(e, null);
 
             if (type == EFcmFailureType.RETRYABLE) {
@@ -247,8 +247,61 @@ public class FcmPushNotificationSender implements PushNotificationSender {
             }
             log.info("Unsubscribed token={} from topics={}", token, topics);
         } catch (FirebaseMessagingException e) {
-            log.error("FCM unsubscribe failed token={} topics={}", token, topics, e);
+            log.error("FCM unsubscribe token from topics failed token={} topics={}", token, topics, e);
             EFcmFailureType type = classifyFcmFailureType(e, null);
+
+            if (type == EFcmFailureType.RETRYABLE) {
+                throw new RuntimeException("FCM_RETRYABLE");
+            } else {
+                throw new NonRetryableFcmException("FCM_NON_RETRYABLE");
+            }
+        }
+    }
+
+
+
+    public void subscribeTokensToTopic(Collection<String> tokens, String topic) {
+        if (tokens == null || tokens.isEmpty() || topic == null) return;
+
+        List<List<String>> batches = partition(tokens, BATCH_SIZE);
+
+        for (List<String> batch : batches) {
+            try {
+                FirebaseMessaging.getInstance()
+                        .subscribeToTopic(batch, topic);
+
+                log.info("Subscribed {} tokens to topic={}", batch.size(), topic);
+
+            } catch (FirebaseMessagingException e) {
+                log.error("FCM subscribeTokenTopics tokens from topic failed topic={}", topic, e);
+
+                EFcmFailureType type = classifyFcmFailureType(e, null);
+
+                if (type == EFcmFailureType.RETRYABLE) {
+                    throw new RuntimeException("FCM_RETRYABLE");
+                } else {
+                    throw new NonRetryableFcmException("FCM_NON_RETRYABLE");
+                }
+            }
+        }
+    }
+
+    public void unsubscribeTokensFromTopic(Collection<String> tokens, String topic) {
+        if (tokens == null || tokens.isEmpty() || topic == null) return;
+
+        List<List<String>> batches = partition(tokens, BATCH_SIZE);
+
+        for (List<String> batch : batches) {
+            try {
+                FirebaseMessaging.getInstance()
+                        .unsubscribeFromTopic(batch, topic);
+
+                log.info("Unsubscribed {} tokens from topic={}", batch.size(), topic);
+
+            } catch (FirebaseMessagingException e) {
+                log.error("FCM unsubscribeTokenTopics tokens from topic failed topic={}", topic, e);
+
+                EFcmFailureType type = classifyFcmFailureType(e, null);
 
             if (type == EFcmFailureType.RETRYABLE) {
                 throw new RuntimeException("FCM_RETRYABLE");

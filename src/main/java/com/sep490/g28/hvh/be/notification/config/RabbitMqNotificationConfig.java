@@ -119,24 +119,24 @@ public class RabbitMqNotificationConfig {
     //====================================
     @Bean
     Queue subscribeQueue(){
-        return QueueBuilder.durable(properties.queue().subscribe())
+        return QueueBuilder.durable(properties.queue().subscribeTokenTopics())
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeRetry())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeTokenTopicsRetry())
                 .build();
     }
 
     @Bean
     Queue subscribeRetryQueue(){
-        return QueueBuilder.durable(properties.queue().subscribeRetry())
+        return QueueBuilder.durable(properties.queue().subscribeTokenTopicsRetry())
                 .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribe())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeTokenTopics())
                 .build();
     }
 
     @Bean
     Queue subscribeDlqQueue(){
-        return QueueBuilder.durable(properties.queue().subscribeDlq())
+        return QueueBuilder.durable(properties.queue().subscribeTokenTopicsDlq())
                 .build();
     }
 
@@ -145,7 +145,7 @@ public class RabbitMqNotificationConfig {
         return BindingBuilder
                 .bind(subscribeQueue())
                 .to(notificationExchange())
-                .with(properties.routing().subscribe());
+                .with(properties.routing().subscribeTokenTopics());
     }
 
     @Bean
@@ -153,7 +153,7 @@ public class RabbitMqNotificationConfig {
         return BindingBuilder
                 .bind(subscribeRetryQueue())
                 .to(notificationExchange())
-                .with(properties.routing().subscribeRetry());
+                .with(properties.routing().subscribeTokenTopicsRetry());
     }
 
     @Bean
@@ -161,31 +161,31 @@ public class RabbitMqNotificationConfig {
         return BindingBuilder
                 .bind(subscribeDlqQueue())
                 .to(notificationExchange())
-                .with(properties.routing().subscribeDlq());
+                .with(properties.routing().subscribeTokenTopicsDlq());
     }
 
 
     //====================================
     @Bean
     Queue unsubscribeQueue(){
-        return QueueBuilder.durable(properties.queue().unsubscribe())
+        return QueueBuilder.durable(properties.queue().unsubscribeTokenTopics())
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeRetry())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeTokenTopicsRetry())
                 .build();
     }
 
     @Bean
     Queue unsubscribeRetryQueue(){
-        return QueueBuilder.durable(properties.queue().unsubscribeRetry())
+        return QueueBuilder.durable(properties.queue().unsubscribeTokenTopicsRetry())
                 .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribe())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeTokenTopics())
                 .build();
     }
 
     @Bean
     Queue unsubscribeDlqQueue(){
-        return QueueBuilder.durable(properties.queue().unsubscribeDlq())
+        return QueueBuilder.durable(properties.queue().unsubscribeTokenTopicsDlq())
                 .build();
     }
 
@@ -194,7 +194,7 @@ public class RabbitMqNotificationConfig {
         return BindingBuilder
                 .bind(unsubscribeQueue())
                 .to(notificationExchange())
-                .with(properties.routing().unsubscribe());
+                .with(properties.routing().unsubscribeTokenTopics());
     }
 
     @Bean
@@ -202,7 +202,7 @@ public class RabbitMqNotificationConfig {
         return BindingBuilder
                 .bind(unsubscribeRetryQueue())
                 .to(notificationExchange())
-                .with(properties.routing().unsubscribeRetry());
+                .with(properties.routing().unsubscribeTokenTopicsRetry());
     }
 
     @Bean
@@ -210,7 +210,7 @@ public class RabbitMqNotificationConfig {
         return BindingBuilder
                 .bind(unsubscribeDlqQueue())
                 .to(notificationExchange())
-                .with(properties.routing().unsubscribeDlq());
+                .with(properties.routing().unsubscribeTokenTopicsDlq());
     }
 
 }
