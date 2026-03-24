@@ -4,4 +4,5 @@ public enum EEventApplicationStatus {
     PENDING,
     APPROVED,
     REJECTED,
+    CANCELLED,
 }

@@ -54,7 +54,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     @Transactional
     @Override
     public void applyEventSession(UUID sessionId) {
-        //check session existed?
+        //find the session
         EventSession session = eventSessionRepository.findById(sessionId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED));
 
@@ -71,8 +71,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         UUID volunteerId = currentUserProvider.getId();
+
         //Have ever the volunteer applied for this session yet?
-        if (eventApplicationRepository.getEventApplicationsByVolunteerIdAndSessionId(volunteerId, sessionId).isPresent()) {
+        if (eventApplicationRepository.findApplicationPendingOrApproved(volunteerId, sessionId).isPresent()) {
+            //rejected and cancelled still can apply again
+            //but pending and approve -> nah
             throw new AppException(EventErrorCode.ALREADY_APPLIED);
         }
         //check expected Vol amount
@@ -103,7 +106,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
             eventApplication = eventApplicationRepository.save(eventApplication);
             eventSessionRepository.save(session);
+
+            //subscribe the volunteer's notification token(s) to the topic of notification
+            notificationService.subscribeUserToTopicOfEvent(volunteerId, event.getId());
             log.info("Volunteer application is approved automatically eventApplicationId={}", eventApplication.getId());
+
         } else {
             eventApplication.setStatus(EEventApplicationStatus.PENDING);
             eventApplication = eventApplicationRepository.save(eventApplication);
@@ -140,9 +147,13 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()+1);
         eventSessionRepository.save(eventSession);
-        log.info("Approved event application eventApplicationId={}", eventApplication.getId());
+
+        //subscribe the volunteer's notification token(s) to the topic of notification
+        notificationService.subscribeUserToTopicOfEvent(eventApplication.getVolunteer().getId(), event.getId());
+
         //send notification to vol
         notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
+        log.info("Approved event application eventApplicationId={}", eventApplication.getId());
     }
 
     @Override
@@ -170,6 +181,70 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 eventApplication,
                 request.getRejectionReason()
         );
+    }
+
+    @Transactional
+    @Override
+    public void cancelApplication(UUID applicationId) {
+        //find the application
+        EventApplication eventApplication = eventApplicationRepository.findById(applicationId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
+        );
+
+        EventSession eventSession = eventApplication.getSession();
+        Event event = eventSession.getEvent();
+        Volunteer volunteer = eventApplication.getVolunteer();
+
+        //whether the event status allow volunteer to cancel application
+        if (!EEventStatus.volunteerCanCancelledApplication(event.getStatus())){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+        }
+
+        //check application status, only PENDING and APPROVED can cancel
+        if (eventApplication.getStatus().equals(EEventApplicationStatus.CANCELLED)
+                || eventApplication.getStatus().equals(EEventApplicationStatus.REJECTED)){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+        }
+        LocalDate today = LocalDate.now();
+
+        // not allow to cancel on the date or after the session date
+        if (!today.isBefore(eventApplication.getSessionDate())) {
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+        }
+
+        boolean isMinusScore = false;
+        //application is approved -> check the event timeline
+        if (eventApplication.getStatus().equals(EEventApplicationStatus.APPROVED)){
+            //check event status
+            /*
+            If an application is approved
+            and the volunteer cancels the applied event
+            after the recruitment end date
+            and before the  date of the event session,
+            volunteer's honor score will be minus for 3 scores.
+             */
+            if (today.isAfter(event.getRecruitmentEndDate())) {
+                // volunteer's honor score will be minus for 3 scores
+                volunteer.setHonorScore((short) (volunteer.getHonorScore() - 3));
+                volunteerRepository.save(volunteer);
+                log.info("Volunteer will be deduct 3 points of honor score after cancel application successfully");
+                isMinusScore = true;
+            }
+
+            //decrease the approved amount of session
+            eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()-1);
+            eventSessionRepository.save(eventSession);
+        }
+
+        eventApplication.setStatus(EEventApplicationStatus.CANCELLED);
+        eventApplicationRepository.save(eventApplication);
+
+        //unsubscribe the volunteer's notification token(s) from the topic of notification
+        notificationService.unsubscribeUserFromTopicOfEvent(currentUserProvider.getId(), event.getId());
+
+        //send notification to the volunteer
+        notificationService.sendEventApplicationCancelledSuccessfully(volunteer.getId(), event, eventApplication, isMinusScore);
+        log.info("Volunteer cancelled event application eventApplicationId={}", eventApplication.getId());
     }
 
     @Override

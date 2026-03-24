@@ -18,4 +18,5 @@ public enum ENotificationType {
 
     VOL_APPLICATION_APPROVED, //send to vol
     VOL_APPLICATION_REJECTED, //send to vol
+    VOL_APPLICATION_CANCELLED, //send to vol
 }

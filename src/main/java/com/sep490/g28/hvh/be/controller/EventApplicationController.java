@@ -69,4 +69,13 @@ public class EventApplicationController {
         UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventApplicationService.getRegisteredParticipants(pageNumber, pageSize, id));
     }
+
+    @PreAuthorize("hasRole('VOL') and @eventApplicationAuthorizer.isVolunteerOfEventApplication(#id)")
+    @PutMapping("/vol/event-applications/{id}/cancel")
+    ResponseEntity<Void> cancelApplication(
+            @PathVariable UUID id
+    ) {
+        eventApplicationService.cancelApplication(id);
+        return ResponseEntity.ok().build();
+    }
 }

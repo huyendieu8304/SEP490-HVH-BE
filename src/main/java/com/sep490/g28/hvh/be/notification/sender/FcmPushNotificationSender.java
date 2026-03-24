@@ -12,10 +12,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Firebase Cloud Messaging (FCM) implementation of {@link PushNotificationSender}.
@@ -30,7 +27,9 @@ import java.util.Map;
 public class FcmPushNotificationSender implements PushNotificationSender {
 
     NotificationTokenTxService notificationTokenTxService;
-    /** FCM maximum number of tokens per multicast request. */
+    /**
+     * FCM maximum number of tokens per multicast request.
+     */
     private static final int BATCH_SIZE = 500;
     private final NotificationTokenRepository notificationTokenRepository;
 
@@ -83,11 +82,8 @@ public class FcmPushNotificationSender implements PushNotificationSender {
         if (tokens == null || tokens.isEmpty()) {
             return;
         }
-
-        //split into batches
-        for (int i = 0; i < tokens.size(); i += BATCH_SIZE) {
-            List<String> batch =
-                    tokens.subList(i, Math.min(i + BATCH_SIZE, tokens.size()));
+        List<List<String>> batches = partition(tokens, BATCH_SIZE);
+        for (List<String> batch : batches) {
             //create batch message
             MulticastMessage message = MulticastMessage.builder()
                     .addAllTokens(batch)
@@ -209,23 +205,17 @@ public class FcmPushNotificationSender implements PushNotificationSender {
      * @param topics collection of topic names
      */
     @Override
-    public void subscribeToTopics(String token, Collection<String> topics) {
+    public void subscribeSingleTokenToTopics(String token, Collection<String> topics) {
         if (token == null || topics == null || topics.isEmpty()) return;
 
-        try {
-            for (String topic : topics) {
-                FirebaseMessaging.getInstance()
-                        .subscribeToTopic(List.of(token), topic);
-            }
-            log.info("Subscribed token={} to topics={}", token, topics);
-        } catch (FirebaseMessagingException e) {
-            log.error("FCM subscribe failed token={} topics={}", token, topics, e);
-            EFcmFailureType type = classifyFcmFailureType(e, null);
+        for (String topic : topics) {
+            try {
+                executeSubscribe(List.of(token), topic);
+                log.info("Subscribed token={} to topics={}", token, topics);
 
-            if (type == EFcmFailureType.RETRYABLE) {
-                throw new RuntimeException("FCM_RETRYABLE");
-            } else {
-                throw new NonRetryableFcmException("FCM_NON_RETRYABLE");
+            } catch (Exception e) {
+                log.error("FCM subscribe token to topic failed token={} topic={}", token, topic, e);
+                throw e;
             }
         }
     }
@@ -237,17 +227,63 @@ public class FcmPushNotificationSender implements PushNotificationSender {
      * @param topics collection of topic names
      */
     @Override
-    public void unsubscribeFromTopics(String token, Collection<String> topics) {
+    public void unsubscribeSingleTokenFromTopics(String token, Collection<String> topics) {
         if (token == null || topics == null || topics.isEmpty()) return;
 
-        try {
-            for (String topic : topics) {
-                FirebaseMessaging.getInstance()
-                        .unsubscribeFromTopic(List.of(token), topic);
+        for (String topic : topics) {
+            try {
+                executeUnsubscribe(List.of(token), topic);
+                log.info("Unsubscribed token={} from topics={}", token, topics);
+
+            } catch (Exception e) {
+                log.error("FCM unsubscribe token from topics failed token={} topic={}", token, topic, e);
+                throw e;
             }
-            log.info("Unsubscribed token={} from topics={}", token, topics);
+        }
+    }
+
+    @Override
+    public void subscribeUserToTopic(UUID userId, String topic) {
+        List<String> tokens = notificationTokenRepository.findTokensByUserId(userId);
+        if (tokens == null || tokens.isEmpty() || topic == null) return;
+        List<List<String>> batches = partition(tokens, BATCH_SIZE);
+
+        for (List<String> batch : batches) {
+            try {
+                executeSubscribe(batch, topic);
+                log.info("Subscribed {} tokens of userId={} to topic={}", batch.size(), userId, topic);
+
+            } catch (Exception e) {
+                log.error("FCM subscribe tokens to topic failed topic={}", topic, e);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void unsubscribeUserFromTopic(UUID userId, String topic) {
+        List<String> tokens = notificationTokenRepository.findTokensByUserId(userId);
+        if (tokens == null || tokens.isEmpty() || topic == null) return;
+
+        List<List<String>> batches = partition(tokens, BATCH_SIZE);
+
+        for (List<String> batch : batches) {
+            try {
+                executeUnsubscribe(batch, topic);
+                log.info("Unsubscribed {} tokens of userId={} from topic={}", batch.size(), userId, topic);
+
+            } catch (Exception e) {
+                log.error("FCM unsubscribeTokenTopics failed topic={}", topic, e);
+                throw e;
+            }
+        }
+    }
+
+    private void executeUnsubscribe(List<String> tokens, String topic) {
+        try {
+            FirebaseMessaging.getInstance()
+                    .unsubscribeFromTopic(tokens, topic);
         } catch (FirebaseMessagingException e) {
-            log.error("FCM unsubscribe failed token={} topics={}", token, topics, e);
             EFcmFailureType type = classifyFcmFailureType(e, null);
 
             if (type == EFcmFailureType.RETRYABLE) {
@@ -257,4 +293,29 @@ public class FcmPushNotificationSender implements PushNotificationSender {
             }
         }
     }
+
+    private void executeSubscribe(List<String> tokens, String topic) {
+        try {
+            FirebaseMessaging.getInstance()
+                    .subscribeToTopic(tokens, topic);
+        } catch (FirebaseMessagingException e) {
+            EFcmFailureType type = classifyFcmFailureType(e, null);
+
+            if (type == EFcmFailureType.RETRYABLE) {
+                throw new RuntimeException("FCM_RETRYABLE");
+            } else {
+                throw new NonRetryableFcmException("FCM_NON_RETRYABLE");
+            }
+        }
+    }
+
+    private List<List<String>> partition(Collection<String> tokens, int size) {
+        List<String> list = new ArrayList<>(tokens);
+        List<List<String>> result = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += size) {
+            result.add(list.subList(i, Math.min(i + size, list.size())));
+        }
+        return result;
+    }
+
 }
