@@ -13,7 +13,7 @@ import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
 import com.sep490.g28.hvh.be.notification.repository.UserNotificationRepository;
 import com.sep490.g28.hvh.be.notification.repository.NotificationRepository;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTokenRepository;
-import com.sep490.g28.hvh.be.notification.dto.RegisterNotificationTokenRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTopicSubscriptionRepository;
 import com.sep490.g28.hvh.be.notification.service.NotificationTokenTxService;
 import com.sep490.g28.hvh.be.repository.UserRepository;

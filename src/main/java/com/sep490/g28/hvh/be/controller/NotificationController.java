@@ -1,6 +1,6 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.notification.dto.RegisterNotificationTokenRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
  * Controller for notification
  */
 @RestController
-@RequestMapping("/api/v1/notification")
+@RequestMapping("/api/v1")
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class NotificationController {
@@ -23,13 +23,13 @@ public class NotificationController {
     private final NotificationPublisher notificationPublisher;
     private final UserRepository userRepository;
 
-    @PostMapping("/register-token")
+    @PostMapping("/notification/register-token")
     public ResponseEntity<Void> registerToken(@RequestBody RegisterNotificationTokenRequest request) {
         notificationService.registerNotificationToken(request);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/unregister-token")
+    @PutMapping("/notification/unregister-token")
     public ResponseEntity<Void> unregisterToken(@RequestParam String token) {
         notificationService.unregisterNotificationToken(token);
         return ResponseEntity.ok().build();

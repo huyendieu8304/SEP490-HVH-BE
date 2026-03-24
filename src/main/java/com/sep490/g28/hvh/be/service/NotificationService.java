@@ -1,7 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.entity.*;
-import com.sep490.g28.hvh.be.notification.dto.RegisterNotificationTokenRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 
 import java.util.UUID;
 
