@@ -718,7 +718,7 @@ public class OrganizationServiceTest {
         session.setEndDateTime(OffsetDateTime.now().plusHours(3));
 
         Event event = new Event();
-        event.setDateTimes(List.of(session));
+        event.setSessions(List.of(session));
 
         when(organizationRepository.findById(orgId))
                 .thenReturn(Optional.of(org));
@@ -818,7 +818,7 @@ public class OrganizationServiceTest {
         session.setEndDateTime(OffsetDateTime.now().plusHours(3));
 
         Event event = new Event();
-        event.setDateTimes(List.of(session));
+        event.setSessions(List.of(session));
 
         when(organizationRepository.findById(orgId))
                 .thenReturn(Optional.of(org));

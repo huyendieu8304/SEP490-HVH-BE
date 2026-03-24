@@ -121,7 +121,7 @@ public class EventServiceTest {
         session.setExpectedVolAmount(5);
         session.setExpectedSerAmount(10);
 
-        event.setDateTimes(List.of(session));
+        event.setSessions(List.of(session));
 
         return event;
     }

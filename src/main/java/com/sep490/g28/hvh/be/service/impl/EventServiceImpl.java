@@ -351,7 +351,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),
@@ -431,7 +431,7 @@ public class EventServiceImpl implements EventService {
         List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
                 event.getHost().getId(),
                 eventId,
-                event.getDateTimes()
+                event.getSessions()
         );
         if (!conflictSession.isEmpty()) {
             throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
@@ -681,7 +681,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),
@@ -695,7 +695,7 @@ public class EventServiceImpl implements EventService {
                 eventSessionService.findConflictSessionDateOfHost(
                         event.getHost().getId(),
                         id,
-                        event.getDateTimes()
+                        event.getSessions()
                 );
 
         List<EventSessionDetailsResponse> conflictSessions = Optional.of(conflictSession)
@@ -816,7 +816,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),
@@ -830,7 +830,7 @@ public class EventServiceImpl implements EventService {
                 eventSessionService.findConflictSessionDateOfHost(
                         event.getHost().getId(),
                         id,
-                        event.getDateTimes()
+                        event.getSessions()
                 );
 
         List<EventSessionDetailsResponse> conflictSessions = Optional.of(conflictSession)
@@ -995,7 +995,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),

@@ -90,7 +90,7 @@ public class Event {
             cascade = CascadeType.ALL,
             orphanRemoval = true //each checkin place must link to one event
     )
-    private List<EventSession> dateTimes = new ArrayList<>();
+    private List<EventSession> sessions = new ArrayList<>();
 
 
     //--------------------------------------------------------
