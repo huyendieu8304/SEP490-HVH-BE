@@ -224,6 +224,7 @@ public class EventSessionServiceImpl implements EventSessionService {
         return startDate;
     }
 
+    //todo unit test for this method
     @Override
     public List<EventSession> findConflictSessionDateOfHost(UUID hostId, UUID checkedEventId, List<EventSession> checkedSessions) {
         List<LocalDate> dates = checkedSessions

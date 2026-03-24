@@ -259,7 +259,7 @@ public class EventController {
             @PathVariable java.util.UUID eventId,
             @RequestBody @Valid AnnounceVolunteerRequest request
     ) {
-        eventService.announceVolunteerOfEvent(eventId, request);
+        eventService.announceVolunteersOfEvent(eventId, request);
         return ResponseEntity.ok().build();
 
     }

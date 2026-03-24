@@ -6,6 +6,7 @@ import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
@@ -57,11 +58,14 @@ public class EventServiceTest {
     @Mock
     CurrentUserProvider currentUserProvider;
 
-    @InjectMocks
-    EventServiceImpl eventService;
-
     @Mock
     EventSessionService eventSessionService;
+
+    @Mock
+    NotificationService notificationService;
+
+    @InjectMocks
+    EventServiceImpl eventService;
 
     UUID volunteerId;
     UUID eventId;
@@ -866,6 +870,74 @@ public class EventServiceTest {
         EventDetailsResponseForHost response = eventService.getEventDetailsByHost(eventId);
 
         assertEquals("", response.getActivitySubDomain());
+    }
+
+    // ==== announceVolunteersOfEvent ===================================
+    private Event event(EEventStatus status) {
+        Event e = new Event();
+        e.setId(UUID.randomUUID());
+        e.setStatus(status);
+        return e;
+    }
+
+    private AnnounceVolunteerRequest req() {
+        return new AnnounceVolunteerRequest();
+    }
+
+    // TC01
+    @Test
+    void announceVolunteer_upcoming_success() {
+
+        Event event = event(EEventStatus.UPCOMING);
+
+        when(eventRepository.findById(event.getId()))
+                .thenReturn(Optional.of(event));
+
+        eventService.announceVolunteersOfEvent(event.getId(), req());
+
+        verify(notificationService)
+                .sendNotificationToVolunteersOfEvent(eq(event.getId()), any());
+    }
+
+    // TC02
+    @Test
+    void announceVolunteer_ongoing_success() {
+
+        Event event = event(EEventStatus.ONGOING);
+
+        when(eventRepository.findById(event.getId()))
+                .thenReturn(Optional.of(event));
+
+        eventService.announceVolunteersOfEvent(event.getId(), req());
+
+        verify(notificationService)
+                .sendNotificationToVolunteersOfEvent(eq(event.getId()), any());
+    }
+
+    // TC03
+    @Test
+    void announceVolunteer_eventNotExist_shouldThrow() {
+
+        when(eventRepository.findById(any()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> eventService.announceVolunteersOfEvent(UUID.randomUUID(), req()));
+    }
+
+    // TC04
+    @Test
+    void announceVolunteer_invalidStatus_shouldThrow() {
+
+        Event event = event(EEventStatus.RECRUITING); // không hợp lệ
+
+        when(eventRepository.findById(event.getId()))
+                .thenReturn(Optional.of(event));
+
+        assertThrows(AppException.class,
+                () -> eventService.announceVolunteersOfEvent(event.getId(), req()));
+
+        verifyNoInteractions(notificationService);
     }
 
 }

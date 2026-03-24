@@ -55,5 +55,5 @@ public interface EventService {
 
     EventDetailsResponseForHost getEventDetailsByHost(UUID eventId);
 
-    void announceVolunteerOfEvent(UUID eventId, AnnounceVolunteerRequest request);
+    void announceVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
 }
