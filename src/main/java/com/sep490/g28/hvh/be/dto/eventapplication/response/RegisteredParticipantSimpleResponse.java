@@ -1,0 +1,20 @@
+package com.sep490.g28.hvh.be.dto.eventapplication.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.UUID;
+
+@Getter
+@Setter
+@AllArgsConstructor
+public class RegisteredParticipantSimpleResponse {
+    private UUID volunteerId;
+    private String email;
+    private String phone;
+    private String nickName;
+    private String name;
+    private String avatarUrl;
+    //todo add totalPoints, totalHonorHours
+}

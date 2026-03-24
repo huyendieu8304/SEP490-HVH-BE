@@ -483,6 +483,13 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
 
         //get signed urls
+        CompletableFuture<String> avatarImageFuture = null;
+        CompletableFuture<String> coverImageFuture = null;
+        if(organization.getAvatarImage() != null && organization.getCoverImage() != null) {
+            avatarImageFuture = storageService.getSignedUrlAsync(organization.getAvatarImage());
+            coverImageFuture = storageService.getSignedUrlAsync(organization.getCoverImage());
+        }
+
         List<CompletableFuture<String>> legalDocumentsFutures = new ArrayList<>();
         if(organization.getLegalDocument() != null) {
             String[] legalDocuments = organization.getLegalDocument().split("\\s+");
@@ -507,11 +514,19 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         List<String> legalDocumentsUrls = new ArrayList<>();
         List<String> otherEvidencesUrls = new ArrayList<>();
+        String avatarImageUrl = null;
+        String coverImageUrl = null;
         try {
 
             CompletableFuture.allOf(legalDocumentsFutures.toArray(new CompletableFuture[0])).join();
 
             CompletableFuture.allOf(otherEvidencesFutures.toArray(new CompletableFuture[0])).join();
+
+            if(avatarImageFuture != null && coverImageFuture != null) {
+                CompletableFuture.allOf(avatarImageFuture, coverImageFuture).join();
+                avatarImageUrl = avatarImageFuture.join();
+                coverImageUrl = coverImageFuture.join();
+            }
 
             for (CompletableFuture<String> legalDocumentsFuture : legalDocumentsFutures) {
                 legalDocumentsUrls.add(legalDocumentsFuture.join());
@@ -537,6 +552,8 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .orgType(organization.getOrgType())
                 .orgIntroduction(organization.getOrgIntroduction())
                 .createdAt(organization.getCreatedAt())
+                .avatarImageUrl(avatarImageUrl)
+                .coverImageUrl(coverImageUrl)
                 .legalDocumentUrls(legalDocumentsUrls)
                 .otherEvidencesUrls(otherEvidencesUrls)
                 .managerId(managerId)
@@ -545,6 +562,84 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .managerPhone(managerPhone)
                 .managerCID(managerCID)
                 .totalHosts(totalHosts)
+                .totalHonorHours(totalHonorHours)
+                .note(note.toString())
+                .build();
+    }
+
+    @Override
+    public OrganizationDetailsResponse getOrganizationDetails(UUID ordId) {
+        //get the organization from db
+        Organization organization = organizationRepository.findById(ordId).orElseThrow(
+                () -> new AppException(OrganizationErrorCode.ORGANIZATION_NOT_EXISTED)
+        );
+
+        StringBuilder note = new StringBuilder();
+
+        //get manager info
+        UUID managerId = null;
+        String managerEmail = null;
+        String managerPhone = null;
+
+        OrganizationManager organizationManager = organizationManagerRepository.findByOrganizationId(ordId);
+
+        if(organizationManager == null) {
+            note.append(OrganizationErrorCode.NO_ORGANIZATION_MANAGER_FOUND.getMessage()).append("\n");
+        } else {
+            managerId = organizationManager.getId();
+            managerEmail = organizationManager.getEmail();
+            managerPhone = organizationManager.getPhone();
+        }
+
+        //get total honor hours
+        long totalHonorHours = 0;
+        List<Event> events = eventRepository.findAllByOrganizationId(ordId);
+
+        for(Event e : events) {
+
+            for(EventSession es : e.getDateTimes()) {
+                totalHonorHours += Duration.between(es.getStartDateTime(), es.getEndDateTime()).toHours();
+            }
+        }
+
+        //get signed urls
+        CompletableFuture<String> avatarImageFuture = null;
+        CompletableFuture<String> coverImageFuture = null;
+        if(organization.getAvatarImage() != null && organization.getCoverImage() != null) {
+            avatarImageFuture = storageService.getSignedUrlAsync(organization.getAvatarImage());
+            coverImageFuture = storageService.getSignedUrlAsync(organization.getCoverImage());
+        }
+
+        String avatarImageUrl = null;
+        String coverImageUrl = null;
+        try {
+            if(avatarImageFuture != null && coverImageFuture != null) {
+                CompletableFuture.allOf(avatarImageFuture, coverImageFuture).join();
+                avatarImageUrl = avatarImageFuture.join();
+                coverImageUrl = coverImageFuture.join();
+            }
+
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof AppException ae) {
+                note.append(ae.getMessage()).append("\n");
+            } else {
+                throw cause instanceof RuntimeException re ? re : e;
+            }
+        }
+
+        return OrganizationDetailsResponse.builder()
+                .id(organization.getId())
+                .name(organization.getName())
+                .dhaRegistered(organization.getDhaRegistered())
+                .orgType(organization.getOrgType())
+                .orgIntroduction(organization.getOrgIntroduction())
+                .createdAt(organization.getCreatedAt())
+                .avatarImageUrl(avatarImageUrl)
+                .coverImageUrl(coverImageUrl)
+                .managerId(managerId)
+                .managerEmail(managerEmail)
+                .managerPhone(managerPhone)
                 .totalHonorHours(totalHonorHours)
                 .note(note.toString())
                 .build();

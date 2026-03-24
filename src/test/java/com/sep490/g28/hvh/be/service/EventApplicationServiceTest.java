@@ -4,11 +4,14 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import com.sep490.g28.hvh.be.entity.Volunteer;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
@@ -19,16 +22,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class EventApplicationServiceTest {
@@ -43,14 +50,18 @@ public class EventApplicationServiceTest {
     VolunteerRepository volunteerRepository;
     @Mock
     CurrentUserProvider currentUserProvider;
+    @Mock
+    StorageService storageService;
 
     @Mock NotificationService notificationService;
 
     UUID volunteerId;
+    UUID sessionId;
 
     @BeforeEach
     void setup() {
         volunteerId = UUID.randomUUID();
+        sessionId = UUID.randomUUID();
 
         lenient().when(currentUserProvider.getId())
                 .thenReturn(volunteerId);
@@ -77,7 +88,7 @@ public class EventApplicationServiceTest {
         return s;
     }
 
-    private EventApplication application() {
+    private EventApplication app() {
 
         Event event = new Event();
         event.setStatus(EEventStatus.RECRUITING);
@@ -652,5 +663,80 @@ public class EventApplicationServiceTest {
         assertEquals((short)10, app.getVolunteer().getHonorScore());
 
         verify(volunteerRepository, never()).save(any());
+    }
+
+    //----- getRegisteredParticipants --------------------------
+    //TC01
+    @Test
+    void getRegisteredParticipants_success() {
+
+        EventApplication app = application();
+        app.getVolunteer().setAvatarUrl("avatar1");
+
+        Page<EventApplication> page = new PageImpl<>(List.of(app));
+
+        when(eventApplicationRepository.getEventApplicationsBySessionId(
+                eq(sessionId),
+                any()
+        )).thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("avatar1"))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        EventApplicationsResponse response =
+                service.getRegisteredParticipants(0, 10, sessionId);
+
+        assertEquals(1, response.getRegisteredParticipants().size());
+        assertEquals("signed-url",
+                response.getRegisteredParticipants().getFirst().getAvatarUrl());
+    }
+
+    //TC02
+    @Test
+    void getRegisteredParticipants_volunteer_null() {
+
+        EventApplication app = application();
+        app.setVolunteer(null);
+
+        Page<EventApplication> page = new PageImpl<>(List.of(app));
+
+        when(eventApplicationRepository.getEventApplicationsBySessionId(
+                eq(sessionId),
+                any()
+        )).thenReturn(page);
+
+        EventApplicationsResponse response =
+                service.getRegisteredParticipants(0, 10, sessionId);
+
+        RegisteredParticipantSimpleResponse participant =
+                response.getRegisteredParticipants().getFirst();
+
+        assertNull(participant.getVolunteerId());
+        assertNull(participant.getEmail());
+        assertNull(participant.getAvatarUrl());
+    }
+
+    //TC03
+    @Test
+    void getRegisteredParticipants_should_return_null_next_page() {
+
+        EventApplication app = application();
+
+        Page<EventApplication> page = new PageImpl<>(
+                List.of(app),
+                PageRequest.of(0, 10),
+                1
+        );
+
+        when(eventApplicationRepository.getEventApplicationsBySessionId(
+                eq(sessionId),
+                any()
+        )).thenReturn(page);
+
+        EventApplicationsResponse response =
+                service.getRegisteredParticipants(0, 10, sessionId);
+
+        assertFalse(response.isHasMore());
+        assertNull(response.getNextCursor());
     }
 }
