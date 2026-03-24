@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.service;
 
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 
@@ -28,4 +29,6 @@ public interface NotificationService {
     void sendEventApplicationApproved(UUID volunteerId, Event event, EventApplication application);
     void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason);
     void sendEventApplicationCancelledSuccessfully(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore);
+
+    void sendNotificationToVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
 }

@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
@@ -53,4 +54,6 @@ public interface EventService {
     Page<EventSimpleResponseForHost> getEventsByHost(int pageNumber, int pageSize, String eventName, String status);
 
     EventDetailsResponseForHost getEventDetailsByHost(UUID eventId);
+
+    void announceVolunteerOfEvent(UUID eventId, AnnounceVolunteerRequest request);
 }

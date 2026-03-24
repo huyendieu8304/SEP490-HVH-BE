@@ -243,12 +243,23 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByHost(pageNumber, pageSize, name, status));
     }
 
-    @PreAuthorize("hasRole('HOST')")
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#id)")
     @GetMapping("/host/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
         java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventService.getEventDetailsByHost(id));
+    }
+
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PostMapping("/host/events/{eventId}/announce-volunteers")
+    public ResponseEntity<Void> announceVolunteer(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid AnnounceVolunteerRequest request
+    ) {
+        eventService.announceVolunteerOfEvent(eventId, request);
+        return ResponseEntity.ok().build();
+
     }
 }

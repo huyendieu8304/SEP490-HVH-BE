@@ -5,6 +5,7 @@ import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -1035,6 +1036,22 @@ public class EventServiceImpl implements EventService {
                 .eventSessions(eventSessions)
                 .note(note.toString())
                 .build();
+    }
+
+    @Override
+    public void announceVolunteerOfEvent(UUID eventId, AnnounceVolunteerRequest request) {
+        //find the event
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //host can only send notification to registered Volunteer when the event is in status UPCOMING and ONGOING
+        if (!(event.getStatus().equals(EEventStatus.UPCOMING) || event.getStatus().equals(EEventStatus.ONGOING))){
+            throw new AppException(EventErrorCode.EVENT_NOTIFICATION_CANNOT_SENT);
+        }
+
+        //send notification
+        notificationService.sendNotificationToVolunteersOfEvent(event.getId(), request);
     }
 
 }
