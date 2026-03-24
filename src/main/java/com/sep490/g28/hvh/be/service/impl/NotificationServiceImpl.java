@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ENotificationDataAction;
 import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.constant.ERole;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
 import com.sep490.g28.hvh.be.notification.entity.NotificationTopicSubscription;
@@ -13,9 +14,10 @@ import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
 import com.sep490.g28.hvh.be.notification.repository.UserNotificationRepository;
 import com.sep490.g28.hvh.be.notification.repository.NotificationRepository;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTokenRepository;
-import com.sep490.g28.hvh.be.notification.dto.RegisterNotificationTokenRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTopicSubscriptionRepository;
 import com.sep490.g28.hvh.be.notification.service.NotificationTokenTxService;
+import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationTopicSubscriptionRepository notificationTopicSubscriptionRepository;
     private final UserNotificationRepository userNotificationRepository;
+    private final EventRepository eventRepository;
 
     private final CurrentUserProvider currentUserProvider;
 
@@ -400,5 +403,25 @@ public class NotificationServiceImpl implements NotificationService {
 
         notificationPublisher.enqueueNotification(notification, volunteerId);
     }
+
+    @Override
+    public void sendNotificationToVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request) {
+        String eventTopicName = EVENT_TOPIC_PRE + eventId;
+
+        //send notification to topic
+        Notification notificationForVolunteers = new Notification();
+        notificationForVolunteers.setTopic(eventTopicName);
+        notificationForVolunteers.setTitle(request.getTitle());
+        notificationForVolunteers.setBody(request.getBody());
+        notificationForVolunteers.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_ANNOUNCEMENT.name()
+        ));
+        notificationForVolunteers.setType(ENotificationType.VOL_EVENT_ANNOUNCEMENT);
+        notificationRepository.save(notificationForVolunteers);
+
+        //send notification to topic
+        notificationPublisher.enqueueNotification(notificationForVolunteers, null);
+    }
+
 
 }

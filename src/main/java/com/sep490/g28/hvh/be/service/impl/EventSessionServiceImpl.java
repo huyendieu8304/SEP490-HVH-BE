@@ -58,7 +58,7 @@ public class EventSessionServiceImpl implements EventSessionService {
         }
         addEventDateTimes(event, adds);
 
-        LocalDate startDate = validateAndResolveStartDate(recruitmentEndDate, event.getDateTimes());
+        LocalDate startDate = validateAndResolveStartDate(recruitmentEndDate, event.getSessions());
 
         event.setStartDate(startDate);
     }
@@ -75,7 +75,7 @@ public class EventSessionServiceImpl implements EventSessionService {
             dt.setExpectedVolAmount(r.getExpectedVolAmount());
             dt.setExpectedSerAmount(r.getExpectedSerAmount());
 
-            event.getDateTimes().add(dt);
+            event.getSessions().add(dt);
         }
     }
 
@@ -90,7 +90,7 @@ public class EventSessionServiceImpl implements EventSessionService {
         //request datetime empty, don't need to update
         if (sessionRequests == null || sessionRequests.isEmpty()) return;
 
-        List<EventSession> existingEventSessions = event.getDateTimes();
+        List<EventSession> existingEventSessions = event.getSessions();
 
         //categorize update place request base on action
         List<EditEventSessionRequest> removes = new ArrayList<>();
@@ -224,6 +224,7 @@ public class EventSessionServiceImpl implements EventSessionService {
         return startDate;
     }
 
+    //todo unit test for this method
     @Override
     public List<EventSession> findConflictSessionDateOfHost(UUID hostId, UUID checkedEventId, List<EventSession> checkedSessions) {
         List<LocalDate> dates = checkedSessions

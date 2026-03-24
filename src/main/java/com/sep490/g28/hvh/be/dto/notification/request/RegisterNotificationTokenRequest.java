@@ -1,4 +1,4 @@
-package com.sep490.g28.hvh.be.notification.dto;
+package com.sep490.g28.hvh.be.dto.notification.request;
 
 import com.sep490.g28.hvh.be.constant.EPlatform;
 import jakarta.validation.constraints.NotBlank;

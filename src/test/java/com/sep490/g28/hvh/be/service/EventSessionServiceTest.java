@@ -137,7 +137,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(1, event.getDateTimes().size());
+        assertEquals(1, event.getSessions().size());
         assertNotNull(event.getStartDate());
     }
 
@@ -155,7 +155,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(2, event.getDateTimes().size());
+        assertEquals(2, event.getSessions().size());
     }
 
     // TC06
@@ -196,7 +196,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertTrue(event.getDateTimes().isEmpty());
+        assertTrue(event.getSessions().isEmpty());
     }
 
     // TC02
@@ -210,7 +210,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertTrue(event.getDateTimes().isEmpty());
+        assertTrue(event.getSessions().isEmpty());
     }
 
     // TC03
@@ -220,7 +220,7 @@ public class EventSessionServiceTest {
         EventSession s1 = session(start(20));
         EventSession s2 = session(start(21));
 
-        event.getDateTimes().addAll(List.of(s1, s2));
+        event.getSessions().addAll(List.of(s1, s2));
 
         EditEventSessionRequest r = removeReq(s1.getId());
 
@@ -231,8 +231,8 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(1, event.getDateTimes().size());
-        assertEquals(s2.getId(), event.getDateTimes().get(0).getId());
+        assertEquals(1, event.getSessions().size());
+        assertEquals(s2.getId(), event.getSessions().get(0).getId());
     }
 
     // TC04
@@ -240,7 +240,7 @@ public class EventSessionServiceTest {
     void updateEventSessions_edit_shouldUpdateValues() {
 
         EventSession s = session(start(20));
-        event.getDateTimes().add(s);
+        event.getSessions().add(s);
 
         OffsetDateTime newStart = start(25);
         OffsetDateTime newEnd = newStart.plus(Duration.ofHours(2));
@@ -267,7 +267,7 @@ public class EventSessionServiceTest {
     void updateEventSessions_add_shouldInsert() {
 
         EventSession s = session(start(20));
-        event.getDateTimes().add(s);
+        event.getSessions().add(s);
 
         EditEventSessionRequest r = sessionReq(
                 start(22),
@@ -281,7 +281,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(2, event.getDateTimes().size());
+        assertEquals(2, event.getSessions().size());
     }
 
     // TC06
@@ -289,7 +289,7 @@ public class EventSessionServiceTest {
     void updateEventSessions_removeAll_shouldThrow() {
 
         EventSession s = session(start(20));
-        event.getDateTimes().add(s);
+        event.getSessions().add(s);
 
         EditEventSessionRequest r = removeReq(s.getId());
 
@@ -309,7 +309,7 @@ public class EventSessionServiceTest {
         EventSession s1 = session(start(20));
         EventSession s2 = session(start(21));
 
-        event.getDateTimes().addAll(List.of(s1, s2));
+        event.getSessions().addAll(List.of(s1, s2));
 
         EditEventSessionRequest r = editReq(
                 s2.getId(),
@@ -333,7 +333,7 @@ public class EventSessionServiceTest {
         EventSession s1 = session(start(20));
         EventSession s2 = session(start(21));
 
-        event.getDateTimes().addAll(List.of(s1, s2));
+        event.getSessions().addAll(List.of(s1, s2));
 
         UUID nonExistId = UUID.randomUUID();
 
@@ -351,14 +351,14 @@ public class EventSessionServiceTest {
         );
 
         // sessions remain unchanged
-        assertEquals(2, event.getDateTimes().size());
+        assertEquals(2, event.getSessions().size());
 
-        EventSession rs1 = event.getDateTimes().stream()
+        EventSession rs1 = event.getSessions().stream()
                 .filter(s -> s.getId().equals(s1.getId()))
                 .findFirst()
                 .orElseThrow();
 
-        EventSession rs2 = event.getDateTimes().stream()
+        EventSession rs2 = event.getSessions().stream()
                 .filter(s -> s.getId().equals(s2.getId()))
                 .findFirst()
                 .orElseThrow();

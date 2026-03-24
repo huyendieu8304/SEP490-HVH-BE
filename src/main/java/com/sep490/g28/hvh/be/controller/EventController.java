@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.validation.EventStatus;
 import jakarta.validation.constraints.Max;
@@ -243,12 +244,23 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByHost(pageNumber, pageSize, name, status));
     }
 
-    @PreAuthorize("hasRole('HOST')")
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#id)")
     @GetMapping("/host/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
         java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventService.getEventDetailsByHost(id));
+    }
+
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PostMapping("/host/events/{eventId}/announce-volunteers")
+    public ResponseEntity<Void> announceVolunteer(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid AnnounceVolunteerRequest request
+    ) {
+        eventService.announceVolunteersOfEvent(eventId, request);
+        return ResponseEntity.ok().build();
+
     }
 }

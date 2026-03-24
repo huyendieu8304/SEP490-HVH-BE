@@ -328,7 +328,7 @@ public class NotificationConsumer {
     // =========================================================
     // ===== SUBSCRIBE USER TO SINGLE TOPIC =====
     @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe-user-topic}")
-    public void consumeSubscribeUserToTopics(Message message, UserToTopicSubscriptionMessage msg) {
+    public void consumeSubscribeUserToTopic(Message message, UserToTopicSubscriptionMessage msg) {
         int retryCount = getRetryCountForQueue(message, properties.queue().subscribeUserTopic());
 
         try {
@@ -356,7 +356,7 @@ public class NotificationConsumer {
     }
 
     @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe-user-topic-dlq}")
-    public void consumeSubscribeUserToTopicsDlq(Message message, UserToTopicSubscriptionMessage msg) {
+    public void consumeSubscribeUserToTopicDlq(Message message, UserToTopicSubscriptionMessage msg) {
         MessageProperties props = message.getMessageProperties();
 
         int retryCount = getRetryCountForQueue(message, properties.queue().unsubscribeUserTopicDlq());
@@ -371,9 +371,8 @@ public class NotificationConsumer {
 
     // =========================================================
     // ===== UNSUBSCRIBE USER FROM SINGLE TOPIC =====
-
-    @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe-user-topic}")
-    public void consumeUnsubscribeUserToTopics(Message message, UserToTopicSubscriptionMessage msg) {
+    @RabbitListener(queues = "${rabbitmq.notification.queue.unsubscribe-user-topic}")
+    public void consumeUnsubscribeUserFromTopic(Message message, UserToTopicSubscriptionMessage msg) {
         int retryCount = getRetryCountForQueue(message, properties.queue().unsubscribeUserTopic());
 
         try {
@@ -400,8 +399,8 @@ public class NotificationConsumer {
         }
     }
 
-    @RabbitListener(queues = "${rabbitmq.notification.queue.subscribe-user-topic-dlq}")
-    public void consumeUnsubscribeUserToTopicsDlq(Message message, UserToTopicSubscriptionMessage msg) {
+    @RabbitListener(queues = "${rabbitmq.notification.queue.unsubscribe-user-topic-dlq}")
+    public void consumeUnsubscribeUserFromTopicDlq(Message message, UserToTopicSubscriptionMessage msg) {
         MessageProperties props = message.getMessageProperties();
 
         int retryCount = getRetryCountForQueue(message, properties.queue().unsubscribeUserTopicDlq());

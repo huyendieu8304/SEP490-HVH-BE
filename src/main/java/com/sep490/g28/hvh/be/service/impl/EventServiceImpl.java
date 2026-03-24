@@ -5,6 +5,7 @@ import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -350,7 +351,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),
@@ -430,7 +431,7 @@ public class EventServiceImpl implements EventService {
         List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
                 event.getHost().getId(),
                 eventId,
-                event.getDateTimes()
+                event.getSessions()
         );
         if (!conflictSession.isEmpty()) {
             throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
@@ -519,6 +520,7 @@ public class EventServiceImpl implements EventService {
         notificationService.sendEventRejectedByAdminNotification(event, request.getReason());
     }
 
+    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForManager> getPendingEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -545,6 +547,7 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForManager);
     }
 
+    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForManager> getApprovedEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -574,6 +577,7 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForManager);
     }
 
+    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForAdmin> getPendingEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -594,6 +598,7 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForAdmin);
     }
 
+    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForAdmin> getRunningEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -676,7 +681,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),
@@ -690,7 +695,7 @@ public class EventServiceImpl implements EventService {
                 eventSessionService.findConflictSessionDateOfHost(
                         event.getHost().getId(),
                         id,
-                        event.getDateTimes()
+                        event.getSessions()
                 );
 
         List<EventSessionDetailsResponse> conflictSessions = Optional.of(conflictSession)
@@ -811,7 +816,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),
@@ -825,7 +830,7 @@ public class EventServiceImpl implements EventService {
                 eventSessionService.findConflictSessionDateOfHost(
                         event.getHost().getId(),
                         id,
-                        event.getDateTimes()
+                        event.getSessions()
                 );
 
         List<EventSessionDetailsResponse> conflictSessions = Optional.of(conflictSession)
@@ -990,7 +995,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //Map event sessions to response
-        List<EventSessionDetailsResponse> eventSessions = event.getDateTimes().stream()
+        List<EventSessionDetailsResponse> eventSessions = event.getSessions().stream()
                 .map(es -> new EventSessionDetailsResponse(
                         es.getId(),
                         es.getStartDateTime(),
@@ -1035,6 +1040,22 @@ public class EventServiceImpl implements EventService {
                 .eventSessions(eventSessions)
                 .note(note.toString())
                 .build();
+    }
+
+    @Override
+    public void announceVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request) {
+        //find the event
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //host can only send notification to registered Volunteer when the event is in status UPCOMING and ONGOING
+        if (!(event.getStatus().equals(EEventStatus.UPCOMING) || event.getStatus().equals(EEventStatus.ONGOING))){
+            throw new AppException(EventErrorCode.EVENT_NOTIFICATION_CANNOT_SENT);
+        }
+
+        //send notification
+        notificationService.sendNotificationToVolunteersOfEvent(event.getId(), request);
     }
 
 }

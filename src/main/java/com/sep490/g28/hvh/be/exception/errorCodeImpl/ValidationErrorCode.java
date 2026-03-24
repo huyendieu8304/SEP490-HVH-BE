@@ -61,6 +61,9 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_NOTIFICATION_TOKEN(2039, "Token để nhận thông báo không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_DEVICE_ID(2040, "ID thiết bị không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_STATUS(2041, "Trạng thái sự kiện không tồn tại", HttpStatus.BAD_REQUEST ),
+
+    INVALID_NOTIFICATION_TITLE(2042, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+    INVALID_NOTIFICATION_BODY(2043, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

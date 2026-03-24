@@ -9,7 +9,6 @@ import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationReques
 import com.sep490.g28.hvh.be.dto.organization.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
-import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.OrganizationErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
@@ -477,7 +476,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         for(Event e : events) {
 
-            for(EventSession es : e.getDateTimes()) {
+            for(EventSession es : e.getSessions()) {
                 totalHonorHours += Duration.between(es.getStartDateTime(), es.getEndDateTime()).toHours();
             }
         }
@@ -597,7 +596,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         for(Event e : events) {
 
-            for(EventSession es : e.getDateTimes()) {
+            for(EventSession es : e.getSessions()) {
                 totalHonorHours += Duration.between(es.getStartDateTime(), es.getEndDateTime()).toHours();
             }
         }

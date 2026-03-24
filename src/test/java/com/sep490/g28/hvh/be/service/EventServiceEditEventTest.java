@@ -76,7 +76,7 @@ public class EventServiceEditEventTest {
         e.setHost(host);
 
         e.setStatus(EEventStatus.EDITING);
-        e.setDateTimes(new ArrayList<>());
+        e.setSessions(new ArrayList<>());
         e.setImages(new ArrayList<>());
         return e;
     }
