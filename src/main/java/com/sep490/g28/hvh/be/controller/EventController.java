@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.validation.EventStatus;
 import jakarta.validation.constraints.Max;
