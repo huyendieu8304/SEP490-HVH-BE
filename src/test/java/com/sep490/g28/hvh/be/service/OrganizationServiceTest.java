@@ -91,19 +91,6 @@ public class OrganizationServiceTest {
     @BeforeEach
     void setup() {
 
-//        organizationService = new OrganizationServiceImpl(
-//                organizationRegistrationRepository,
-//                organizationRepository,
-//                organizationManagerRepository,
-//                userRepository,
-//                storageService,
-//                storagePathGenerator,
-//                otpService,
-//                systemAdminRepository,
-//                currentUserProvider,
-//                authClient,
-//                emailService
-//        );
         id = UUID.randomUUID();
         orgId = UUID.randomUUID();
 

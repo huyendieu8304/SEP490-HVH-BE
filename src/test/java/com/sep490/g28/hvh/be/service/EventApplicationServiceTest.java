@@ -88,7 +88,7 @@ public class EventApplicationServiceTest {
         return s;
     }
 
-    private EventApplication app() {
+    private EventApplication application() {
 
         Event event = new Event();
         event.setStatus(EEventStatus.RECRUITING);
