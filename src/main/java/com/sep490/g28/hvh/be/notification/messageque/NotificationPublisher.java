@@ -2,7 +2,8 @@ package com.sep490.g28.hvh.be.notification.messageque;
 
 import com.sep490.g28.hvh.be.notification.config.RabbitMqNotificationProperties;
 import com.sep490.g28.hvh.be.notification.dto.SendNotificationMessage;
-import com.sep490.g28.hvh.be.notification.dto.TopicSubscriptionMessage;
+import com.sep490.g28.hvh.be.notification.dto.TokenToTopicsSubscriptionMessage;
+import com.sep490.g28.hvh.be.notification.dto.UserToTopicSubscriptionMessage;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -34,6 +35,8 @@ public class NotificationPublisher {
     private final RabbitTemplate rabbitTemplate;
     private final RabbitMqNotificationProperties properties;
 
+    // =========================================================
+    // ===== SEND NOTIFICATION =====
     /**
      * Enqueue a notification send request.
      *
@@ -79,16 +82,18 @@ public class NotificationPublisher {
         } else throw new IllegalArgumentException("Missing target in notification, check your code");
     }
 
+    // =========================================================
+    // ===== SUBSCRIBE SINGLE TOKEN TO TOPICS =====
     /**
-     * Enqueue a request to subscribeTokenTopics a device token to multiple topics.
+     * Enqueue a request to subscribe a device token to multiple topics.
      *
      * @param token  device token
      * @param topics collection of topic names
      */
     public void enqueueSubscribeToTopics(String token, Collection<String> topics) {
 
-        TopicSubscriptionMessage payload =
-                new TopicSubscriptionMessage(token, topics);
+        TokenToTopicsSubscriptionMessage payload =
+                new TokenToTopicsSubscriptionMessage(token, topics);
 
         rabbitTemplate.convertAndSend(
                 properties.exchange(),
@@ -97,20 +102,60 @@ public class NotificationPublisher {
         );
     }
 
+    // =========================================================
+    // ===== UNSUBSCRIBE TOKEN FROM TOPICS =====
     /**
-     * Enqueue a request to unsubscribeTokenTopics a device token from multiple topics.
+     * Enqueue a request to unsubscribe a device token from multiple topics.
      *
      * @param token  device token
      * @param topics collection of topic names
      */
     public void enqueueUnsubscribeFromTopics(String token, Collection<String> topics) {
 
-        TopicSubscriptionMessage payload =
-                new TopicSubscriptionMessage(token, topics);
+        TokenToTopicsSubscriptionMessage payload =
+                new TokenToTopicsSubscriptionMessage(token, topics);
 
         rabbitTemplate.convertAndSend(
                 properties.exchange(),
                 properties.routing().unsubscribeTokenTopics(),
+                payload
+        );
+    }
+
+    // =========================================================
+    // ===== SUBSCRIBE USER TO SINGLE TOPIC =====
+    /**
+     * Enqueue a request to subscribe user's tokens to multiple topics.
+     *
+     * @param userId  id of the user
+     * @param topicName the name of the target topic
+     */
+    public void enqueueSubscribeUserToTopic(UUID userId, String topicName) {
+
+        UserToTopicSubscriptionMessage payload = new UserToTopicSubscriptionMessage(userId, topicName);
+
+        rabbitTemplate.convertAndSend(
+                properties.exchange(),
+                properties.routing().subscribeUserTopic(),
+                payload
+        );
+    }
+
+    // =========================================================
+    // ===== UNSUBSCRIBE USER FROM SINGLE TOPIC =====
+    /**
+     * Enqueue a request to unsubscribe user's tokens to multiple topics.
+     *
+     * @param userId  id of the user
+     * @param topicName the name of the target topic
+     */
+    public void enqueueUnsubscribeUserFromTopic(UUID userId, String topicName) {
+
+        UserToTopicSubscriptionMessage payload = new UserToTopicSubscriptionMessage(userId, topicName);
+
+        rabbitTemplate.convertAndSend(
+                properties.exchange(),
+                properties.routing().unsubscribeUserTopic(),
                 payload
         );
     }

@@ -126,25 +126,28 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void subscribeUserToTopicOfEvent(UUID userId, UUID eventId) {
+        String topicName = EVENT_TOPIC_PRE + eventId;
+
         NotificationTopicSubscription subscription = new NotificationTopicSubscription();
         subscription.setUser(userRepository.getReferenceById(userId));
-        subscription.setTopic(EVENT_TOPIC_PRE + eventId);
+        subscription.setTopic(topicName);
         notificationTopicSubscriptionRepository.save(subscription);
 
-        //todo push request to message queue
-        List<String> tokens = notificationTokenRepository.findTokensByUserId(userId);
-
-        log.info("Subscribed user to topic of event, userId={} evenId={}", userId, eventId);
+        //push request to message queue
+        notificationPublisher.enqueueSubscribeUserToTopic(userId, topicName);
+        log.info("Subscribed user to topic of event, userId={} evenId={} topic={}", userId, eventId, topicName);
     }
 
     @Transactional
     @Override
     public void unsubscribeUserFromTopicOfEvent(UUID userId, UUID eventId) {
-        notificationTopicSubscriptionRepository.deleteByUser_IdAndTopic(userId, EVENT_TOPIC_PRE + eventId);
-        //todo push request to message queue
-        List<String> tokens = notificationTokenRepository.findTokensByUserId(userId);
+        String topicName = EVENT_TOPIC_PRE + eventId;
 
-        log.info("Unsubscribed user from topic of event, userId={} evenId={}", userId, eventId);
+        notificationTopicSubscriptionRepository.deleteByUser_IdAndTopic(userId, topicName);
+
+        //push request to message queue
+        notificationPublisher.enqueueUnsubscribeUserFromTopic(userId, topicName);
+        log.info("Unsubscribed user from topic of event, userId={} evenId={} topic={}", userId, eventId, topicName);
     }
 
     //    @Override

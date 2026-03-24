@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.notification.sender;
 import com.sep490.g28.hvh.be.notification.dto.SendNotificationMessage;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * Client abstraction for sending push notifications.
@@ -35,7 +36,7 @@ public interface PushNotificationSender {
      * @param token device token
      * @param topics topics' name
      */
-    void subscribeToTopics(String token, Collection<String> topics);
+    void subscribeSingleTokenToTopics(String token, Collection<String> topics);
 
     /**
      * Unsubscribe a device token to multiple topics.
@@ -43,5 +44,9 @@ public interface PushNotificationSender {
      * @param token device token
      * @param topics topics' name
      */
-    void unsubscribeFromTopics(String token, Collection<String> topics);
+    void unsubscribeSingleTokenFromTopics(String token, Collection<String> topics);
+
+    void subscribeUserToTopic(UUID userId, String topicName);
+
+    void unsubscribeUserFromTopic(UUID userId, String topicName);
 }
