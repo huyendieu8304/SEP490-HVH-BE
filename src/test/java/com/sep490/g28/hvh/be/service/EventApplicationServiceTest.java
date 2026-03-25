@@ -28,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -497,5 +498,22 @@ public class EventApplicationServiceTest {
 
         assertFalse(response.isHasMore());
         assertNull(response.getNextCursor());
+    }
+
+    //TC04
+    @Test
+    void getRegisteredParticipants_should_return_empty_page() {
+
+        Page<EventApplication> page = new PageImpl<>(new ArrayList<>());
+
+        when(eventApplicationRepository.getEventApplicationsBySessionId(
+                eq(sessionId),
+                any()
+        )).thenReturn(page);
+
+        EventApplicationsResponse response =
+                service.getRegisteredParticipants(0, 10, sessionId);
+
+        assertEquals(new ArrayList<>(), response.getRegisteredParticipants());
     }
 }

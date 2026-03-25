@@ -26,10 +26,7 @@ import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -774,7 +771,7 @@ public class EventServiceTest {
         )).thenReturn(emptyPage);
 
         Page<EventSimpleResponseForHost> response =
-                eventService.getEventsByHost(0, 10, null, null);
+                eventService.getEventsByHost(0, 10, null, "RECRUITING");
 
         assertTrue(response.getContent().isEmpty());
         assertEquals(0, response.getTotalElements());
@@ -851,21 +848,20 @@ public class EventServiceTest {
 
     // ===== TC3 =====
     @Test
-    void getEventDetailsByHost_null_activity_sub_domain() {
+    void getEventDetailsByHost_null_activity_sub_domain_null_image() {
 
         Event event = mockEvent();
+        event.setImages(null);
 
         event.setActivitySubDomain(null);
 
         when(eventRepository.findById(eventId))
                 .thenReturn(Optional.of(event));
 
-        when(storageService.getSignedUrlAsync(any()))
-                .thenReturn(CompletableFuture.completedFuture("url"));
-
         EventDetailsResponseForHost response = eventService.getEventDetailsByHost(eventId);
 
         assertEquals("", response.getActivitySubDomain());
+        assertEquals(new ArrayList<>(),response.getImageUrls());
     }
 
 }
