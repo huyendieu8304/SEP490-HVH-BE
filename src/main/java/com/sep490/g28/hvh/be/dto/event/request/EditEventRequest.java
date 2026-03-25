@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.validator.constraints.Length;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -39,6 +40,10 @@ public class EditEventRequest {
     @NotBlank (message = "INVALID_ADDRESS")
     @ValidWard
     String address;
+
+    @NotBlank(message = "INVALID_EVENT_DETAIL_ADDRESS")
+    @Length(max = 200, message = "INVALID_EVENT_DETAIL_ADDRESS")
+    String detailAddress;
 
     @NotNull(message = "INVALID_EVENT_AUTO_APPROVE")
     Boolean autoApprove;

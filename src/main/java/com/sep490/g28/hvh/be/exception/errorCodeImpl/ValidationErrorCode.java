@@ -64,9 +64,10 @@ public enum ValidationErrorCode implements ErrorCode {
 
     INVALID_EVENT_RECRUITMENT_END_DATE(2042, "Ngày kết thúc tuyển tình nguyện viên phải ở sau ngày hôm nay ít nhất 3 ngày.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_DATE(2043, "Ngày tổ chức sự kiện phải ở sau ngày hôm nay.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_DETAIL_ADDRESS(2044, "Địa chỉ chi tiết của sự kiện không được bỏ trống và không nên dài quá 200 kí tự.", HttpStatus.BAD_REQUEST),
 
-    INVALID_NOTIFICATION_TITLE(2044, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
-    INVALID_NOTIFICATION_BODY(2045, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+    INVALID_NOTIFICATION_TITLE(2045, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+    INVALID_NOTIFICATION_BODY(2046, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

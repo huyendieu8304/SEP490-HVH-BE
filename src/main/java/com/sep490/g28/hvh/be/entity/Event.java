@@ -58,6 +58,9 @@ public class Event {
     @Column(name = "address", nullable = false)
     private String address;
 
+    @Column(name = "detail_address", nullable = false)
+    private String detailAddress;
+
     //--------------------------------------------------------
     @Column(name = "auto_approve", nullable = false)
     private boolean autoApprove; //1: yes, 0: no
