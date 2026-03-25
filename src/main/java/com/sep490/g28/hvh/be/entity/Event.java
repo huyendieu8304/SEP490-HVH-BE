@@ -58,9 +58,15 @@ public class Event {
     @Column(name = "address", nullable = false)
     private String address;
 
+    @Column(name = "detail_address", nullable = false)
+    private String detailAddress;
+
     //--------------------------------------------------------
     @Column(name = "auto_approve", nullable = false)
     private boolean autoApprove; //1: yes, 0: no
+
+     @Column(name = "serving_activity", nullable = false)
+    private boolean servingActivity; //1: yes, 0: no
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_sub_domain_id", referencedColumnName = "id", nullable = false)
@@ -78,8 +84,7 @@ public class Event {
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
-    //todo, suưửa ve not null after fix create event
-    @Column(name = "end_date", nullable = true)
+    @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
     @Column(name = "recruitment_end_date", nullable = false)

@@ -44,23 +44,30 @@ public class EventSessionServiceImpl implements EventSessionService {
             throw new AppException(EventErrorCode.INVALID_DATE_TIME_AMOUNT);
         }
 
-        //check request: valid add place amount?
-        List<EditEventSessionRequest> adds = sessionRequests.stream()
-                .filter(r -> (
-                        r.getUpdateAction() == EUpdateAction.ADD
-                        && Duration.between(r.getStartDateTime(), r.getEndDateTime()).compareTo(Duration.ofHours(sessionMaxTime)) <= 0)
-                )
-                .toList();
+        List<EditEventSessionRequest> adds = new ArrayList<>();
+        //check the duration between the start time and end time of the session, must not > session max time of the domain
+        for (EditEventSessionRequest r : sessionRequests) {
+            if (r.getUpdateAction().equals(EUpdateAction.ADD)){
+                if (
+                        Duration.between(r.getStartDateTime(), r.getEndDateTime())
+                                .compareTo(Duration.ofHours(sessionMaxTime)) > 0
+                ) {
+                    //not satisfy session constraint
+                    throw new AppException(EventErrorCode.INVALID_EVENT_SESSION_TIME_RANGE);
+                } else {
+                    adds.add(r);
+                }
+            }
+        }
 
+        //check request: valid session time amount?
         //make sure at least 1 object is added
         if (adds.isEmpty()) {
             throw new AppException(EventErrorCode.INVALID_DATE_TIME_AMOUNT);
         }
         addEventDateTimes(event, adds);
-
-        LocalDate startDate = validateAndResolveStartDate(recruitmentEndDate, event.getSessions());
-
-        event.setStartDate(startDate);
+        // VALIDATE + RESOLVE START DATE END DATE
+        validateAndResolveEventStartEndDate(recruitmentEndDate, event.getSessions(), event);
     }
 
     private void addEventDateTimes(
@@ -172,24 +179,24 @@ public class EventSessionServiceImpl implements EventSessionService {
             addEventDateTimes(event, adds);
         }
 
-        // VALIDATE + RESOLVE START DATE
-        LocalDate startDate = validateAndResolveStartDate(
+        // VALIDATE + RESOLVE START DATE END DATE
+        validateAndResolveEventStartEndDate(
                 recruitmentEndDate,
-                existingEventSessions
+                existingEventSessions,
+                event
         );
-        event.setStartDate(startDate);
 
     }
 
-    private LocalDate validateAndResolveStartDate(
+    private void validateAndResolveEventStartEndDate(
             LocalDate recruitmentEndDate,
-            List<EventSession> sessions
+            List<EventSession> sessions,
+            Event event
     ) {
 
         Set<LocalDate> days = new HashSet<>();
         //iterate through each session to make sure there are no 2 session in one day
         for (EventSession r : sessions) {
-            // convert UTC -> VN
             LocalDate date = r.getStartDateTime()
                     .toLocalDate();
 
@@ -199,6 +206,7 @@ public class EventSessionServiceImpl implements EventSessionService {
             }
         }
 
+        //resolve event's startDate
         LocalDate startDate = days.stream()
                 .min(LocalDate::compareTo)
                 .orElseThrow();
@@ -206,12 +214,12 @@ public class EventSessionServiceImpl implements EventSessionService {
         // today
         LocalDate today = LocalDate.now();
 
-        // startDate endDate must after at least 15 days since today
+        // startDate must after at least 15 days since today
         if (startDate.isBefore(today.plusDays(15))) {
             throw new AppException(EventErrorCode.INVALID_EVENT_START_DATE);
         }
 
-        //recruitment endDate must after at least 3 days since today
+        //recruitmentEndDate must after at least 3 days since today
         if (recruitmentEndDate.isBefore(today.plusDays(3))) {
             throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
         }
@@ -221,7 +229,14 @@ public class EventSessionServiceImpl implements EventSessionService {
             throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
         }
 
-        return startDate;
+        event.setStartDate(startDate);
+
+        //resolve event's endDate
+        LocalDate endDate = days.stream()
+                .min(LocalDate::compareTo)
+                .orElseThrow();
+        event.setEndDate(endDate);
+
     }
 
     //todo unit test for this method

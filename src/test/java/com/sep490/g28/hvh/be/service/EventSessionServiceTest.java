@@ -370,18 +370,19 @@ public class EventSessionServiceTest {
 
 
     // ==== validate ===================================
-    private LocalDate invokeValidate(LocalDate recruitmentEndDate, List<EventSession> sessions) throws Exception {
+    private LocalDate invokeValidate(LocalDate recruitmentEndDate, List<EventSession> sessions, Event targetEvent) throws Exception {
 
         Method m = EventSessionServiceImpl.class
                 .getDeclaredMethod(
-                        "validateAndResolveStartDate",
+                        "validateAndResolveEventStartEndDate",
                         LocalDate.class,
-                        List.class
+                        List.class,
+                        Event.class
                 );
 
         m.setAccessible(true);
 
-        return (LocalDate) m.invoke(service, recruitmentEndDate, sessions);
+        return (LocalDate) m.invoke(service, recruitmentEndDate, sessions, targetEvent);
     }
 
     // TC01
@@ -397,14 +398,16 @@ public class EventSessionServiceTest {
 
         LocalDate result = invokeValidate(
                 recruitmentEnd,
-                List.of(s1, s2)
+                List.of(s1, s2),
+                event
         );
 
         LocalDate expected = s1.getStartDateTime()
                 .atZoneSameInstant(vn)
                 .toLocalDate();
 
-        assertEquals(expected, result);
+        assertEquals(event.getStartDate(), s1.getStartDateTime().toLocalDate());
+        assertEquals(event.getEndDate(), s1.getEndDateTime().toLocalDate());
     }
 
     // TC02
@@ -422,7 +425,7 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = validRecruitmentEndDate();
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s1, s2)));
+                () -> invokeValidate(recruitmentEnd, List.of(s1, s2), event));
     }
 
     // TC03
@@ -436,7 +439,7 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = LocalDate.now(vn).plusDays(1);
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s)));
+                () -> invokeValidate(recruitmentEnd, List.of(s), event));
     }
 
     // TC04
@@ -450,7 +453,7 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = LocalDate.now(vn).plusDays(10);
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s)));
+                () -> invokeValidate(recruitmentEnd, List.of(s), event));
     }
 
     // TC05
@@ -468,6 +471,6 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = startDate.minusDays(2);
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s)));
+                () -> invokeValidate(recruitmentEnd, List.of(s), event));
     }
 }

@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.validator.constraints.Length;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -40,8 +41,15 @@ public class EditEventRequest {
     @ValidWard
     String address;
 
+    @NotBlank(message = "INVALID_EVENT_DETAIL_ADDRESS")
+    @Length(max = 200, message = "INVALID_EVENT_DETAIL_ADDRESS")
+    String detailAddress;
+
     @NotNull(message = "INVALID_EVENT_AUTO_APPROVE")
     Boolean autoApprove;
+
+    @NotNull(message = "INVALID_EVENT_SERVING_ACTIVITY")
+    Boolean servingActivity;
 
     @NotNull(message = "INVALID_EVENT_SUBDOMAIN_ID")
     @Positive(message = "INVALID_EVENT_SUBDOMAIN_ID")
@@ -55,6 +63,7 @@ public class EditEventRequest {
 
     //--------------------------------------------------------
     @RequiredField(fieldName = "Ngày kết thúc tuyển người")
+    @Future(message = "INVALID_EVENT_RECRUITMENT_END_DATE")
     LocalDate recruitmentEndDate;
 
     @Valid
