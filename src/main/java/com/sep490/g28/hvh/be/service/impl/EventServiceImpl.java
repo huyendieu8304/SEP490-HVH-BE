@@ -899,6 +899,7 @@ public class EventServiceImpl implements EventService {
 
         Page<Event> events = eventRepository.findEventsByHostId(hostId, status, eventName, pageable);
 
+        //check if there's no event with input status
         if(events.getContent().isEmpty()) {
             return new PageImpl<>(Collections.emptyList(), pageable, events.getTotalElements());
         }

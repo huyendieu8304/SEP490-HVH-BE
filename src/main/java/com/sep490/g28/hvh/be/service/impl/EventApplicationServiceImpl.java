@@ -195,6 +195,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                     String name = null;
                     String avatarUrl = null;
 
+                    //check if the event application linked with a volunteer
                     if(e.getVolunteer() != null) {
 
                         Volunteer volunteer = e.getVolunteer();

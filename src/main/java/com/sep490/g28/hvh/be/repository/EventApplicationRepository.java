@@ -52,7 +52,7 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
     @Query("""
             SELECT e
             FROM EventApplication e
-            WHERE e.id = :sessionId
+            WHERE e.session.id = :sessionId
             """)
     Page<EventApplication> getEventApplicationsBySessionId(UUID sessionId, Pageable pageable);
 }
