@@ -92,7 +92,11 @@ public class EventServiceEditEventTest {
 
         r.setAddress("Hà Nội");
 
+        r.setDetailAddress("Tòa nhà Lestat Lioncourt");
+
         r.setAutoApprove(true);
+
+        r.setServingActivity(true);
 
         r.setServedTarget(EServedTarget.ELDERLY);
 
