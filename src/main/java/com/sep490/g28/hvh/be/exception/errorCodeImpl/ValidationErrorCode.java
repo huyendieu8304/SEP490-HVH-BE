@@ -62,8 +62,11 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_DEVICE_ID(2040, "ID thiết bị không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_STATUS(2041, "Trạng thái sự kiện không tồn tại", HttpStatus.BAD_REQUEST ),
 
-    INVALID_NOTIFICATION_TITLE(2042, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
-    INVALID_NOTIFICATION_BODY(2043, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_RECRUITMENT_END_DATE(2042, "Ngày kết thúc tuyển tình nguyện viên phải ở sau ngày hôm nay ít nhất 3 ngày.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_SESSION_DATE(2043, "Ngày tổ chức sự kiện phải ở sau ngày hôm nay.", HttpStatus.BAD_REQUEST),
+
+    INVALID_NOTIFICATION_TITLE(2044, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+    INVALID_NOTIFICATION_BODY(2045, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

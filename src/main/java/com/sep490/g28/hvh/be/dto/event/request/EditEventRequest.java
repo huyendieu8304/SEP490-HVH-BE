@@ -55,6 +55,7 @@ public class EditEventRequest {
 
     //--------------------------------------------------------
     @RequiredField(fieldName = "Ngày kết thúc tuyển người")
+    @Future(message = "INVALID_EVENT_RECRUITMENT_END_DATE")
     LocalDate recruitmentEndDate;
 
     @Valid

@@ -44,14 +44,23 @@ public class EventSessionServiceImpl implements EventSessionService {
             throw new AppException(EventErrorCode.INVALID_DATE_TIME_AMOUNT);
         }
 
-        //check request: valid add place amount?
-        List<EditEventSessionRequest> adds = sessionRequests.stream()
-                .filter(r -> (
-                        r.getUpdateAction() == EUpdateAction.ADD
-                        && Duration.between(r.getStartDateTime(), r.getEndDateTime()).compareTo(Duration.ofHours(sessionMaxTime)) <= 0)
-                )
-                .toList();
+        List<EditEventSessionRequest> adds = new ArrayList<>();
+        //check the duration between the start time and end time of the session, must not > session max time of the domain
+        for (EditEventSessionRequest r : sessionRequests) {
+            if (r.getUpdateAction().equals(EUpdateAction.ADD)){
+                if (
+                        Duration.between(r.getStartDateTime(), r.getEndDateTime())
+                                .compareTo(Duration.ofHours(sessionMaxTime)) > 0
+                ) {
+                    //not satisfy session constraint
+                    throw new AppException(EventErrorCode.INVALID_EVENT_SESSION_TIME_RANGE);
+                } else {
+                    adds.add(r);
+                }
+            }
+        }
 
+        //check request: valid session time amount?
         //make sure at least 1 object is added
         if (adds.isEmpty()) {
             throw new AppException(EventErrorCode.INVALID_DATE_TIME_AMOUNT);
