@@ -4,17 +4,20 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ENotificationDataAction;
 import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.constant.ERole;
+import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
+import com.sep490.g28.hvh.be.notification.entity.NotificationTopicSubscription;
 import com.sep490.g28.hvh.be.notification.entity.UserNotification;
 import com.sep490.g28.hvh.be.notification.entity.NotificationToken;
 import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
 import com.sep490.g28.hvh.be.notification.repository.UserNotificationRepository;
 import com.sep490.g28.hvh.be.notification.repository.NotificationRepository;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTokenRepository;
-import com.sep490.g28.hvh.be.notification.dto.RegisterNotificationTokenRequest;
+import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTopicSubscriptionRepository;
 import com.sep490.g28.hvh.be.notification.service.NotificationTokenTxService;
+import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationTopicSubscriptionRepository notificationTopicSubscriptionRepository;
     private final UserNotificationRepository userNotificationRepository;
+    private final EventRepository eventRepository;
 
     private final CurrentUserProvider currentUserProvider;
 
@@ -55,7 +59,7 @@ public class NotificationServiceImpl implements NotificationService {
         UUID userId = currentUserProvider.getId();
         NotificationToken notificationToken = registerNotificationTokenInternal(request, userId);
 
-        //subscribe token to topic
+        //subscribe token to topics
         subscribeTokenToTopicsAfterRegister(notificationToken.getToken(), userId);
     }
 
@@ -121,6 +125,32 @@ public class NotificationServiceImpl implements NotificationService {
             topics.add(ADMIN_TOPIC);
         }
         notificationPublisher.enqueueUnsubscribeFromTopics(token, topics);
+    }
+
+    @Override
+    public void subscribeUserToTopicOfEvent(UUID userId, UUID eventId) {
+        String topicName = EVENT_TOPIC_PRE + eventId;
+
+        NotificationTopicSubscription subscription = new NotificationTopicSubscription();
+        subscription.setUser(userRepository.getReferenceById(userId));
+        subscription.setTopic(topicName);
+        notificationTopicSubscriptionRepository.save(subscription);
+
+        //push request to message queue
+        notificationPublisher.enqueueSubscribeUserToTopic(userId, topicName);
+        log.info("Subscribed user to topic of event, userId={} evenId={} topic={}", userId, eventId, topicName);
+    }
+
+    @Transactional
+    @Override
+    public void unsubscribeUserFromTopicOfEvent(UUID userId, UUID eventId) {
+        String topicName = EVENT_TOPIC_PRE + eventId;
+
+        notificationTopicSubscriptionRepository.deleteByUser_IdAndTopic(userId, topicName);
+
+        //push request to message queue
+        notificationPublisher.enqueueUnsubscribeUserFromTopic(userId, topicName);
+        log.info("Unsubscribed user from topic of event, userId={} evenId={} topic={}", userId, eventId, topicName);
     }
 
     //    @Override
@@ -324,7 +354,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason) {
-        //send notification to host
+        //send notification to volunteer
         Notification notification = new Notification();
 
         notification.setTitle("Đơn đăng kí tham gia sự kiện tình nguyện không được chấp thuận");
@@ -345,5 +375,53 @@ public class NotificationServiceImpl implements NotificationService {
 
         notificationPublisher.enqueueNotification(notification, volunteerId);
     }
+
+    @Override
+    public void sendEventApplicationCancelledSuccessfully(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
+        //send notification to volunteer
+        Notification notification = new Notification();
+
+        notification.setTitle("Đơn đăng kí tham gia sự kiện tình nguyện đã được hủy thành công");
+        String body = String.format("Bạn đã hủy đơn đăng kí tham gia sự kiện %s ngày %s thành công.",
+                event.getName(),
+                application.getSessionDate()
+        );
+
+        if (isMinusScore) {
+            body = body.concat(" Tuy nhiên do thời gian tuyển người của sự kiện đã kết thúc và bạn đã hủy tham gia sự kiện trước thời gian diễn ra, nên chúng tôi sẽ trừ 3 điểm trong Điểm vinh dự của bạn.");
+        }
+        notification.setBody(body);
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_APPLICATION_CANCELLED.name(),
+                DATA_REF_ID_KEY, application.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_APPLICATION_CANCELLED);
+
+        //save notification
+        notification = saveNotificationForUser(notification, volunteerId);
+
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
+    @Override
+    public void sendNotificationToVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request) {
+        String eventTopicName = EVENT_TOPIC_PRE + eventId;
+
+        //send notification to topic
+        Notification notificationForVolunteers = new Notification();
+        notificationForVolunteers.setTopic(eventTopicName);
+        notificationForVolunteers.setTitle(request.getTitle());
+        notificationForVolunteers.setBody(request.getBody());
+        notificationForVolunteers.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_ANNOUNCEMENT.name()
+        ));
+        notificationForVolunteers.setType(ENotificationType.VOL_EVENT_ANNOUNCEMENT);
+        notificationRepository.save(notificationForVolunteers);
+
+        //send notification to topic
+        notificationPublisher.enqueueNotification(notificationForVolunteers, null);
+    }
+
 
 }

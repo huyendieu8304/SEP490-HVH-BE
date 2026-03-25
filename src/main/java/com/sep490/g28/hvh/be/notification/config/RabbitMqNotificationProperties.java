@@ -14,38 +14,56 @@ public record RabbitMqNotificationProperties(
 
     public record Queue(
             String sendUser,
-            String sendTopic,
             String retryUser,
-            String retryTopic,
             String dlqUser,
+
+            String sendTopic,
+            String retryTopic,
             String dlqTopic,
 
-            String subscribe,
-            String subscribeRetry,
-            String subscribeDlq,
+            String subscribeTokenTopics,
+            String subscribeTokenTopicsRetry,
+            String subscribeTokenTopicsDlq,
 
-            String unsubscribe,
-            String unsubscribeRetry,
-            String unsubscribeDlq
+            String unsubscribeTokenTopics,
+            String unsubscribeTokenTopicsRetry,
+            String unsubscribeTokenTopicsDlq,
+
+            String subscribeUserTopic,
+            String subscribeUserTopicRetry,
+            String subscribeUserTopicDlq,
+
+            String unsubscribeUserTopic,
+            String unsubscribeUserTopicRetry,
+            String unsubscribeUserTopicDlq
 
 
             ) {}
 
     public record Routing(
             String sendUser,
-            String sendTopic,
             String retryUser,
-            String retryTopic,
             String dlqUser,
+
+            String sendTopic,
+            String retryTopic,
             String dlqTopic,
 
-            String subscribe,
-            String subscribeRetry,
-            String subscribeDlq,
+            String subscribeTokenTopics,
+            String subscribeTokenTopicsRetry,
+            String subscribeTokenTopicsDlq,
 
-            String unsubscribe,
-            String unsubscribeRetry,
-            String unsubscribeDlq
+            String unsubscribeTokenTopics,
+            String unsubscribeTokenTopicsRetry,
+            String unsubscribeTokenTopicsDlq,
+
+            String subscribeUserTopic,
+            String subscribeUserTopicRetry,
+            String subscribeUserTopicDlq,
+
+            String unsubscribeUserTopic,
+            String unsubscribeUserTopicRetry,
+            String unsubscribeUserTopicDlq
     ) {}
 
     public record Retry(

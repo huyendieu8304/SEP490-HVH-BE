@@ -14,5 +14,8 @@ public interface EventApplicationService {
 
     void rejectApplication(UUID applicationId, RejectApplicationRequest request);
 
+    void cancelApplication(UUID applicationId);
+
     EventApplicationsResponse getRegisteredParticipants(int pageNumber, int pageSize, UUID sessionId);
+
 }

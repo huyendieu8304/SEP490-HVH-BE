@@ -92,19 +92,6 @@ public class OrganizationServiceTest {
     @BeforeEach
     void setup() {
 
-//        organizationService = new OrganizationServiceImpl(
-//                organizationRegistrationRepository,
-//                organizationRepository,
-//                organizationManagerRepository,
-//                userRepository,
-//                storageService,
-//                storagePathGenerator,
-//                otpService,
-//                systemAdminRepository,
-//                currentUserProvider,
-//                authClient,
-//                emailService
-//        );
         id = UUID.randomUUID();
         orgId = UUID.randomUUID();
 
@@ -737,7 +724,7 @@ public class OrganizationServiceTest {
         session.setEndDateTime(OffsetDateTime.now().plusHours(3));
 
         Event event = new Event();
-        event.setDateTimes(List.of(session));
+        event.setSessions(List.of(session));
 
         when(organizationRepository.findById(orgId))
                 .thenReturn(Optional.of(org));
@@ -837,7 +824,7 @@ public class OrganizationServiceTest {
         session.setEndDateTime(OffsetDateTime.now().plusHours(3));
 
         Event event = new Event();
-        event.setDateTimes(List.of(session));
+        event.setSessions(List.of(session));
 
         when(organizationRepository.findById(orgId))
                 .thenReturn(Optional.of(org));

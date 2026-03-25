@@ -137,7 +137,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(1, event.getDateTimes().size());
+        assertEquals(1, event.getSessions().size());
         assertNotNull(event.getStartDate());
     }
 
@@ -155,7 +155,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(2, event.getDateTimes().size());
+        assertEquals(2, event.getSessions().size());
     }
 
     // TC06
@@ -196,7 +196,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertTrue(event.getDateTimes().isEmpty());
+        assertTrue(event.getSessions().isEmpty());
     }
 
     // TC02
@@ -210,7 +210,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertTrue(event.getDateTimes().isEmpty());
+        assertTrue(event.getSessions().isEmpty());
     }
 
     // TC03
@@ -220,7 +220,7 @@ public class EventSessionServiceTest {
         EventSession s1 = session(start(20));
         EventSession s2 = session(start(21));
 
-        event.getDateTimes().addAll(List.of(s1, s2));
+        event.getSessions().addAll(List.of(s1, s2));
 
         EditEventSessionRequest r = removeReq(s1.getId());
 
@@ -231,8 +231,8 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(1, event.getDateTimes().size());
-        assertEquals(s2.getId(), event.getDateTimes().get(0).getId());
+        assertEquals(1, event.getSessions().size());
+        assertEquals(s2.getId(), event.getSessions().get(0).getId());
     }
 
     // TC04
@@ -240,7 +240,7 @@ public class EventSessionServiceTest {
     void updateEventSessions_edit_shouldUpdateValues() {
 
         EventSession s = session(start(20));
-        event.getDateTimes().add(s);
+        event.getSessions().add(s);
 
         OffsetDateTime newStart = start(25);
         OffsetDateTime newEnd = newStart.plus(Duration.ofHours(2));
@@ -267,7 +267,7 @@ public class EventSessionServiceTest {
     void updateEventSessions_add_shouldInsert() {
 
         EventSession s = session(start(20));
-        event.getDateTimes().add(s);
+        event.getSessions().add(s);
 
         EditEventSessionRequest r = sessionReq(
                 start(22),
@@ -281,7 +281,7 @@ public class EventSessionServiceTest {
                 (short) 4
         );
 
-        assertEquals(2, event.getDateTimes().size());
+        assertEquals(2, event.getSessions().size());
     }
 
     // TC06
@@ -289,7 +289,7 @@ public class EventSessionServiceTest {
     void updateEventSessions_removeAll_shouldThrow() {
 
         EventSession s = session(start(20));
-        event.getDateTimes().add(s);
+        event.getSessions().add(s);
 
         EditEventSessionRequest r = removeReq(s.getId());
 
@@ -309,7 +309,7 @@ public class EventSessionServiceTest {
         EventSession s1 = session(start(20));
         EventSession s2 = session(start(21));
 
-        event.getDateTimes().addAll(List.of(s1, s2));
+        event.getSessions().addAll(List.of(s1, s2));
 
         EditEventSessionRequest r = editReq(
                 s2.getId(),
@@ -333,7 +333,7 @@ public class EventSessionServiceTest {
         EventSession s1 = session(start(20));
         EventSession s2 = session(start(21));
 
-        event.getDateTimes().addAll(List.of(s1, s2));
+        event.getSessions().addAll(List.of(s1, s2));
 
         UUID nonExistId = UUID.randomUUID();
 
@@ -351,14 +351,14 @@ public class EventSessionServiceTest {
         );
 
         // sessions remain unchanged
-        assertEquals(2, event.getDateTimes().size());
+        assertEquals(2, event.getSessions().size());
 
-        EventSession rs1 = event.getDateTimes().stream()
+        EventSession rs1 = event.getSessions().stream()
                 .filter(s -> s.getId().equals(s1.getId()))
                 .findFirst()
                 .orElseThrow();
 
-        EventSession rs2 = event.getDateTimes().stream()
+        EventSession rs2 = event.getSessions().stream()
                 .filter(s -> s.getId().equals(s2.getId()))
                 .findFirst()
                 .orElseThrow();
@@ -370,18 +370,19 @@ public class EventSessionServiceTest {
 
 
     // ==== validate ===================================
-    private LocalDate invokeValidate(LocalDate recruitmentEndDate, List<EventSession> sessions) throws Exception {
+    private LocalDate invokeValidate(LocalDate recruitmentEndDate, List<EventSession> sessions, Event targetEvent) throws Exception {
 
         Method m = EventSessionServiceImpl.class
                 .getDeclaredMethod(
-                        "validateAndResolveStartDate",
+                        "validateAndResolveEventStartEndDate",
                         LocalDate.class,
-                        List.class
+                        List.class,
+                        Event.class
                 );
 
         m.setAccessible(true);
 
-        return (LocalDate) m.invoke(service, recruitmentEndDate, sessions);
+        return (LocalDate) m.invoke(service, recruitmentEndDate, sessions, targetEvent);
     }
 
     // TC01
@@ -397,14 +398,16 @@ public class EventSessionServiceTest {
 
         LocalDate result = invokeValidate(
                 recruitmentEnd,
-                List.of(s1, s2)
+                List.of(s1, s2),
+                event
         );
 
         LocalDate expected = s1.getStartDateTime()
                 .atZoneSameInstant(vn)
                 .toLocalDate();
 
-        assertEquals(expected, result);
+        assertEquals(event.getStartDate(), s1.getStartDateTime().toLocalDate());
+        assertEquals(event.getEndDate(), s1.getEndDateTime().toLocalDate());
     }
 
     // TC02
@@ -422,7 +425,7 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = validRecruitmentEndDate();
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s1, s2)));
+                () -> invokeValidate(recruitmentEnd, List.of(s1, s2), event));
     }
 
     // TC03
@@ -436,7 +439,7 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = LocalDate.now(vn).plusDays(1);
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s)));
+                () -> invokeValidate(recruitmentEnd, List.of(s), event));
     }
 
     // TC04
@@ -450,7 +453,7 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = LocalDate.now(vn).plusDays(10);
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s)));
+                () -> invokeValidate(recruitmentEnd, List.of(s), event));
     }
 
     // TC05
@@ -468,6 +471,6 @@ public class EventSessionServiceTest {
         LocalDate recruitmentEnd = startDate.minusDays(2);
 
         assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s)));
+                () -> invokeValidate(recruitmentEnd, List.of(s), event));
     }
 }

@@ -22,20 +22,13 @@ public class RabbitMqNotificationConfig {
         return new DirectExchange(properties.exchange());
     }
 
-//    ====================================
+    // =========================================================
+    // ===== SEND NOTIFICATION TO USER =====
     @Bean
     Queue sendUserQueue() {
         return QueueBuilder.durable(properties.queue().sendUser())
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange()) //send mail fail, push to this exchage a gain with the routing below
                 .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().retryUser())
-                .build();
-    }
-
-    @Bean
-    Queue sendTopicQueue() {
-        return QueueBuilder.durable(properties.queue().sendTopic())
-                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange()) //send mail fail, push to this exchage a gain with the routing below
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().retryTopic())
                 .build();
     }
 
@@ -49,22 +42,8 @@ public class RabbitMqNotificationConfig {
     }
 
     @Bean
-    Queue retryTopicQueue(){
-        return QueueBuilder.durable(properties.queue().retryTopic())
-                .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
-                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().sendTopic())
-                .build();
-    }
-
-    @Bean
     Queue dlqUserQueue(){
         return QueueBuilder.durable(properties.queue().dlqUser()).build();
-    }
-
-    @Bean
-    Queue dlqTopicQueue(){
-        return QueueBuilder.durable(properties.queue().dlqTopic()).build();
     }
 
 
@@ -77,19 +56,51 @@ public class RabbitMqNotificationConfig {
     }
 
     @Bean
-    Binding sendTopicBinding() {
-        return BindingBuilder
-                .bind(sendTopicQueue())
-                .to(notificationExchange())
-                .with(properties.routing().sendTopic());
-    }
-
-    @Bean
     Binding retryUserBinding() {
         return BindingBuilder
                 .bind(retryUserQueue())
                 .to(notificationExchange())
                 .with(properties.routing().retryUser());
+    }
+
+    @Bean
+    Binding dlqUserBinding() {
+        return BindingBuilder
+                .bind(dlqUserQueue())
+                .to(notificationExchange())
+                .with(properties.routing().dlqUser());
+    }
+
+    // =========================================================
+    // ===== SEND NOTIFICATION TO TOPIC =====
+    @Bean
+    Queue sendTopicQueue() {
+        return QueueBuilder.durable(properties.queue().sendTopic())
+                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange()) //send mail fail, push to this exchage a gain with the routing below
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().retryTopic())
+                .build();
+    }
+
+    @Bean
+    Queue retryTopicQueue(){
+        return QueueBuilder.durable(properties.queue().retryTopic())
+                .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
+                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().sendTopic())
+                .build();
+    }
+
+    @Bean
+    Queue dlqTopicQueue(){
+        return QueueBuilder.durable(properties.queue().dlqTopic()).build();
+    }
+
+    @Bean
+    Binding sendTopicBinding() {
+        return BindingBuilder
+                .bind(sendTopicQueue())
+                .to(notificationExchange())
+                .with(properties.routing().sendTopic());
     }
 
     @Bean
@@ -101,14 +112,6 @@ public class RabbitMqNotificationConfig {
     }
 
     @Bean
-    Binding dlqUserBinding() {
-        return BindingBuilder
-                .bind(dlqUserQueue())
-                .to(notificationExchange())
-                .with(properties.routing().dlqUser());
-    }
-
-    @Bean
     Binding dlqTopicBinding() {
         return BindingBuilder
                 .bind(dlqTopicQueue())
@@ -116,101 +119,199 @@ public class RabbitMqNotificationConfig {
                 .with(properties.routing().dlqTopic());
     }
 
-    //====================================
+    // =========================================================
+    // ===== SUBSCRIBE SINGLE TOKEN TO TOPICS =====
     @Bean
-    Queue subscribeQueue(){
-        return QueueBuilder.durable(properties.queue().subscribe())
+    Queue subscribeSingleTokenToTopicsQueue(){
+        return QueueBuilder.durable(properties.queue().subscribeTokenTopics())
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeRetry())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeTokenTopicsRetry())
                 .build();
     }
 
     @Bean
-    Queue subscribeRetryQueue(){
-        return QueueBuilder.durable(properties.queue().subscribeRetry())
+    Queue subscribeSingleTokenToTopicsRetryQueue(){
+        return QueueBuilder.durable(properties.queue().subscribeTokenTopicsRetry())
                 .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribe())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeTokenTopics())
                 .build();
     }
 
     @Bean
-    Queue subscribeDlqQueue(){
-        return QueueBuilder.durable(properties.queue().subscribeDlq())
+    Queue subscribeSingleTokenToTopicsDlqQueue(){
+        return QueueBuilder.durable(properties.queue().subscribeTokenTopicsDlq())
                 .build();
     }
 
     @Bean
-    Binding subscribeBinding() {
+    Binding subscribeSingleTokenToTopicsBinding() {
         return BindingBuilder
-                .bind(subscribeQueue())
+                .bind(subscribeSingleTokenToTopicsQueue())
                 .to(notificationExchange())
-                .with(properties.routing().subscribe());
+                .with(properties.routing().subscribeTokenTopics());
     }
 
     @Bean
-    Binding subscribeRetryBinding() {
+    Binding subscribeSingleTokenToTopicsRetryBinding() {
         return BindingBuilder
-                .bind(subscribeRetryQueue())
+                .bind(subscribeSingleTokenToTopicsRetryQueue())
                 .to(notificationExchange())
-                .with(properties.routing().subscribeRetry());
+                .with(properties.routing().subscribeTokenTopicsRetry());
     }
 
     @Bean
-    Binding subscribeDlqBinding() {
+    Binding subscribeSingleTokenToTopicsDlqBinding() {
         return BindingBuilder
-                .bind(subscribeDlqQueue())
+                .bind(subscribeSingleTokenToTopicsDlqQueue())
                 .to(notificationExchange())
-                .with(properties.routing().subscribeDlq());
+                .with(properties.routing().subscribeTokenTopicsDlq());
     }
 
-
-    //====================================
+    // =========================================================
+    // ===== UNSUBSCRIBE SINGLE TOKEN FROM TOPICS =====
     @Bean
-    Queue unsubscribeQueue(){
-        return QueueBuilder.durable(properties.queue().unsubscribe())
+    Queue unsubscribeSingleTokenFromTopicsQueue(){
+        return QueueBuilder.durable(properties.queue().unsubscribeTokenTopics())
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeRetry())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeTokenTopicsRetry())
                 .build();
     }
 
     @Bean
-    Queue unsubscribeRetryQueue(){
-        return QueueBuilder.durable(properties.queue().unsubscribeRetry())
+    Queue unsubscribeSingleTokenFromTopicsRetryQueue(){
+        return QueueBuilder.durable(properties.queue().unsubscribeTokenTopicsRetry())
                 .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
                 .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
-                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribe())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeTokenTopics())
                 .build();
     }
 
     @Bean
-    Queue unsubscribeDlqQueue(){
-        return QueueBuilder.durable(properties.queue().unsubscribeDlq())
+    Queue unsubscribeSingleTokenFromTopicsDlqQueue(){
+        return QueueBuilder.durable(properties.queue().unsubscribeTokenTopicsDlq())
                 .build();
     }
 
     @Bean
-    Binding unsubscribeBinding() {
+    Binding unsubscribeSingleTokenFromTopicsBinding() {
         return BindingBuilder
-                .bind(unsubscribeQueue())
+                .bind(unsubscribeSingleTokenFromTopicsQueue())
                 .to(notificationExchange())
-                .with(properties.routing().unsubscribe());
+                .with(properties.routing().unsubscribeTokenTopics());
     }
 
     @Bean
-    Binding unsubscribeRetryBinding() {
+    Binding unsubscribeSingleTokenFromTopicsRetryBinding() {
         return BindingBuilder
-                .bind(unsubscribeRetryQueue())
+                .bind(unsubscribeSingleTokenFromTopicsRetryQueue())
                 .to(notificationExchange())
-                .with(properties.routing().unsubscribeRetry());
+                .with(properties.routing().unsubscribeTokenTopicsRetry());
     }
 
     @Bean
-    Binding unsubscribeDlqBinding() {
+    Binding unsubscribeSingleTokenFromTopicsDlqBinding() {
         return BindingBuilder
-                .bind(unsubscribeDlqQueue())
+                .bind(unsubscribeSingleTokenFromTopicsDlqQueue())
                 .to(notificationExchange())
-                .with(properties.routing().unsubscribeDlq());
+                .with(properties.routing().unsubscribeTokenTopicsDlq());
     }
 
+    // =========================================================
+    // ===== SUBSCRIBE USER TO SINGLE TOPIC =====
+    @Bean
+    Queue subscribeUserToTopicQueue(){
+        return QueueBuilder.durable(properties.queue().subscribeUserTopic())
+                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeUserTopicRetry())
+                .build();
+    }
+
+    @Bean
+    Queue subscribeUserToTopicRetryQueue(){
+        return QueueBuilder.durable(properties.queue().subscribeUserTopicRetry())
+                .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
+                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().subscribeUserTopic())
+                .build();
+    }
+
+    @Bean
+    Queue subscribeUserToTopicDlqQueue(){
+        return QueueBuilder.durable(properties.queue().subscribeUserTopicDlq())
+                .build();
+    }
+
+    @Bean
+    Binding subscribeUserToTopicBinding() {
+        return BindingBuilder
+                .bind(subscribeUserToTopicQueue())
+                .to(notificationExchange())
+                .with(properties.routing().subscribeUserTopic());
+    }
+
+    @Bean
+    Binding subscribeUserToTopicRetryBinding() {
+        return BindingBuilder
+                .bind(subscribeUserToTopicRetryQueue())
+                .to(notificationExchange())
+                .with(properties.routing().subscribeUserTopicRetry());
+    }
+
+    @Bean
+    Binding subscribeUserToTopicDlqBinding() {
+        return BindingBuilder
+                .bind(subscribeUserToTopicDlqQueue())
+                .to(notificationExchange())
+                .with(properties.routing().subscribeUserTopicDlq());
+    }
+
+    // =========================================================
+    // ===== UNSUBSCRIBE USER FROM SINGLE TOPIC =====
+    @Bean
+    Queue unsubscribeUserToTopicQueue(){
+        return QueueBuilder.durable(properties.queue().unsubscribeUserTopic())
+                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeUserTopicRetry())
+                .build();
+    }
+
+    @Bean
+    Queue unsubscribeUserToTopicRetryQueue(){
+        return QueueBuilder.durable(properties.queue().unsubscribeUserTopicRetry())
+                .withArgument(HEADER_MESSAGE_TTL, properties.retry().ttl()) //milisecond
+                .withArgument(HEADER_DEAD_LETTER_EXCHANGE, properties.exchange())
+                .withArgument(HEADER_DEAD_LETTER_ROUTING_KEY, properties.routing().unsubscribeUserTopic())
+                .build();
+    }
+
+    @Bean
+    Queue unsubscribeUserToTopicDlqQueue(){
+        return QueueBuilder.durable(properties.queue().unsubscribeUserTopicDlq())
+                .build();
+    }
+
+    @Bean
+    Binding unsubscribeUserToTopicBinding() {
+        return BindingBuilder
+                .bind(unsubscribeUserToTopicQueue())
+                .to(notificationExchange())
+                .with(properties.routing().unsubscribeUserTopic());
+    }
+
+    @Bean
+    Binding unsubscribeUserToTopicRetryBinding() {
+        return BindingBuilder
+                .bind(unsubscribeUserToTopicRetryQueue())
+                .to(notificationExchange())
+                .with(properties.routing().unsubscribeUserTopicRetry());
+    }
+
+    @Bean
+    Binding unsubscribeUserToTopicDlqBinding() {
+        return BindingBuilder
+                .bind(unsubscribeUserToTopicDlqQueue())
+                .to(notificationExchange())
+                .with(properties.routing().unsubscribeUserTopicDlq());
+    }
 }

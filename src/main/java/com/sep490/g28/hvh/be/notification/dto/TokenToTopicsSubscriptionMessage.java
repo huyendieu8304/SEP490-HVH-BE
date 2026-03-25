@@ -7,7 +7,7 @@ import java.util.Collection;
 
 @Data
 @AllArgsConstructor
-public class TopicSubscriptionMessage {
+public class TokenToTopicsSubscriptionMessage {
     private String token;
     private Collection<String> topics;
 }

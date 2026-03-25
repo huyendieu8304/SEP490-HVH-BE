@@ -76,7 +76,7 @@ public class EventServiceEditEventTest {
         e.setHost(host);
 
         e.setStatus(EEventStatus.EDITING);
-        e.setDateTimes(new ArrayList<>());
+        e.setSessions(new ArrayList<>());
         e.setImages(new ArrayList<>());
         return e;
     }
@@ -92,7 +92,11 @@ public class EventServiceEditEventTest {
 
         r.setAddress("Hà Nội");
 
+        r.setDetailAddress("Tòa nhà Lestat Lioncourt");
+
         r.setAutoApprove(true);
+
+        r.setServingActivity(true);
 
         r.setServedTarget(EServedTarget.ELDERLY);
 

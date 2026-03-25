@@ -89,7 +89,7 @@ public class EventApplicationServiceTest {
         return s;
     }
 
-    private EventApplication app() {
+    private EventApplication application() {
 
         Event event = new Event();
         event.setStatus(EEventStatus.RECRUITING);
@@ -111,19 +111,27 @@ public class EventApplicationServiceTest {
         return app;
     }
 
-    private EventApplication application() {
+    private EventApplication application(EEventApplicationStatus status,
+                                         EEventStatus eventStatus) {
+
+        Event event = new Event();
+        event.setStatus(eventStatus);
+        event.setRecruitmentEndDate(LocalDate.now().minusDays(1)); // default
+
+        EventSession session = new EventSession();
+        session.setEvent(event);
+        session.setApprovedApplicationCount(5);
+
+        Volunteer vol = new Volunteer();
+        vol.setId(UUID.randomUUID());
+        vol.setHonorScore((short) 10);
+
         EventApplication app = new EventApplication();
-        app.setStatus(EEventApplicationStatus.PENDING);
-
-        Volunteer volunteer = new Volunteer();
-        volunteer.setId(UUID.randomUUID());
-        volunteer.setEmail("test@mail.com");
-        volunteer.setPhone("0123");
-        volunteer.setNickname("nick");
-        volunteer.setFullName("name");
-        volunteer.setAvatarUrl(null);
-
-        app.setVolunteer(volunteer);
+        app.setId(UUID.randomUUID());
+        app.setStatus(status);
+        app.setSession(session);
+        app.setVolunteer(vol);
+        app.setSessionDate(LocalDate.now().plusDays(5));
 
         return app;
     }
@@ -139,7 +147,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))
@@ -169,7 +177,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))
@@ -242,7 +250,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.of(new EventApplication()));
 
         assertThrows(AppException.class,
@@ -260,7 +268,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         assertThrows(AppException.class,
@@ -277,7 +285,7 @@ public class EventApplicationServiceTest {
                 .thenReturn(Optional.of(s));
 
         when(eventApplicationRepository
-                .getEventApplicationsByVolunteerIdAndSessionId(any(), any()))
+                .findApplicationPendingOrApproved(any(), any()))
                 .thenReturn(Optional.empty());
 
         when(eventApplicationRepository.findOverlapSession(any(), any(), any(), any()))
@@ -292,7 +300,7 @@ public class EventApplicationServiceTest {
     @Test
     void approveApplication_success() {
 
-        EventApplication app = app();
+        EventApplication app = application();
 
         when(eventApplicationRepository.findById(app.getId()))
                 .thenReturn(Optional.of(app));
@@ -329,7 +337,7 @@ public class EventApplicationServiceTest {
     @Test
     void approveApplication_notPending_shouldThrow() {
 
-        EventApplication app = app();
+        EventApplication app = application();
         app.setStatus(EEventApplicationStatus.APPROVED);
 
         when(eventApplicationRepository.findById(app.getId()))
@@ -343,7 +351,7 @@ public class EventApplicationServiceTest {
     @Test
     void approveApplication_sessionFull_shouldThrow() {
 
-        EventApplication app = app();
+        EventApplication app = application();
         app.getSession().setApprovedApplicationCount(10);
 
         when(eventApplicationRepository.findById(app.getId()))
@@ -357,7 +365,7 @@ public class EventApplicationServiceTest {
     @Test
     void approveApplication_eventNotRecruiting_shouldThrow() {
 
-        EventApplication app = app();
+        EventApplication app = application();
         app.getSession().getEvent().setStatus(EEventStatus.APPROVED_BY_MNG);
 
         when(eventApplicationRepository.findById(app.getId()))
@@ -372,7 +380,7 @@ public class EventApplicationServiceTest {
     @Test
     void rejectApplication_success() {
 
-        EventApplication app = app();
+        EventApplication app = application();
 
         RejectApplicationRequest req = new RejectApplicationRequest();
         req.setRejectionReason("invalid");
@@ -412,7 +420,7 @@ public class EventApplicationServiceTest {
     @Test
     void rejectApplication_notPending_shouldThrow() {
 
-        EventApplication app = app();
+        EventApplication app = application();
         app.setStatus(EEventApplicationStatus.APPROVED);
 
         when(eventApplicationRepository.findById(app.getId()))
@@ -423,6 +431,239 @@ public class EventApplicationServiceTest {
 
         assertThrows(AppException.class,
                 () -> service.rejectApplication(app.getId(), req));
+    }
+
+    //------ cancelApplication -----------------------
+    // TC01
+    @Test
+    void cancelApplication_pending_success() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.PENDING,
+                EEventStatus.RECRUITING
+        );
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        service.cancelApplication(app.getId());
+
+        assertEquals(EEventApplicationStatus.CANCELLED, app.getStatus());
+
+        verify(eventApplicationRepository).save(app);
+
+        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+                eq(app.getVolunteer().getId()),
+                eq(app.getSession().getEvent()),
+                eq(app),
+                eq(false)
+        );
+
+        verifyNoInteractions(volunteerRepository);
+        verifyNoInteractions(eventSessionRepository);
+    }
+
+    // TC02
+    @Test
+    void cancelApplication_approved_minusScore() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.APPROVED,
+                EEventStatus.RECRUITING
+        );
+
+        // today > recruitmentEndDate && < sessionDate
+        app.getSession().getEvent().setRecruitmentEndDate(LocalDate.now().minusDays(2));
+        app.setSessionDate(LocalDate.now().plusDays(2));
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        service.cancelApplication(app.getId());
+
+        assertEquals((short) 7, app.getVolunteer().getHonorScore());
+
+        verify(volunteerRepository).save(app.getVolunteer());
+        verify(eventSessionRepository).save(app.getSession());
+
+        assertEquals(4, app.getSession().getApprovedApplicationCount());
+
+        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+                eq(app.getVolunteer().getId()),
+                any(),
+                eq(app),
+                eq(true)
+        );
+    }
+
+    // TC03
+    @Test
+    void cancelApplication_approved_noMinusScore() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.APPROVED,
+                EEventStatus.RECRUITING
+        );
+
+        // today <= recruitmentEndDate
+        app.getSession().getEvent().setRecruitmentEndDate(LocalDate.now().plusDays(1));
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        service.cancelApplication(app.getId());
+
+        assertEquals((short) 10, app.getVolunteer().getHonorScore());
+
+        verify(eventSessionRepository).save(app.getSession());
+
+        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+                eq(app.getVolunteer().getId()),
+                any(),
+                eq(app),
+                eq(false)
+        );
+    }
+
+    // TC04
+    @Test
+    void cancelApplication_notExist_shouldThrow() {
+
+        when(eventApplicationRepository.findById(any()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.cancelApplication(UUID.randomUUID()));
+    }
+
+    // TC05
+    @Test
+    void cancelApplication_eventNotAllowed_shouldThrow() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.PENDING,
+                EEventStatus.CANCELLED // giả sử không cho cancel
+        );
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        assertThrows(AppException.class,
+                () -> service.cancelApplication(app.getId()));
+    }
+
+    // TC06
+    @Test
+    void cancelApplication_alreadyCancelled_shouldThrow() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.CANCELLED,
+                EEventStatus.RECRUITING
+        );
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        assertThrows(AppException.class,
+                () -> service.cancelApplication(app.getId()));
+    }
+
+    // TC07
+    @Test
+    void cancelApplication_rejected_shouldThrow() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.REJECTED,
+                EEventStatus.RECRUITING
+        );
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        assertThrows(AppException.class,
+                () -> service.cancelApplication(app.getId()));
+    }
+
+    // TC08
+    @Test
+    void cancelApplication_minusScore_exactCondition() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.APPROVED,
+                EEventStatus.RECRUITING
+        );
+
+        LocalDate today = LocalDate.now();
+
+        app.getSession().getEvent()
+                .setRecruitmentEndDate(today.minusDays(1)); // today > recruitmentEndDate
+
+        app.setSessionDate(today.plusDays(1)); // today < sessionDate
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        service.cancelApplication(app.getId());
+
+        assertEquals((short) 7, app.getVolunteer().getHonorScore());
+
+        verify(volunteerRepository).save(app.getVolunteer());
+
+        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+                eq(app.getVolunteer().getId()),
+                any(),
+                eq(app),
+                eq(true)
+        );
+    }
+
+    // TC09
+    @Test
+    void cancelApplication_todayEqualsSessionDate_shouldThrow() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.APPROVED,
+                EEventStatus.ONGOING
+        );
+
+        LocalDate today = LocalDate.now();
+
+        app.getSession().getEvent()
+                .setRecruitmentEndDate(today.minusDays(2));
+
+        app.setSessionDate(today); // today == sessionDate
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        assertThrows(AppException.class,
+                () -> service.cancelApplication(app.getId()));
+    }
+
+    // TC10
+    @Test
+    void cancelApplication_todayEqualsRecruitmentEndDate_noMinus() {
+
+        EventApplication app = application(
+                EEventApplicationStatus.APPROVED,
+                EEventStatus.RECRUITING
+        );
+
+        LocalDate today = LocalDate.now();
+
+        app.getSession().getEvent()
+                .setRecruitmentEndDate(today); // today == recruitmentEndDate
+
+        app.setSessionDate(today.plusDays(2));
+
+        when(eventApplicationRepository.findById(app.getId()))
+                .thenReturn(Optional.of(app));
+
+        service.cancelApplication(app.getId());
+
+        assertEquals((short)10, app.getVolunteer().getHonorScore());
+
+        verify(volunteerRepository, never()).save(any());
     }
 
     //----- getRegisteredParticipants --------------------------
