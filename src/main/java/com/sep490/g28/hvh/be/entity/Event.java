@@ -65,6 +65,9 @@ public class Event {
     @Column(name = "auto_approve", nullable = false)
     private boolean autoApprove; //1: yes, 0: no
 
+     @Column(name = "serving_activity", nullable = false)
+    private boolean servingActivity; //1: yes, 0: no
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_sub_domain_id", referencedColumnName = "id", nullable = false)
     private ActivitySubDomain activitySubDomain;

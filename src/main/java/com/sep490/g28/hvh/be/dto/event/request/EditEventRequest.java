@@ -48,6 +48,9 @@ public class EditEventRequest {
     @NotNull(message = "INVALID_EVENT_AUTO_APPROVE")
     Boolean autoApprove;
 
+    @NotNull(message = "INVALID_EVENT_SERVING_ACTIVITY")
+    Boolean servingActivity;
+
     @NotNull(message = "INVALID_EVENT_SUBDOMAIN_ID")
     @Positive(message = "INVALID_EVENT_SUBDOMAIN_ID")
     Short activitySubDomainId;
