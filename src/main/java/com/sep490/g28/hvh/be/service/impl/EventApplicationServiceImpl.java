@@ -152,7 +152,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         notificationService.subscribeUserToTopicOfEvent(eventApplication.getVolunteer().getId(), event.getId());
 
         //send notification to vol
-        notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
+        notificationService.sendEventApplicationApprovedNotification(eventApplication.getVolunteer().getId(), event, eventApplication);
         log.info("Approved event application eventApplicationId={}", eventApplication.getId());
     }
 
@@ -175,7 +175,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Event event = eventApplication.getSession().getEvent();
 
         //send notification to vol
-        notificationService.sendEventApplicationRejected(
+        notificationService.sendEventApplicationRejectedNotification(
                 eventApplication.getVolunteer().getId(),
                 event,
                 eventApplication,
@@ -243,7 +243,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         notificationService.unsubscribeUserFromTopicOfEvent(currentUserProvider.getId(), event.getId());
 
         //send notification to the volunteer
-        notificationService.sendEventApplicationCancelledSuccessfully(volunteer.getId(), event, eventApplication, isMinusScore);
+        notificationService.sendEventApplicationCancelledSuccessfullyNotification(volunteer.getId(), event, eventApplication, isMinusScore);
         log.info("Volunteer cancelled event application eventApplicationId={}", eventApplication.getId());
     }
 

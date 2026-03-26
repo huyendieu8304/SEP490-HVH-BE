@@ -333,7 +333,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationApproved(UUID volunteerId, Event event, EventApplication application) {
+    public void sendEventApplicationApprovedNotification(UUID volunteerId, Event event, EventApplication application) {
         //send notification to host
         Notification notification = new Notification();
 
@@ -353,7 +353,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason) {
+    public void sendEventApplicationRejectedNotification(UUID volunteerId, Event event, EventApplication application, String rejectionReason) {
         //send notification to volunteer
         Notification notification = new Notification();
 
@@ -377,7 +377,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationCancelledSuccessfully(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
+    public void sendEventApplicationCancelledSuccessfullyNotification(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
         //send notification to volunteer
         Notification notification = new Notification();
 
