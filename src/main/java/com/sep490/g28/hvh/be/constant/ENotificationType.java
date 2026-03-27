@@ -21,4 +21,5 @@ public enum ENotificationType {
     VOL_APPLICATION_CANCELLED, //send to vol
 
     VOL_EVENT_ANNOUNCEMENT,
+    VOL_EVENT_CANCELLED_BY_HOST,
 }
