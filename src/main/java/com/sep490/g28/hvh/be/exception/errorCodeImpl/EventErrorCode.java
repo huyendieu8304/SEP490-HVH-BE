@@ -35,9 +35,12 @@ public enum EventErrorCode implements ErrorCode {
 
     EVENT_APPLICATION_NOT_EXISTED(7019, "Event application not found", HttpStatus.NOT_FOUND),
     EVENT_APPLICATION_NOT_PENDING(7020, "Đơn đăng kí không ở trong trạng thái chờ phê duyệt", HttpStatus.CONFLICT),
-    EVENT_APPLICATION_CANNOT_CANCEL(7021, "Đơn đăng kí ở trong trạng thái không hủy được", HttpStatus.CONFLICT),
+    EVENT_APPLICATION_CANNOT_CANCEL(7021, "Đơn đăng kí đang ở trong trạng thái không được hủy", HttpStatus.CONFLICT),
 
-    EVENT_NOTIFICATION_CANNOT_SENT(7022, "Trạng thái của sự kiện không cho phép host gửi thông báo", HttpStatus.CONFLICT),
+    EVENT_ANNOUNCEMENT_CANNOT_SENT(7022, "Trạng thái của sự kiện không cho phép host gửi thông báo", HttpStatus.CONFLICT),
+
+    EVENT_CANNOT_CANCEL(7023, "Sự kiện đang ở trong trạng thái không được hủy", HttpStatus.CONFLICT),
+
     ;
 
     private final int code;

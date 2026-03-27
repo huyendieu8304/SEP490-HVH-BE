@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
@@ -12,6 +13,7 @@ import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.ActivityDomainErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
+import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.EventRepository;
@@ -49,12 +51,15 @@ public class EventServiceImpl implements EventService {
     VolunteerRepository volunteerRepository;
     VolunteerSavedEventRepository volunteerSavedEventRepository;
     OrganizationManagerRepository organizationManagerRepository;
+    OrganizationRepository organizationRepository;
+    EventApplicationRepository eventApplicationRepository;
 
     StorageService storageService;
 
     EventImageService eventImageService;
     EventSessionService eventSessionService;
     NotificationService notificationService;
+    EmailService emailService;
 
     CurrentUserProvider currentUserProvider;
 
@@ -1053,11 +1058,57 @@ public class EventServiceImpl implements EventService {
 
         //host can only send notification to registered Volunteer when the event is in status UPCOMING and ONGOING
         if (!(event.getStatus().equals(EEventStatus.UPCOMING) || event.getStatus().equals(EEventStatus.ONGOING))){
-            throw new AppException(EventErrorCode.EVENT_NOTIFICATION_CANNOT_SENT);
+            throw new AppException(EventErrorCode.EVENT_ANNOUNCEMENT_CANNOT_SENT);
         }
 
         //send notification
         notificationService.sendNotificationToVolunteersOfEvent(event.getId(), request);
+    }
+
+    @Transactional
+    @Override
+    public void cancelEventByHost(UUID eventId, CancelEventRequest request) {
+        //find the event
+        //todo test method nay
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check the event status cancelable?
+        if (!EEventStatus.cancellable(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
+        }
+
+        //update event status to cancelled
+        event.setStatus(EEventStatus.CANCELLED);
+        eventRepository.save(event);
+
+        //deduct the credit hour of the organization by 3
+        Organization organization = event.getOrganization();
+        organization.setCreditHour(organization.getCreditHour()-3);
+        organizationRepository.save(organization);
+
+        //update all the applications of the volunteer to CANCELLED status
+        List<EventSession> eventSessions = event.getSessions();
+        List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
+        List<EventApplication> eventApplications =  eventApplicationRepository.cancelApplicationsBySessions(sessionIds);
+
+        //send email to the org manager
+        OrganizationManager manager = organization.getOrganizationManager();
+        Host host = event.getHost();
+        emailService.sendEventCancelledEmail(
+                manager.getEmail(),
+                manager.getFullName(),
+                organization.getName(),
+                event.getName(),
+                host.getFullName(),
+                host.getEmail(),
+                request.getReason()
+        );
+
+        //send notification to all the volunteer that applied to the event
+        notificationService.sentEventCancelledByHostNotification(eventApplications, event.getName(), request.getReason());
+
     }
 
 }

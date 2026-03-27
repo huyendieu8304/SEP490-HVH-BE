@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.service;
 
+import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
@@ -56,4 +57,6 @@ public interface EventService {
     EventDetailsResponseForHost getEventDetailsByHost(UUID eventId);
 
     void announceVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
+
+    void cancelEventByHost(UUID eventId, CancelEventRequest request);
 }

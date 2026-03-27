@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.controller;
 
+import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
@@ -261,6 +262,16 @@ public class EventController {
     ) {
         eventService.announceVolunteersOfEvent(eventId, request);
         return ResponseEntity.ok().build();
+    }
 
+    //todo test method nay
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PostMapping("/host/events/{eventId}/cancel")
+    public ResponseEntity<Void> cancelEvent(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid CancelEventRequest request
+    ) {
+        eventService.cancelEventByHost(eventId, request);
+        return ResponseEntity.ok().build();
     }
 }
