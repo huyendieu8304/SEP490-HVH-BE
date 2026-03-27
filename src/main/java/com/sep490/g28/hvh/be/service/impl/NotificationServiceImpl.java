@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -424,26 +425,51 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sentEventCancelledByHostNotification(List<UUID> volunteerIds, UUID eventId, String eventName, String cancelReason) {
-        //send notification to volunteer
-        //TODO tìm cách xử lí batch
-        for (UUID volId : volunteerIds) {
+    public void sentEventCancelledByHostNotification(List<EventApplication> eventApplications, String eventName, String cancelReason) {
+
+        //ListNotification
+        List<Notification> notifications = new ArrayList<>();
+        for (EventApplication application : eventApplications) {
             Notification notification = new Notification();
             notification.setTitle("Sự kiện đã bị hủy bởi Host");
-            notification.setBody(String.format("Sự kiện %s đã bị Host hủy và không tiếp tục diễn ra với lí do: %s. " +
-                    "Đơn đăng kí tham gia sự kiện của bạn sẽ được tự động hủy và sẽ không ảnh hưởng đến số điểm hiện tại bạn đang có.",
-                    eventName, cancelReason));
+            notification.setBody(String.format(
+                    "Sự kiện %s đã bị Host hủy và không tiếp tục diễn ra với lí do: %s. " +
+                            "Đơn đăng kí tham gia sự kiện vào ngày %s của bạn sẽ được tự động hủy và sẽ không ảnh hưởng đến số điểm hiện tại bạn đang có.",
+                    eventName, cancelReason, application.getSessionDate().toString()
+            ));
             notification.setData(Map.of(
                     DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_CANCELLED_BY_HOST.name(),
-                    DATA_REF_ID_KEY, eventId.toString(),
-                    DATA_ACTION, ENotificationDataAction.VOL_EVENT_DETAILS.name()
+                    DATA_REF_ID_KEY, application.getId().toString(),
+                    DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
             ));
             notification.setType(ENotificationType.VOL_EVENT_CANCELLED_BY_HOST);
 
-            //save notification
-            notification = saveNotificationForUser(notification, volId);
+            notifications.add(notification);
+        }
 
-            notificationPublisher.enqueueNotification(notification, volId);
+        notifications = notificationRepository.saveAll(notifications);
+
+        //link volunteer to notification
+        List<UserNotification> userNotifications = new ArrayList<>();
+
+        for (int i = 0; i < notifications.size(); i++) {
+            EventApplication app = eventApplications.get(i);
+            Notification noti = notifications.get(i);
+
+            UserNotification un = new UserNotification();
+            un.setNotification(noti);
+            un.setUser(userRepository.getReferenceById(app.getVolunteer().getId()));
+
+            userNotifications.add(un);
+        }
+        userNotificationRepository.saveAll(userNotifications);
+
+        //push notification
+        for (int i = 0; i < notifications.size(); i++) {
+            notificationPublisher.enqueueNotification(
+                    notifications.get(i),
+                    eventApplications.get(i).getVolunteer().getId()
+            );
         }
     }
 
