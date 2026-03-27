@@ -133,6 +133,24 @@ public class RabbitMQEmailService implements EmailService {
                 Xin trân trong cảm ơn!
                 """, orgName, password);
         emailPublisher.enqueue(hostEmail, subject, body);
+    }
+
+    @Override
+    public void sendEventCancelledEmail(String orgManagerEmail, String orgManagerFullName, String organizationName, String eventName, String hostFullName, String hostEmail, String cancelReason) {
+        String subject = "HVH - Sự kiện bị hủy";
+
+        //todo, điều chỉnh lại nội dung mail
+        String body = String.format("""
+                Xin chào %s.
+                Hiện tại sự kiện %s của tổ chức %s đã bị hủy bởi host %s (%s).
+                """,
+                orgManagerFullName,
+                eventName,
+                organizationName,
+                orgManagerFullName,
+                hostEmail
+                );
+        emailPublisher.enqueue(orgManagerEmail, subject, body);
 
     }
 }
