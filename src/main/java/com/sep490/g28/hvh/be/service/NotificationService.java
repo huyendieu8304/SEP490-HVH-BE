@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface NotificationService {
@@ -31,4 +32,6 @@ public interface NotificationService {
     void sendEventApplicationCancelledSuccessfullyNotification(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore);
 
     void sendNotificationToVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
+
+    void sentEventCancelledByHostNotification(List<UUID> volunteerIds, UUID eventId, String eventName, String cancelReason);
 }

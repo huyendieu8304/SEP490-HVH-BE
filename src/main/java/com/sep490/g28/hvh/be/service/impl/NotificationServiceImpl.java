@@ -423,5 +423,29 @@ public class NotificationServiceImpl implements NotificationService {
         notificationPublisher.enqueueNotification(notificationForVolunteers, null);
     }
 
+    @Override
+    public void sentEventCancelledByHostNotification(List<UUID> volunteerIds, UUID eventId, String eventName, String cancelReason) {
+        //send notification to volunteer
+        //TODO tìm cách xử lí batch
+        for (UUID volId : volunteerIds) {
+            Notification notification = new Notification();
+            notification.setTitle("Sự kiện đã bị hủy bởi Host");
+            notification.setBody(String.format("Sự kiện %s đã bị Host hủy và không tiếp tục diễn ra với lí do: %s. " +
+                    "Đơn đăng kí tham gia sự kiện của bạn sẽ được tự động hủy và sẽ không ảnh hưởng đến số điểm hiện tại bạn đang có.",
+                    eventName, cancelReason));
+            notification.setData(Map.of(
+                    DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_CANCELLED_BY_HOST.name(),
+                    DATA_REF_ID_KEY, eventId.toString(),
+                    DATA_ACTION, ENotificationDataAction.VOL_EVENT_DETAILS.name()
+            ));
+            notification.setType(ENotificationType.VOL_EVENT_CANCELLED_BY_HOST);
+
+            //save notification
+            notification = saveNotificationForUser(notification, volId);
+
+            notificationPublisher.enqueueNotification(notification, volId);
+        }
+    }
+
 
 }
