@@ -320,4 +320,14 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 page.hasNext()
         );
     }
+
+    @Override
+    public List<EventApplication> cancelAllApplicationsToEvent(Event event) {
+        //update all the applications of the volunteer to CANCELLED status
+        List<EventSession> eventSessions = event.getSessions();
+        List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
+        List<EventApplication> eventApplications =  eventApplicationRepository.cancelApplicationsBySessions(sessionIds);
+        log.info("All the applications of volunteer has been cancelled");
+        return eventApplications;
+    }
 }

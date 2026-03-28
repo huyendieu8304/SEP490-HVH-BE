@@ -1081,24 +1081,21 @@ public class EventServiceImpl implements EventService {
         //update event status to cancelled
         event.setStatus(EEventStatus.CANCELLED);
         eventRepository.save(event);
-        log.info("The status of event set to CANCELLED, eventId={}", eventId);
 
         //deduct the credit hour of the organization by 3
         Organization organization = event.getOrganization();
-        organization.setCreditHour(organization.getCreditHour()-3);
-        organizationRepository.save(organization);
-        log.info("The credit hour of organization was deducted by 3, organizationId={}", organization.getId());
+        organizationService.deductCreditHourOfOrganization(organization, 3);
 
-        //update all the applications of the volunteer to CANCELLED status
-        List<EventSession> eventSessions = event.getSessions();
-        List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
-        List<EventApplication> eventApplications =  eventApplicationRepository.cancelApplicationsBySessions(sessionIds);
-        log.info("All the  applications of volunteer has been cancelled");
+        //cancel all applications of volunteer to the event
+        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsToEvent(event);
+
+        //send notification to all the volunteer that applied to the event
+        notificationService.sentEventCancelledByHostNotification(eventApplications, event.getName(), request.getReason());
 
         //send email to the org manager
         OrganizationManager manager = organization.getOrganizationManager();
         Host host = event.getHost();
-        emailService.sendEventCancelledEmail(
+        emailService.sendEventCancelledByHostEmail(
                 manager.getEmail(),
                 manager.getFullName(),
                 organization.getName(),

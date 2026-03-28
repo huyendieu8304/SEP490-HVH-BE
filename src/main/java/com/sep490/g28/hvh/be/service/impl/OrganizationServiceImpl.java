@@ -643,4 +643,11 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .note(note.toString())
                 .build();
     }
+
+    @Override
+    public void deductCreditHourOfOrganization(Organization organization, int numberOfHourDeduct) {
+        organization.setCreditHour(organization.getCreditHour()- numberOfHourDeduct);
+        organizationRepository.save(organization);
+        log.info("The credit hour of organization was deducted by 3, organizationId={}", organization.getId());
+    }
 }
