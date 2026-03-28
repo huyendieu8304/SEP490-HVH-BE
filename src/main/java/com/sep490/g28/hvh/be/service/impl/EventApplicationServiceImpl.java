@@ -138,7 +138,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         //check the status of the event
         Event event = eventSession.getEvent();
-        if (event.getStatus() != EEventStatus.RECRUITING){
+        if (EEventStatus.canEventApplicationBeProcessedByHost(event.getStatus())){
             throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
         }
 
@@ -168,6 +168,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
         }
 
+        //todo liệu có cần kiểm tra thông tin status của event ở chỗ này không?
+        //todo có khi thêm cron job, khi event chuyển status qua ONGOING cái là tự động reject hết đơn đăng kí luôn
         eventApplication.setStatus(EEventApplicationStatus.REJECTED);
         eventApplicationRepository.save(eventApplication);
         log.info("Reject event application eventApplicationId={}", eventApplication.getId());
@@ -196,7 +198,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Volunteer volunteer = eventApplication.getVolunteer();
 
         //whether the event status allow volunteer to cancel application
-        if (!EEventStatus.volunteerCanCancelledApplication(event.getStatus())){
+        if (!EEventStatus.canEventApplicationBeCancelledByVolunteer(event.getStatus())){
             throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
         }
 

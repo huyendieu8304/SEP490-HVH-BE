@@ -1,7 +1,6 @@
 package com.sep490.g28.hvh.be.notification.entity;
 
 import com.sep490.g28.hvh.be.constant.ENotificationType;
-import com.sep490.g28.hvh.be.entity.User;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;

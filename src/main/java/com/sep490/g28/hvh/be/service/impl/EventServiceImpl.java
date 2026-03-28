@@ -236,7 +236,7 @@ public class EventServiceImpl implements EventService {
 
     private EditEventResponse editEvent(EditEventRequest request, Event event, EEventStatus eventStatus) {
         EditEventResponse response = new EditEventResponse();
-        if (!EEventStatus.editable(event.getStatus()))
+        if (!EEventStatus.canEventBeEdited(event.getStatus()))
             //event is not edit table
             throw new AppException(EventErrorCode.EVENT_NOT_EDITABLE);
 
@@ -1071,7 +1071,7 @@ public class EventServiceImpl implements EventService {
         );
 
         //check the event status cancelable?
-        if (!EEventStatus.cancellable(event.getStatus())) {
+        if (!EEventStatus.canEventBeCancelled(event.getStatus())) {
             throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
         }
 
@@ -1113,7 +1113,7 @@ public class EventServiceImpl implements EventService {
         );
 
         //check the event status cancelable?
-        if (!EEventStatus.cancellable(event.getStatus())) {
+        if (!EEventStatus.canEventBeCancelled(event.getStatus())) {
             throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
         }
 
