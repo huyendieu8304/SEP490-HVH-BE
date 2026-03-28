@@ -18,10 +18,7 @@ import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.*;
-import com.sep490.g28.hvh.be.service.EventSessionService;
-import com.sep490.g28.hvh.be.service.EventImageService;
-import com.sep490.g28.hvh.be.service.EventService;
-import com.sep490.g28.hvh.be.service.NotificationService;
+import com.sep490.g28.hvh.be.service.*;
 import com.sep490.g28.hvh.be.util.GeoUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -51,13 +48,13 @@ public class EventServiceImpl implements EventService {
     VolunteerRepository volunteerRepository;
     VolunteerSavedEventRepository volunteerSavedEventRepository;
     OrganizationManagerRepository organizationManagerRepository;
-    OrganizationRepository organizationRepository;
-    EventApplicationRepository eventApplicationRepository;
 
     StorageService storageService;
 
     EventImageService eventImageService;
     EventSessionService eventSessionService;
+    EventApplicationService eventApplicationService;
+    OrganizationService organizationService;
     NotificationService notificationService;
     EmailService emailService;
 
@@ -1104,11 +1101,48 @@ public class EventServiceImpl implements EventService {
                 host.getEmail(),
                 request.getReason()
         );
-
-        //send notification to all the volunteer that applied to the event
-        notificationService.sentEventCancelledByHostNotification(eventApplications, event.getName(), request.getReason());
+        log.info("The event was cancelled by host, eventId={}", eventId);
 
     }
+
+    @Override
+    public void cancelEventByAdmin(UUID eventId, CancelEventRequest request) {
+        //find the event
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check the event status cancelable?
+        if (!EEventStatus.cancellable(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
+        }
+
+        //update event status to cancelled
+        event.setStatus(EEventStatus.CANCELLED);
+        eventRepository.save(event);
+
+        //deduct the credit hour of the organization by 3
+        Organization organization = event.getOrganization();
+        organizationService.deductCreditHourOfOrganization(organization, 3);
+
+        //cancel all applications of volunteer to the event
+        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsToEvent(event);
+
+        //send notification to all the volunteer that applied to the event
+        notificationService.sentEventCancelledByAdminNotification(eventApplications, event.getName(), request.getReason());
+
+        //send email to the org manager
+        OrganizationManager manager = organization.getOrganizationManager();
+        emailService.sendEventCancelledByAdminEmail(
+                manager.getEmail(),
+                manager.getFullName(),
+                organization.getName(),
+                event.getName(),
+                request.getReason()
+        );
+        log.info("The event was cancelled by admin, eventId={}", eventId);
+    }
+
 
 }
 

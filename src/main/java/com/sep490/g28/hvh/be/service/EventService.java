@@ -59,4 +59,6 @@ public interface EventService {
     void announceVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
 
     void cancelEventByHost(UUID eventId, CancelEventRequest request);
+
+    void cancelEventByAdmin(UUID eventId, CancelEventRequest request);
 }
