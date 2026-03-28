@@ -264,9 +264,9 @@ public class EventController {
         return ResponseEntity.ok().build();
     }
 
-    //todo test method nay
+
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
-    @PostMapping("/host/events/{eventId}/cancel")
+    @PutMapping("/host/events/{eventId}/cancel")
     public ResponseEntity<Void> cancelEvent(
             @PathVariable java.util.UUID eventId,
             @RequestBody @Valid CancelEventRequest request
