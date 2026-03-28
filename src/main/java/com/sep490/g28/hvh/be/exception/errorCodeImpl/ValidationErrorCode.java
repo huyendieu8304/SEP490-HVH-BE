@@ -71,7 +71,11 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_NOTIFICATION_BODY(2047, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
 
     INVALID_EVENT_REJECT_REASON(2048, "Lí do từ chối phê duyệt sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
-    INVALID_EVENT_CANCEL_REASON(2048, "Lí do hủy sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_CANCEL_REASON(2049, "Lí do hủy sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+
+    INVALID_EVENT_DESCRIPTION(2050, "Mô tả sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+    INVALID_LAT_LNG(2051, "Địa điểm check in phải có cả kinh độ và vĩ độ.", HttpStatus.BAD_REQUEST),
+
     ;
 
     private final int code;
