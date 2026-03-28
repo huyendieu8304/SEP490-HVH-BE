@@ -22,4 +22,5 @@ public enum ENotificationType {
 
     VOL_EVENT_ANNOUNCEMENT,
     VOL_EVENT_CANCELLED_BY_HOST,
+    VOL_EVENT_CANCELLED_BY_AD,
 }

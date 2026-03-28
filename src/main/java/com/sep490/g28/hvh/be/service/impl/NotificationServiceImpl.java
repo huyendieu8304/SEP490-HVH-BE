@@ -478,11 +478,11 @@ public class NotificationServiceImpl implements NotificationService {
                 eventName, cancelReason, application.getSessionDate().toString()
         ));
         notification.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_CANCELLED_BY_HOST.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_CANCELLED_BY_AD.name(),
                 DATA_REF_ID_KEY, application.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
         ));
-        notification.setType(ENotificationType.VOL_EVENT_CANCELLED_BY_HOST);
+        notification.setType(ENotificationType.VOL_EVENT_CANCELLED_BY_AD);
         return notification;
     }
 
