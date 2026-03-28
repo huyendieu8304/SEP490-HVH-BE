@@ -90,13 +90,21 @@ public interface EmailService {
      */
     void sendCreateHostAccountEmail(String orgName, String hostEmail, String password);
 
-    void sendEventCancelledEmail(
+    void sendEventCancelledByHostEmail(
             String orgManagerEmail,
             String orgManagerFullName,
             String organizationName,
             String eventName,
             String hostFullName,
             String hostEmail,
+            String cancelReason
+    );
+
+    void sendEventCancelledByAdminEmail(
+            String orgManagerEmail,
+            String orgManagerFullName,
+            String organizationName,
+            String eventName,
             String cancelReason
     );
 }

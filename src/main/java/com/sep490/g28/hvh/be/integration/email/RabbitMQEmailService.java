@@ -152,7 +152,7 @@ public class RabbitMQEmailService implements EmailService {
     }
 
     @Override
-    public void sendEventCancelledEmail(String orgManagerEmail, String orgManagerFullName, String organizationName, String eventName, String hostFullName, String hostEmail, String cancelReason) {
+    public void sendEventCancelledByHostEmail(String orgManagerEmail, String orgManagerFullName, String organizationName, String eventName, String hostFullName, String hostEmail, String cancelReason) {
         String subject = "HVH - Sự kiện bị hủy";
         String body = String.format("""
                 Xin chào %s.
@@ -163,11 +163,28 @@ public class RabbitMQEmailService implements EmailService {
                 orgManagerFullName,
                 eventName,
                 organizationName,
-                orgManagerFullName,
+                hostFullName,
                 hostEmail
                 );
         emailPublisher.enqueue(orgManagerEmail, subject, body);
-        log.info("Email inform organization manager about the event cancellation was pushed to message queue, toEmail={}", orgManagerEmail);
+        log.info("Email inform organization manager about the event cancellation  by host was pushed to message queue, toEmail={}", orgManagerEmail);
+    }
 
+    @Override
+    public void sendEventCancelledByAdminEmail(String orgManagerEmail, String orgManagerFullName, String organizationName, String eventName, String cancelReason) {
+        String subject = "HVH - Sự kiện bị hủy";
+        String body = String.format("""
+                Xin chào %s.
+                Hiện tại sự kiện %s của tổ chức %s đã bị hủy bởi quản trị viên với lí do: %s. \\n
+                Do sự kiện của bạn đã bước vào giai đoạn tiến hành cho nên theo quy định của nền tảng, chúng tôi sẽ trừ 3 giờ tín nhiệm của tổ chức bạn.
+                Rất tiếc sự kiện của bạn đã phải dừng lại. Chúng tôi mong rằng vẫn có thể đồng hành cùng tổ chức bạn trong những sự kiện sắp tới.
+                """,
+                orgManagerFullName,
+                eventName,
+                organizationName,
+                cancelReason
+        );
+        emailPublisher.enqueue(orgManagerEmail, subject, body);
+        log.info("Email inform organization manager about the event cancellation by admin was pushed to message queue, toEmail={}", orgManagerEmail);
     }
 }
