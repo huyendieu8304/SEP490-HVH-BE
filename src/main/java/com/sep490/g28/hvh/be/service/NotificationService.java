@@ -34,4 +34,5 @@ public interface NotificationService {
     void sendNotificationToVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
 
     void sentEventCancelledByHostNotification(List<EventApplication> eventApplications, String eventName, String cancelReason);
+    void sentEventCancelledByAdminNotification(List<EventApplication> eventApplications, String eventName, String cancelReason);
 }
