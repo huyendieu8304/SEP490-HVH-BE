@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
+import com.sep490.g28.hvh.be.dto.event.request.CheckEventCheckInCodeRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
@@ -12,10 +13,7 @@ import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
-import com.sep490.g28.hvh.be.repository.EventRepository;
-import com.sep490.g28.hvh.be.repository.EventSessionRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerSavedEventRepository;
+import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +49,9 @@ public class EventServiceTest {
 
     @Mock
     EventSessionRepository eventSessionRepository;
+
+    @Mock
+    EventApplicationRepository eventApplicationRepository;
 
     @Mock
     CurrentUserProvider currentUserProvider;
@@ -126,6 +127,12 @@ public class EventServiceTest {
     private SaveEventRequest validSaveEventRequest() {
         SaveEventRequest req = new SaveEventRequest();
         req.setEventId(eventId.toString());
+        return req;
+    }
+
+    private CheckEventCheckInCodeRequest validCheckEventCheckInCodeRequest() {
+        CheckEventCheckInCodeRequest req = new CheckEventCheckInCodeRequest();
+        req.setCheckInCode("123456");
         return req;
     }
 
@@ -936,4 +943,243 @@ public class EventServiceTest {
         verifyNoInteractions(notificationService);
     }
 
+    // ==== checkEventCheckInCode ===================================
+    // ===== TC1 =====
+    @Test
+    void checkEventCheckInCode_success() {
+
+        UUID sessionId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEvent(event);
+        session.setCheckInCode("123456");
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        CheckEventCheckInCodeResponse response =
+                eventService.checkEventCheckInCode(request);
+
+        assertEquals(eventId, response.getEventId());
+        assertEquals(sessionId, response.getEventSessionId());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void checkEventCheckInCode_application_not_exist() {
+
+        UUID volunteerId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(null);
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC3 =====
+    @Test
+    void checkEventCheckInCode_session_not_exist() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventApplication app = new EventApplication();
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.empty());
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC4 =====
+    @Test
+    void checkEventCheckInCode_session_not_started() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().plusHours(1)); // future
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC5 =====
+    @Test
+    void checkEventCheckInCode_event_not_exist() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEvent(event);
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.empty());
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC6 =====
+    @Test
+    void checkEventCheckInCode_event_not_ongoing() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setStatus(EEventStatus.UPCOMING); // not ONGOING
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEvent(event);
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC7 =====
+    @Test
+    void checkEventCheckInCode_code_not_match() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setStatus(EEventStatus.ONGOING);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEvent(event);
+        session.setCheckInCode("234567");
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.checkEventCheckInCode(request)
+        );
+    }
 }
