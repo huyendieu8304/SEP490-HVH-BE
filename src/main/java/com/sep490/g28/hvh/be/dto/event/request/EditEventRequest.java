@@ -37,10 +37,12 @@ public class EditEventRequest {
     @RequiredField(fieldName = "Mô tả sự kiện")
     String description;
 
+    @NotNull (message = "INVALID_ADDRESS")
     @NotBlank (message = "INVALID_ADDRESS")
     @ValidWard
     String address;
 
+    @NotNull(message = "INVALID_EVENT_DETAIL_ADDRESS")
     @NotBlank(message = "INVALID_EVENT_DETAIL_ADDRESS")
     @Length(max = 200, message = "INVALID_EVENT_DETAIL_ADDRESS")
     String detailAddress;
@@ -70,6 +72,8 @@ public class EditEventRequest {
     List<EditEventSessionRequest> eventSessions;
 
     //--------------------------------------------------------
+    //todo, sửa thành checkInLocationLat
+    // checkin location
     @NotNull(message = "INVALID_LATITUDE")
     @ValidLatitude
     Double checkInPlaceLat;
