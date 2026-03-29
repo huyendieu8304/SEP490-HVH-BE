@@ -102,6 +102,9 @@ public class Volunteer {
     @Column(name = "honor_score", nullable = false)
     private Short honorScore = 0;
 
+    @Column(name = "device_id", nullable = true)
+    private String deviceId;
+
     @PrePersist
     void prePersist() {
         if (creditScore == null) creditScore = 0;

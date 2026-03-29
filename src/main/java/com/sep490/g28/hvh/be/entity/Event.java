@@ -113,9 +113,6 @@ public class Event {
     @Column(name = "check_in_accuracy_meters", nullable = false)
     private Double checkInAccuracyMeters;
 
-    @Column(name = "check_in_code", length = 6)
-    private String checkInCode;
-
     //--------------------------------------------------------
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

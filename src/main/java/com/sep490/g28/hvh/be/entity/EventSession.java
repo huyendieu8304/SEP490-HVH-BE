@@ -55,6 +55,9 @@ public class EventSession {
     @Column(name = "approved_application_count", nullable = false)
     private int approvedApplicationCount = 0; //increase when an application is approved
 
+    @Column(name = "check_in_code", length = 6)
+    private String checkInCode;
+
     //--------------------------------------------------------
     @CreationTimestamp
     @Column(
