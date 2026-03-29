@@ -1,9 +1,8 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.constant.EEventStatus;
-import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
@@ -1132,6 +1131,98 @@ public class EventServiceImpl implements EventService {
         log.info("The event was cancelled by admin, eventId={}", eventId);
     }
 
+    @Override
+    public UpdateEventResponse updateEvent(UUID eventId, UpdateEventRequest request) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
 
+        //check event status
+        if (!EEventStatus.canEventBeUpdated(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_UPDATE);
+        }
+
+        //handle update information, map request to payload
+        boolean updateCritical = false;
+        UpdateEventPayload updatePayload = new UpdateEventPayload();
+        UpdateEventResponse response = new UpdateEventResponse();
+
+        //check update event sessions and other start date, end recruitment date and end date
+        updateCritical = eventSessionService.checkAndResolveUpdateEventDateTime(event, request, updatePayload);
+
+        //map image
+        if (request.getUpdateImages() != null && !request.getUpdateImages().isEmpty()) {
+            updateCritical = true;
+            response.setUploadUrls(eventImageService.resolveUpdateEventImages(event, request.getUpdateImages(), updatePayload));
+        }
+        if (request.getDescription() != null
+                && !request.getDescription().isEmpty()
+                && !request.getDescription().equalsIgnoreCase(event.getDescription()))
+        {
+            updatePayload.setDescription(request.getDescription());
+        }
+
+        if (request.getAutoApprove() != null
+                && !request.getAutoApprove().equals(event.isAutoApprove())
+        ) {
+            updatePayload.setAutoApprove(request.getAutoApprove());
+        }
+
+        if (request.getServingPlaceType() != null
+                && !request.getServingPlaceType().equals(event.getServingPlaceType())
+        ) {
+            updatePayload.setServingPlaceType(request.getServingPlaceType());
+        }
+
+        if (request.getAddress() != null
+                && !request.getAddress().isEmpty()
+                && !request.getAddress().equals(event.getAddress())
+        ) {
+            updatePayload.setAddress(request.getAddress());
+            updateCritical = true;
+        }
+
+        if (request.getDetailAddress() != null
+        && !request.getDetailAddress().isEmpty()
+                && !request.getDetailAddress().equalsIgnoreCase(event.getDetailAddress())
+        ) {
+            updatePayload.setDetailAddress(request.getDetailAddress());
+            updateCritical = true;
+        }
+
+        if (request.getCheckInLocationLat() != null
+                && request.getCheckInLocationLng() != null
+                && !request.getCheckInLocationLat().equals(GeoUtils.getLat(event.getCheckInLocation()))
+                && !request.getCheckInLocationLng().equals(GeoUtils.getLng(event.getCheckInLocation()))
+        )  {
+            updatePayload.setCheckInLocationLat(request.getCheckInLocationLat());
+            updatePayload.setCheckInLocationLng(request.getCheckInLocationLng());
+            updateCritical = true;
+        }
+
+        if (request.getCheckInLocationAccuracyMeters() != null
+            && (double) request.getCheckInLocationAccuracyMeters() != event.getCheckInAccuracyMeters()
+        ) {
+            updatePayload.setCheckInLocationAccuracyMeters(request.getCheckInLocationAccuracyMeters());
+            updateCritical = true;
+        }
+
+        //set event's update information
+        event.setUpdateEventPayload(updatePayload);
+        event.setUpdateCritical(updateCritical);
+        //set event  status to SUBMITTED
+        event.setStatus(EEventStatus.SUBMITTED);
+        eventRepository.save(event);
+
+        //notify org manager about the update
+        notificationService.sentEventUpdatedByHostNotification(
+                event.getOrganization().getOrganizationManager().getId(),
+                eventId,
+                event.getName()
+        );
+        // todo: should i notify all the volunteer that has been applied to this event
+
+        return response;
+    }
 }
 

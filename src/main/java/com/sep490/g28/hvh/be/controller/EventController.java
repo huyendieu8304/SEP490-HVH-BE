@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.controller;
 import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
@@ -282,5 +283,14 @@ public class EventController {
     ) {
         eventService.cancelEventByAdmin(eventId, request);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PostMapping("/host/events/{eventId}/update")
+    public ResponseEntity<UpdateEventResponse> updateEvent(
+            @PathVariable java.util.UUID eventId,
+            @Valid @RequestBody UpdateEventRequest request
+    ){
+        return ResponseEntity.ok(eventService.updateEvent(eventId, request));
     }
 }

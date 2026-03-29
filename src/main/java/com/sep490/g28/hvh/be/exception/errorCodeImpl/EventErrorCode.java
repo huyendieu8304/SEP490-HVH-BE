@@ -40,6 +40,7 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_ANNOUNCEMENT_CANNOT_SENT(7022, "Trạng thái của sự kiện không cho phép host gửi thông báo", HttpStatus.CONFLICT),
 
     EVENT_CANNOT_CANCEL(7023, "Sự kiện đang ở trong trạng thái không được hủy", HttpStatus.CONFLICT),
+    EVENT_CANNOT_UPDATE(7024, "Sự kiện đang ở trong trạng thái không được cập nhật thông tin", HttpStatus.CONFLICT),
 
     ;
 
