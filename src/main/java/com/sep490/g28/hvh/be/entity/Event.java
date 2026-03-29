@@ -3,12 +3,15 @@ package com.sep490.g28.hvh.be.entity;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.locationtech.jts.geom.Point;
 
@@ -112,6 +115,14 @@ public class Event {
 
     @Column(name = "check_in_accuracy_meters", nullable = false)
     private Double checkInAccuracyMeters;
+
+    //--------------------------------------------------------
+    @Column(name = "update_critical")
+    private Boolean updateCritical;
+
+    @Type(JsonType.class)
+    @Column(name = "update_event_payload", columnDefinition = "jsonb")
+    private UpdateEventPayload updateEventPayload;
 
     //--------------------------------------------------------
     @Enumerated(EnumType.STRING)

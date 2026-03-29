@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.locationtech.jts.geom.Point;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -46,6 +47,18 @@ public class CheckInLog {
 
     @Column(name = "os_version", nullable = false)
     private String osVersion;
+
+    //--------------------------------------------------------
+    /**
+     * geography(Point, 4326)
+     * Save using PostGIS
+     */
+    @Column(
+            name = "check_in_location",
+            nullable = false,
+            columnDefinition = "geography(Point, 4326)"
+    )
+    private Point checkInLocation;
 
     @CreationTimestamp
     @Column(
