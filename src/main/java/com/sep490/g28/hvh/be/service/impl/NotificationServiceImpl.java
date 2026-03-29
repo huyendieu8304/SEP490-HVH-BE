@@ -510,4 +510,22 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+
+    @Override
+    public void sentEventUpdatedByHostNotification(UUID orgManagerId, UUID eventId, String eventName) {
+        Notification notification = new Notification();
+
+        notification.setType(ENotificationType.MNG_EVENT_UPDATED_BY_HOST);
+        notification.setTitle("Sự kiện được cập nhật thông tin");
+        notification.setBody(String.format("Sự kiện \"%s\" vừa được cập nhật thông tin và cần xác nhận.",eventName));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_UPDATED_BY_HOST.name(),
+                DATA_REF_ID_KEY, eventId.toString(),
+                DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
+        ));
+
+        notification = saveNotificationForUser(notification, orgManagerId);
+
+        notificationPublisher.enqueueNotification(notification, orgManagerId);
+    }
 }

@@ -15,6 +15,7 @@ public enum ENotificationType {
     HOST_EVENT_REJECTED_BY_AD, //send to host and mng
     MNG_EVENT_REJECTED_BY_AD, //send to host and mng
 
+    MNG_EVENT_UPDATED_BY_HOST,
 
     VOL_APPLICATION_APPROVED, //send to vol
     VOL_APPLICATION_REJECTED, //send to vol

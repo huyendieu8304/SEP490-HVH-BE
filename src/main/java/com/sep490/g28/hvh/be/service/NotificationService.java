@@ -35,4 +35,6 @@ public interface NotificationService {
 
     void sentEventCancelledByHostNotification(List<EventApplication> eventApplications, String eventName, String cancelReason);
     void sentEventCancelledByAdminNotification(List<EventApplication> eventApplications, String eventName, String cancelReason);
+
+    void sentEventUpdatedByHostNotification(UUID orgManagerId, UUID eventId, String eventName);
 }
