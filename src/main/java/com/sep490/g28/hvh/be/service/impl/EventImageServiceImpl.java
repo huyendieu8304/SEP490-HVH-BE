@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventImage;
@@ -113,7 +114,7 @@ public class EventImageServiceImpl implements EventImageService {
         int removeCount =  removeIds.size();
         int addCount = adds.size();
 
-        //the amount of check in place after update
+        //the amount of event's images after update
         int finalCount = existingCount - removeCount + addCount;
         if (finalCount > MAX_IMAGES) {
             throw new AppException(EventErrorCode.INVALID_IMAGES_AMOUNT);
@@ -144,6 +145,97 @@ public class EventImageServiceImpl implements EventImageService {
             return addEventImages(event, adds, remainingSlots);
         }
 
+        return Collections.emptyList();
+    }
+
+    /**
+     * @return list of upload image url
+     */
+    @Override
+    public List<String> resolveUpdateEventImages(
+            Event event,
+            List<EditEventImageRequest> reqImages,
+            UpdateEventPayload updateEventPayload
+    ) {
+
+        //clone the existing image to new list
+        List<EventImage> eventImagesAfterUpdate = new ArrayList<>(event.getImages().stream()
+                .map(EventImage::new)
+                .toList());
+
+        //categorize update image request base on action
+        List<EditEventImageRequest> removes = new ArrayList<>();
+        List<EditEventImageRequest> adds = new ArrayList<>();
+
+        for (EditEventImageRequest r : reqImages) {
+            if (r.getUpdateAction().equals(EUpdateAction.REMOVE)) {
+                removes.add(r);
+            } else
+                adds.add(r);
+        }
+
+        //check the amount
+        Set<UUID> existingIds = eventImagesAfterUpdate.stream()
+                .map(EventImage::getId)
+                .collect(Collectors.toSet());
+
+        Set<UUID> removeIds = removes.stream()
+                .map(EditEventImageRequest::getImageId)
+                .filter(Objects::nonNull)
+                .filter(existingIds::contains)
+                .collect(Collectors.toSet());
+
+        int existingCount = eventImagesAfterUpdate.size();
+        int removeCount =  removeIds.size();
+        int addCount = adds.size();
+
+        //the amount of event's images after update
+        int finalCount = existingCount - removeCount + addCount;
+        if (finalCount > MAX_IMAGES) {
+            throw new AppException(EventErrorCode.INVALID_IMAGES_AMOUNT);
+        }
+
+        //remove
+        if (!removeIds.isEmpty()) {
+            eventImagesAfterUpdate.removeIf(dt -> removeIds.contains(dt.getId()));
+        }
+
+        //add
+        if (!adds.isEmpty()) {
+            int remainingSlot = MAX_IMAGES - (existingCount - removeCount);
+            List<CompletableFuture<String>> urlFutures = new ArrayList<>();
+            //go through add list to create object EventImage and get upload url
+            adds.stream()
+                    .filter(r -> r.getUpdateAction() == EUpdateAction.ADD)
+                    .limit(remainingSlot)
+                    .forEach(r -> {
+                        //create object EventImage
+                        UUID imageId = UUID.randomUUID();
+                        String path = storagePathGenerator.eventImage(
+                                event.getId(),
+                                imageId,
+                                r.getFileExtension()
+                        );
+
+                        EventImage image = new EventImage();
+                        image.setId(imageId);
+                        image.setEvent(event);
+                        image.setImagePath(path);
+
+                        //add to the list
+                        eventImagesAfterUpdate.add(image);
+
+                        urlFutures.add(storageService.getUploadUrlAsync(path));
+                    });
+
+            CompletableFuture.allOf(urlFutures.toArray(new CompletableFuture[0])).join();
+
+            return urlFutures.stream()
+                    .map(CompletableFuture::join)
+                    .toList();
+
+        }
+        updateEventPayload.setEventImages(eventImagesAfterUpdate);
         return Collections.emptyList();
     }
 }

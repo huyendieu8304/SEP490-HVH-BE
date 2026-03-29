@@ -75,6 +75,7 @@ public enum ValidationErrorCode implements ErrorCode {
 
     INVALID_EVENT_DESCRIPTION(2050, "Mô tả sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
     INVALID_LAT_LNG(2051, "Địa điểm check in phải có cả kinh độ và vĩ độ.", HttpStatus.BAD_REQUEST),
+    AT_LEAST_ONE_FIELD_REQUIRED(2052, "Cần ít nhất 1 trường thông tin trong request body", HttpStatus.BAD_REQUEST),
 
     ;
 
