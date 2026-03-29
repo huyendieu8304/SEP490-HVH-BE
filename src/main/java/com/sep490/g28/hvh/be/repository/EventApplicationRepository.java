@@ -61,4 +61,11 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
 
     boolean existsByIdAndVolunteer_Id(UUID applicationId, UUID volunteerId);
 
+    @Query("""
+                SELECT e
+                FROM EventApplication e
+                WHERE e.volunteer.id = :volunteerId
+                AND e.sessionDate = :sessionDate
+            """)
+    EventApplication findEventApplicationByVolunteerIdAndSessionDate(UUID volunteerId, LocalDate sessionDate);
 }

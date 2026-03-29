@@ -69,6 +69,7 @@ public enum ValidationErrorCode implements ErrorCode {
 
     INVALID_NOTIFICATION_TITLE(2046, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
     INVALID_NOTIFICATION_BODY(2047, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+    INVALID_CHECK_IN_CODE(2053, "Mã check-in không hợp lệ", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

@@ -1,9 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
-import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.validation.EventStatus;
@@ -262,5 +260,18 @@ public class EventController {
         eventService.announceVolunteersOfEvent(eventId, request);
         return ResponseEntity.ok().build();
 
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @PostMapping("/volunteer/events/check-event-check-in-code")
+    public ResponseEntity<CheckEventCheckInCodeResponse> checkEventCheckInCode(@Valid @RequestBody CheckEventCheckInCodeRequest request) {
+        return ResponseEntity.ok(eventService.checkEventCheckInCode(request));
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @PostMapping("/volunteer/events/quick-check-in")
+    public ResponseEntity<Void> quickCheckIn(@Valid @RequestBody QuickCheckInEventRequest request) {
+        eventService.quickCheckInEvent(request);
+        return ResponseEntity.ok().build();
     }
 }

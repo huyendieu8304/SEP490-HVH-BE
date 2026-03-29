@@ -1,7 +1,6 @@
 package com.sep490.g28.hvh.be.service;
 
-import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import org.springframework.data.domain.Page;
@@ -9,7 +8,6 @@ import org.springframework.data.domain.Page;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import java.util.UUID;
 
 public interface EventService {
@@ -56,4 +54,8 @@ public interface EventService {
     EventDetailsResponseForHost getEventDetailsByHost(UUID eventId);
 
     void announceVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
+
+    CheckEventCheckInCodeResponse checkEventCheckInCode(CheckEventCheckInCodeRequest request);
+
+    void quickCheckInEvent(QuickCheckInEventRequest request);
 }
