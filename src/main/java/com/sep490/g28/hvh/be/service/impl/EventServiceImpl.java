@@ -434,9 +434,36 @@ public class EventServiceImpl implements EventService {
         eventRepository.save(event);
         log.info("Event is approved by Organization Manager: eventId={}", event.getId());
 
-        //send notification
-        notificationService.sendEventApprovedByOrgManagerNotification(event);
+            //send notification
+            notificationService.sendEventCreationApprovedByOrgManagerNotification(event);
+
+        } else if (Boolean.TRUE.equals(event.getUpdateCritical())) {
+            //the manager is approving for an update critical information request
+            //update in db
+            event.setStatus(EEventStatus.APPROVED_BY_MNG);
+            eventRepository.save(event);
+            log.info("Update event is approved by Organization Manager: eventId={}", event.getId());
+
+            //send notification
+            notificationService.sendEventCreationApprovedByOrgManagerNotification(event);
+
+        } else {
+            //the manager is approving for an update non-critical information request
+
+        }
+
+
     }
+
+//    private void approveCreateEventByManager(Event event) {
+//       //update in db
+//        event.setStatus(EEventStatus.APPROVED_BY_MNG);
+//        eventRepository.save(event);
+//        log.info("Event is approved by Organization Manager: eventId={}", event.getId());
+//
+//        //send notification
+//        notificationService.sendEventApprovedByOrgManagerNotification(event);
+//    }
 
     @Override
     public void rejectEventByManager(UUID eventId, RejectEventRequest request) {
@@ -456,7 +483,7 @@ public class EventServiceImpl implements EventService {
         log.info("Event is rejected by Organization Manager: eventId={}", event.getId());
 
         //send notification
-        notificationService.sendEventRejectedByOrgManagerNotification(event, request.getReason());
+        notificationService.sendEventCreationRejectedByOrgManagerNotification(event, request.getReason());
     }
 
     @Override
@@ -488,7 +515,7 @@ public class EventServiceImpl implements EventService {
         log.info("Event is approved by System Admin: eventId={}", event.getId());
 
         //send notification
-        notificationService.sendEventApprovedByAdminNotification(event);
+        notificationService.sendEventCreationApprovedByAdminNotification(event);
     }
 
     @Override
@@ -509,7 +536,7 @@ public class EventServiceImpl implements EventService {
         log.info("Event is rejected by System Admin: eventId={}", event.getId());
 
         //send notification
-        notificationService.sendEventRejectedByAdminNotification(event, request.getReason());
+        notificationService.sendEventCreationRejectedByAdminNotification(event, request.getReason());
     }
 
     //todo unit test for this method

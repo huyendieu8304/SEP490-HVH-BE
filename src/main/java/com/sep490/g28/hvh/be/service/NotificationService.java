@@ -21,11 +21,11 @@ public interface NotificationService {
 //    List<UserNotification> getLatestNotification(OffsetDateTime cursor);
 
     void sendEventCreatedNotification(Event event, Host host);
-    void sendEventApprovedByOrgManagerNotification(Event event);
-    void sendEventRejectedByOrgManagerNotification(Event event, String reason);
+    void sendEventCreationApprovedByOrgManagerNotification(Event event);
+    void sendEventCreationRejectedByOrgManagerNotification(Event event, String reason);
 
-    void sendEventApprovedByAdminNotification(Event event);
-    void sendEventRejectedByAdminNotification(Event event, String reason);
+    void sendEventCreationApprovedByAdminNotification(Event event);
+    void sendEventCreationRejectedByAdminNotification(Event event, String reason);
 
     void sendEventApplicationApprovedNotification(UUID volunteerId, Event event, EventApplication application);
     void sendEventApplicationRejectedNotification(UUID volunteerId, Event event, EventApplication application, String rejectionReason);

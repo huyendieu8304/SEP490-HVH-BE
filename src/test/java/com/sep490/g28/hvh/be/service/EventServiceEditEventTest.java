@@ -377,7 +377,7 @@ public class EventServiceEditEventTest {
         verify(eventRepository).save(event);
 
         verify(notificationService)
-                .sendEventApprovedByOrgManagerNotification(event);
+                .sendEventCreationApprovedByOrgManagerNotification(event);
     }
 
     // TC02
@@ -459,7 +459,7 @@ public class EventServiceEditEventTest {
         verify(eventRepository).save(event);
 
         verify(notificationService)
-                .sendEventRejectedByOrgManagerNotification(event, req.getReason());
+                .sendEventCreationRejectedByOrgManagerNotification(event, req.getReason());
     }
 
     // TC02
@@ -521,7 +521,7 @@ public class EventServiceEditEventTest {
         verify(eventRepository).save(event);
 
         verify(notificationService)
-                .sendEventApprovedByAdminNotification(event);
+                .sendEventCreationApprovedByAdminNotification(event);
     }
 
     // TC02
@@ -580,7 +580,7 @@ public class EventServiceEditEventTest {
         verify(eventRepository).save(event);
 
         verify(notificationService)
-                .sendEventRejectedByAdminNotification(event, req.getReason());
+                .sendEventCreationRejectedByAdminNotification(event, req.getReason());
     }
 
     // TC02

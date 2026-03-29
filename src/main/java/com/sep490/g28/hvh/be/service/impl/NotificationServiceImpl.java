@@ -201,7 +201,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void sendEventApprovedByOrgManagerNotification(Event event) {
+    public void sendEventCreationApprovedByOrgManagerNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
         UUID hostId = event.getHost().getId();
@@ -237,7 +237,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventRejectedByOrgManagerNotification(Event event, String reason) {
+    public void sendEventCreationRejectedByOrgManagerNotification(Event event, String reason) {
         //send notification to host
         Notification notification = new Notification();
         UUID hostId = event.getHost().getId();
@@ -258,7 +258,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApprovedByAdminNotification(Event event) {
+    public void sendEventCreationApprovedByAdminNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
         UUID hostId = event.getHost().getId();
@@ -296,7 +296,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventRejectedByAdminNotification(Event event, String reason) {
+    public void sendEventCreationRejectedByAdminNotification(Event event, String reason) {
         //send notification to host
         Notification notificationForHost = new Notification();
         UUID hostId = event.getHost().getId();
