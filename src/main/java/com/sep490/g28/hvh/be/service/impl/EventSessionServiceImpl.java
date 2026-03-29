@@ -193,7 +193,11 @@ public class EventSessionServiceImpl implements EventSessionService {
         return days;
     }
 
-    private void updateEventSessions(Event event, List<EditEventSessionRequest> editEventSessionRequests, List<EventSession> targetEventSessionsList) {
+    private void updateEventSessions(
+            Event event,
+            List<EditEventSessionRequest> editEventSessionRequests,
+            List<EventSession> targetEventSessionsList
+    ) {
         ActivityDomain activityDomain = event.getActivitySubDomain().getActivityDomain();
         Short sessionMaxTime =
                 activityDomain.getSpecialSessionMaxTime() == null
@@ -304,7 +308,7 @@ public class EventSessionServiceImpl implements EventSessionService {
         LocalDate recruitmentEndDateAfterUpdate = event.getRecruitmentEndDate();
         LocalDate startDateAfterUpdate = event.getStartDate();
 
-        //whether update recruitmentEndDate?
+        //recruitmentEndDate is updated?
         if (updateEventRequest.getRecruitmentEndDate() != null
                 && updateEventRequest.getRecruitmentEndDate().isEqual(event.getRecruitmentEndDate())
         ) {
@@ -313,14 +317,15 @@ public class EventSessionServiceImpl implements EventSessionService {
             updateEventPayload.setRecruitmentEndDate(updateEventRequest.getRecruitmentEndDate());
         }
 
-        //whether update event sessions?
+        //event sessions is updated?
         if (updateEventRequest.getEventSessions() != null
                 && !updateEventRequest.getEventSessions().isEmpty()
         ) {
             updateEventDateTime = true;
 
+            //clone the existing session to new list
             List<EventSession> eventSessionsAfterUpdate = new ArrayList<>(event.getSessions().stream()
-                    .map(session -> new EventSession(session))
+                    .map(EventSession::new)
                     .toList());
 
             //resolve new event sessions
@@ -349,9 +354,10 @@ public class EventSessionServiceImpl implements EventSessionService {
                     .orElseThrow();
             updateEventPayload.setStartDate(startDateAfterUpdate);
             updateEventPayload.setEndDate(endDateAfterUpdate);
+            updateEventPayload.setEventSessions(eventSessionsAfterUpdate);
         }
 
-        // update event recruitment end date OR event session, check constrain again
+        // event recruitment end date OR event session is updated
         if (updateEventDateTime) {
             //check event's dates constraints
             checkEventDatesConstraint(startDateAfterUpdate, recruitmentEndDateAfterUpdate);
