@@ -73,13 +73,15 @@ public class EventSessionTimeValidator implements ConstraintValidator<EventSessi
             if (duration.compareTo(Duration.ofHours(1)) < 0) {
                 invalid(context, endDateTimeFieldName,
                         ValidationErrorCode.INVALID_EVENT_SESSION_TIME_RANGE);
-                return false;            }
+                return false;
+            }
 
             // max session 12h
             if (duration.compareTo(Duration.ofHours(12)) > 0) {
                 invalid(context, endDateTimeFieldName,
                         ValidationErrorCode.INVALID_EVENT_SESSION_TIME_RANGE);
-                return false;            }
+                return false;
+            }
         }
 
         return true;

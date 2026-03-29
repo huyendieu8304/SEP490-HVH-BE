@@ -72,4 +72,16 @@ public class EventSession {
             columnDefinition = "TIMESTAMP WITH TIME ZONE"
     )
     private OffsetDateTime updatedAt;
+
+    public EventSession(EventSession session) {
+        this.id = session.id;
+        this.event = session.event;
+        this.startDateTime = session.startDateTime;
+        this.endDateTime = session.endDateTime;
+        this.expectedVolAmount = session.expectedVolAmount;
+        this.expectedSerAmount = session.expectedSerAmount;
+        this.approvedApplicationCount = session.approvedApplicationCount;
+        this.createdAt = session.createdAt;
+        this.updatedAt = session.updatedAt;
+    }
 }

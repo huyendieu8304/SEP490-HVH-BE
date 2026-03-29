@@ -308,9 +308,7 @@ public class EventServiceEditEventTest {
 
         verify(eventSessionService).addEventSessionsForCreateEvent(
                 any(),
-                eq(req.getRecruitmentEndDate()),
-                eq(req.getEventSessions()),
-                eq((short) 4)
+                eq(req.getEventSessions())
         );
     }
 

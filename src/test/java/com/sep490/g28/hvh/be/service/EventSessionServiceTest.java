@@ -84,9 +84,7 @@ public class EventSessionServiceTest {
         assertThrows(AppException.class,
                 () -> service.addEventSessionsForCreateEvent(
                         event,
-                        validRecruitmentEndDate(),
-                        null,
-                        (short) 4
+                        null
                 ));
     }
 
@@ -97,9 +95,7 @@ public class EventSessionServiceTest {
         assertThrows(AppException.class,
                 () -> service.addEventSessionsForCreateEvent(
                         event,
-                        validRecruitmentEndDate(),
-                        List.of(),
-                        (short) 4
+                        List.of()
                 ));
     }
 
@@ -115,9 +111,7 @@ public class EventSessionServiceTest {
         assertThrows(AppException.class,
                 () -> service.addEventSessionsForCreateEvent(
                         event,
-                        validRecruitmentEndDate(),
-                        List.of(r),
-                        (short) 4
+                        List.of(r)
                 ));
     }
 
@@ -132,9 +126,7 @@ public class EventSessionServiceTest {
 
         service.addEventSessionsForCreateEvent(
                 event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
+                List.of(r)
         );
 
         assertEquals(1, event.getSessions().size());
@@ -150,9 +142,7 @@ public class EventSessionServiceTest {
 
         service.addEventSessionsForCreateEvent(
                 event,
-                validRecruitmentEndDate(),
-                List.of(r1, r2),
-                (short) 4
+                List.of(r1, r2)
         );
 
         assertEquals(2, event.getSessions().size());
@@ -178,9 +168,7 @@ public class EventSessionServiceTest {
         assertThrows(AppException.class,
                 () -> service.addEventSessionsForCreateEvent(
                         event,
-                        validRecruitmentEndDate(),
-                        List.of(r1, r2),
-                        (short) 4
+                        List.of(r1, r2)
                 ));
     }
 
@@ -191,9 +179,7 @@ public class EventSessionServiceTest {
 
         service.updateEventSessions(
                 event,
-                validRecruitmentEndDate(),
-                null,
-                (short) 4
+                null
         );
 
         assertTrue(event.getSessions().isEmpty());
@@ -205,9 +191,7 @@ public class EventSessionServiceTest {
 
         service.updateEventSessions(
                 event,
-                validRecruitmentEndDate(),
-                List.of(),
-                (short) 4
+                List.of()
         );
 
         assertTrue(event.getSessions().isEmpty());
@@ -226,9 +210,7 @@ public class EventSessionServiceTest {
 
         service.updateEventSessions(
                 event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
+                List.of(r)
         );
 
         assertEquals(1, event.getSessions().size());
@@ -253,9 +235,7 @@ public class EventSessionServiceTest {
 
         service.updateEventSessions(
                 event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
+                List.of(r)
         );
 
         assertEquals(newStart, s.getStartDateTime());
@@ -276,9 +256,7 @@ public class EventSessionServiceTest {
 
         service.updateEventSessions(
                 event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
+                List.of(r)
         );
 
         assertEquals(2, event.getSessions().size());
@@ -296,9 +274,7 @@ public class EventSessionServiceTest {
         assertThrows(AppException.class,
                 () -> service.updateEventSessions(
                         event,
-                        validRecruitmentEndDate(),
-                        List.of(r),
-                        (short) 4
+                        List.of(r)
                 ));
     }
 
@@ -320,9 +296,7 @@ public class EventSessionServiceTest {
         assertThrows(AppException.class,
                 () -> service.updateEventSessions(
                         event,
-                        validRecruitmentEndDate(),
-                        List.of(r),
-                        (short) 4
+                        List.of(r)
                 ));
     }
 
@@ -345,9 +319,7 @@ public class EventSessionServiceTest {
 
         service.updateEventSessions(
                 event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
+                List.of(r)
         );
 
         // sessions remain unchanged

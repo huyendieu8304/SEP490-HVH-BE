@@ -1,7 +1,10 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
+import com.sep490.g28.hvh.be.entity.ActivityDomain;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -36,14 +39,16 @@ public class EventSessionServiceImpl implements EventSessionService {
     @Transactional
     public void addEventSessionsForCreateEvent(
             Event event,
-            LocalDate recruitmentEndDate,
-            List<EditEventSessionRequest> sessionRequests,
-            Short sessionMaxTime
+            List<EditEventSessionRequest> sessionRequests
     ){
         if (sessionRequests == null || sessionRequests.isEmpty()) {
             throw new AppException(EventErrorCode.INVALID_DATE_TIME_AMOUNT);
         }
-
+        ActivityDomain activityDomain = event.getActivitySubDomain().getActivityDomain();
+        Short sessionMaxTime =
+                activityDomain.getSpecialSessionMaxTime() == null
+                        ? 4
+                        : activityDomain.getSpecialSessionMaxTime();
         List<EditEventSessionRequest> adds = new ArrayList<>();
         //check the duration between the start time and end time of the session, must not > session max time of the domain
         for (EditEventSessionRequest r : sessionRequests) {
@@ -65,45 +70,142 @@ public class EventSessionServiceImpl implements EventSessionService {
         if (adds.isEmpty()) {
             throw new AppException(EventErrorCode.INVALID_DATE_TIME_AMOUNT);
         }
-        addEventDateTimes(event, adds);
+
+        event.setSessions(adds.stream().map( r -> {
+            EventSession session = new EventSession();
+            session.setEvent(event);
+            session.setStartDateTime(r.getStartDateTime());
+            session.setEndDateTime(r.getEndDateTime());
+            session.setExpectedVolAmount(r.getExpectedVolAmount());
+            session.setExpectedSerAmount(r.getExpectedSerAmount());
+            return session;
+        }).toList());
+
         // VALIDATE + RESOLVE START DATE END DATE
-        validateAndResolveEventStartEndDate(recruitmentEndDate, event.getSessions(), event);
-    }
+        Set<LocalDate> sessionDates = getSessionDates(event.getSessions());
 
-    private void addEventDateTimes(
-            Event event,
-            List<EditEventSessionRequest> addRequestList
-    ) {
-        for (EditEventSessionRequest r : addRequestList) {
-            EventSession dt = new EventSession();
-            dt.setEvent(event);
-            dt.setStartDateTime(r.getStartDateTime());
-            dt.setEndDateTime(r.getEndDateTime());
-            dt.setExpectedVolAmount(r.getExpectedVolAmount());
-            dt.setExpectedSerAmount(r.getExpectedSerAmount());
-
-            event.getSessions().add(dt);
+        if (findConflictSessionDateOfHost(
+                event.getHost().getId(),
+                event.getId(),
+                event.getSessions()
+        ) != null) {
+            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
         }
+        //resolve event's startDate
+        LocalDate startDate = sessionDates.stream()
+                .min(LocalDate::compareTo)
+                .orElseThrow();
+        //resolve event's endDate
+        LocalDate endDate = sessionDates.stream()
+                .min(LocalDate::compareTo)
+                .orElseThrow();
+        //check event's dates constraints
+        checkEventDatesConstraint(startDate, event.getRecruitmentEndDate());
+
+        event.setStartDate(startDate);
+        event.setEndDate(endDate);
     }
 
     @Override
-    @Transactional
     public void updateEventSessions(
             Event event,
-            LocalDate recruitmentEndDate,
-            List<EditEventSessionRequest> sessionRequests,
-            Short sessionMaxTime
+            List<EditEventSessionRequest> sessionRequests
     ) {
         //request datetime empty, don't need to update
         if (sessionRequests == null || sessionRequests.isEmpty()) return;
 
-        List<EventSession> existingEventSessions = event.getSessions();
+        updateEventSessions(event, sessionRequests, event.getSessions());
+
+        // VALIDATE + RESOLVE START DATE END DATE
+        Set<LocalDate> sessionDates = getSessionDates(event.getSessions());
+
+        if (findConflictSessionDateOfHost(
+                event.getHost().getId(),
+                event.getId(),
+                event.getSessions()
+        ) != null) {
+            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+        }
+
+        //resolve event's startDate
+        LocalDate startDate = sessionDates.stream()
+                .min(LocalDate::compareTo)
+                .orElseThrow();
+        //resolve event's endDate
+        LocalDate endDate = sessionDates.stream()
+                .min(LocalDate::compareTo)
+                .orElseThrow();
+        //check event's dates constraints
+        checkEventDatesConstraint(startDate, event.getRecruitmentEndDate());
+
+        event.setStartDate(startDate);
+        event.setEndDate(endDate);
+    }
+
+    //todo unit test for this method
+    //todo check luôn từ lúc tạo sự kiên, update sự kiện cũng check
+    @Override
+    public List<EventSession> findConflictSessionDateOfHost(UUID hostId, UUID checkedEventId, List<EventSession> checkedSessions) {
+        List<LocalDate> dates = checkedSessions
+                .stream()
+                .map(s -> s.getStartDateTime().toLocalDate())
+                .toList();
+
+        return eventSessionRepository.findConflictingSessions(
+                hostId,
+                checkedEventId,
+                dates
+        );
+    }
+
+    private void checkEventDatesConstraint(LocalDate startDate, LocalDate newRecruitmentEndDate) {
+        // today
+        LocalDate today = LocalDate.now();
+
+        // startDate must after at least 15 days since today
+        if (startDate.isBefore(today.plusDays(15))) {
+            throw new AppException(EventErrorCode.INVALID_EVENT_START_DATE);
+        }
+
+        //recruitmentEndDate must after at least 3 days since today
+        if (newRecruitmentEndDate.isBefore(today.plusDays(3))) {
+            throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
+        }
+
+        // recruitmentEndDate must before startDate at least 3 days
+        if (!newRecruitmentEndDate.isBefore(startDate.minusDays(3))) {
+            throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
+        }
+    }
+
+    private Set<LocalDate> getSessionDates(List<EventSession> newEventSessions) {
+        Set<LocalDate> days = new HashSet<>();
+        //iterate through each session to make sure there are no 2 session in one day
+        for (EventSession r : newEventSessions) {
+            LocalDate date = r.getStartDateTime()
+                    .toLocalDate();
+
+            // there is 2 sessions in a same day
+            if (!days.add(date)) {
+                throw new AppException(EventErrorCode.DUPLICATE_SESSION_DAY);
+            }
+        }
+        return days;
+    }
+
+    private void updateEventSessions(Event event, List<EditEventSessionRequest> editEventSessionRequests, List<EventSession> targetEventSessionsList) {
+        ActivityDomain activityDomain = event.getActivitySubDomain().getActivityDomain();
+        Short sessionMaxTime =
+                activityDomain.getSpecialSessionMaxTime() == null
+                        ? 4
+                        : activityDomain.getSpecialSessionMaxTime();
 
         //categorize update place request base on action
         List<EditEventSessionRequest> removes = new ArrayList<>();
         List<EditEventSessionRequest> edits = new ArrayList<>();
         List<EditEventSessionRequest> adds = new ArrayList<>();
-        for (EditEventSessionRequest r : sessionRequests) {
+
+        for (EditEventSessionRequest r :  editEventSessionRequests) {
             if (r.getUpdateAction() == EUpdateAction.REMOVE) {
                 removes.add(r);
                 //done remove, skip code below
@@ -126,7 +228,7 @@ public class EventSessionServiceImpl implements EventSessionService {
         }
 
         //check the amount
-        Set<UUID> existingIds = existingEventSessions.stream()
+        Set<UUID> existingIds = targetEventSessionsList.stream()
                 .map(EventSession::getId)
                 .collect(Collectors.toSet());
 
@@ -136,7 +238,7 @@ public class EventSessionServiceImpl implements EventSessionService {
                 .filter(existingIds::contains)
                 .collect(Collectors.toSet());
 
-        int finalCount = existingEventSessions.size() - removeIds.size() + adds.size();
+        int finalCount = targetEventSessionsList.size() - removeIds.size() + adds.size();
 
         if (finalCount < 1) {
             throw new AppException(EventErrorCode.INVALID_DATE_TIME_AMOUNT);
@@ -144,8 +246,7 @@ public class EventSessionServiceImpl implements EventSessionService {
 
         //REMOVE
         if (!removeIds.isEmpty()) {
-
-            existingEventSessions.removeIf(dt -> removeIds.contains(dt.getId()));
+            targetEventSessionsList.removeIf(dt -> removeIds.contains(dt.getId()));
         }
 
         //EDIT
@@ -161,8 +262,8 @@ public class EventSessionServiceImpl implements EventSessionService {
                     ));
 
             //edit step
-            //iterate through the list in event and update the one with same id
-            for (EventSession dt : existingEventSessions) {
+            //iterate through the existing event session and update the one with same id
+            for (EventSession dt : targetEventSessionsList) {
 
                 EditEventSessionRequest r = editMap.get(dt.getId());
                 if (r == null) continue;
@@ -176,81 +277,87 @@ public class EventSessionServiceImpl implements EventSessionService {
 
         //ADD
         if (!adds.isEmpty()) {
-            addEventDateTimes(event, adds);
+            targetEventSessionsList.addAll(
+                    adds.stream().map(r -> {
+                        EventSession session = new EventSession();
+                        session.setEvent(event);
+                        session.setStartDateTime(r.getStartDateTime());
+                        session.setEndDateTime(r.getEndDateTime());
+                        session.setExpectedVolAmount(r.getExpectedVolAmount());
+                        session.setExpectedSerAmount(r.getExpectedSerAmount());
+                        return session;
+                    }).toList()
+            );
         }
-
-        // VALIDATE + RESOLVE START DATE END DATE
-        validateAndResolveEventStartEndDate(
-                recruitmentEndDate,
-                existingEventSessions,
-                event
-        );
-
     }
 
-    private void validateAndResolveEventStartEndDate(
-            LocalDate recruitmentEndDate,
-            List<EventSession> sessions,
-            Event event
-    ) {
 
-        Set<LocalDate> days = new HashSet<>();
-        //iterate through each session to make sure there are no 2 session in one day
-        for (EventSession r : sessions) {
-            LocalDate date = r.getStartDateTime()
-                    .toLocalDate();
-
-            // there is no 2 session in a same day
-            if (!days.add(date)) {
-                throw new AppException(EventErrorCode.DUPLICATE_SESSION_DAY);
-            }
-        }
-
-        //resolve event's startDate
-        LocalDate startDate = days.stream()
-                .min(LocalDate::compareTo)
-                .orElseThrow();
-
-        // today
-        LocalDate today = LocalDate.now();
-
-        // startDate must after at least 15 days since today
-        if (startDate.isBefore(today.plusDays(15))) {
-            throw new AppException(EventErrorCode.INVALID_EVENT_START_DATE);
-        }
-
-        //recruitmentEndDate must after at least 3 days since today
-        if (recruitmentEndDate.isBefore(today.plusDays(3))) {
-            throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
-        }
-
-        // recruitmentEndDate must before startDate at least 3 days
-        if (!recruitmentEndDate.isBefore(startDate.minusDays(3))) {
-            throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
-        }
-
-        event.setStartDate(startDate);
-
-        //resolve event's endDate
-        LocalDate endDate = days.stream()
-                .min(LocalDate::compareTo)
-                .orElseThrow();
-        event.setEndDate(endDate);
-
-    }
-
-    //todo unit test for this method
+    //return true  if valid update
+    //false if no update has been made
     @Override
-    public List<EventSession> findConflictSessionDateOfHost(UUID hostId, UUID checkedEventId, List<EventSession> checkedSessions) {
-        List<LocalDate> dates = checkedSessions
-                .stream()
-                .map(s -> s.getStartDateTime().toLocalDate())
-                .toList();
+    public boolean checkAndResolveUpdateEventDateTime(
+            Event event,
+            UpdateEventRequest updateEventRequest,
+            UpdateEventPayload  updateEventPayload
+    ){
+        boolean updateEventDateTime = false;
+        LocalDate recruitmentEndDateAfterUpdate = event.getRecruitmentEndDate();
+        LocalDate startDateAfterUpdate = event.getStartDate();
 
-        return eventSessionRepository.findConflictingSessions(
-                hostId,
-                checkedEventId,
-                dates
-        );
+        //whether update recruitmentEndDate?
+        if (updateEventRequest.getRecruitmentEndDate() != null
+                && updateEventRequest.getRecruitmentEndDate().isEqual(event.getRecruitmentEndDate())
+        ) {
+            updateEventDateTime = true;
+            recruitmentEndDateAfterUpdate = updateEventRequest.getRecruitmentEndDate();
+            updateEventPayload.setRecruitmentEndDate(updateEventRequest.getRecruitmentEndDate());
+        }
+
+        //whether update event sessions?
+        if (updateEventRequest.getEventSessions() != null
+                && !updateEventRequest.getEventSessions().isEmpty()
+        ) {
+            updateEventDateTime = true;
+
+            List<EventSession> eventSessionsAfterUpdate = new ArrayList<>(event.getSessions().stream()
+                    .map(session -> new EventSession(session))
+                    .toList());
+
+            //resolve new event sessions
+            updateEventSessions(event, updateEventRequest.getEventSessions(), eventSessionsAfterUpdate);
+
+            //check duplicate session date hosted by host after updated
+            if (findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    event.getId(),
+                    eventSessionsAfterUpdate
+            ) != null) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
+
+            //get all the date of event session and check whether multiple sessions in a same date?
+            Set<LocalDate> sessionDates = getSessionDates(eventSessionsAfterUpdate);
+
+            //resolve event's startDate
+            startDateAfterUpdate = sessionDates.stream()
+                    .min(LocalDate::compareTo)
+                    .orElseThrow();
+
+            //resolve event's endDate
+            LocalDate endDateAfterUpdate = sessionDates.stream()
+                    .min(LocalDate::compareTo)
+                    .orElseThrow();
+            updateEventPayload.setStartDate(startDateAfterUpdate);
+            updateEventPayload.setEndDate(endDateAfterUpdate);
+        }
+
+        // update event recruitment end date OR event session, check constrain again
+        if (updateEventDateTime) {
+            //check event's dates constraints
+            checkEventDatesConstraint(startDateAfterUpdate, recruitmentEndDateAfterUpdate);
+        }
+
+        return updateEventDateTime;
+
     }
 }

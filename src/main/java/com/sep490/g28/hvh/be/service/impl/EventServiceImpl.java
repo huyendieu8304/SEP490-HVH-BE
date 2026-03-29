@@ -204,13 +204,10 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new AppException(ActivityDomainErrorCode.SUBDOMAIN_NOT_EXISTED));
         event.setActivitySubDomain(activitySubDomain);
 
-        ActivityDomain activityDomain = activitySubDomain.getActivityDomain();
-        Short sessionMaxTime = activityDomain.getSpecialSessionMaxTime() == null ? 4 : activityDomain.getSpecialSessionMaxTime();
+        event.setRecruitmentEndDate(request.getRecruitmentEndDate());
         eventSessionService.addEventSessionsForCreateEvent(
                 event,
-                request.getRecruitmentEndDate(),
-                request.getEventSessions(),
-                sessionMaxTime
+                request.getEventSessions()
         );
 
         //set event's information
@@ -250,16 +247,10 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new AppException(ActivityDomainErrorCode.SUBDOMAIN_NOT_EXISTED));
         event.setActivitySubDomain(activitySubDomain);
 
-        ActivityDomain activityDomain = activitySubDomain.getActivityDomain();
-        Short sessionMaxTime =
-                activityDomain.getSpecialSessionMaxTime() == null
-                        ? 4
-                        : activityDomain.getSpecialSessionMaxTime();
+        event.setRecruitmentEndDate(request.getRecruitmentEndDate());
         eventSessionService.updateEventSessions(
                 event,
-                request.getRecruitmentEndDate(),
-                request.getEventSessions(),
-                sessionMaxTime
+                request.getEventSessions()
         );
 
         //set event's information
@@ -300,8 +291,6 @@ public class EventServiceImpl implements EventService {
         event.setServingActivity(request.getServingActivity());
         event.setServedTarget(request.getServedTarget());
         event.setServingPlaceType(request.getServingPlaceType());
-
-        event.setRecruitmentEndDate(request.getRecruitmentEndDate());
     }
 
     @Override
