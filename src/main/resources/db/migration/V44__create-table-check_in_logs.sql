@@ -1,14 +1,15 @@
 CREATE TABLE check_in_logs
 (
-    id                UUID                     NOT NULL,
-    volunteer_id      UUID,
-    session_id        UUID,
-    device_id         VARCHAR(255)             NOT NULL,
-    ap_version        VARCHAR(255)             NOT NULL,
-    os_version        VARCHAR(255)             NOT NULL,
-    check_in_location GEOGRAPHY(Point, 4326)   NOT NULL,
-    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    id                       UUID                     NOT NULL,
+    volunteer_id             UUID,
+    session_id               UUID,
+    device_id                VARCHAR(255)             NOT NULL,
+    ap_version               VARCHAR(255)             NOT NULL,
+    os_version               VARCHAR(255)             NOT NULL,
+    check_in_location        GEOGRAPHY(Point, 4326)   NOT NULL,
+    check_in_accuracy_meters DOUBLE PRECISION         NOT NULL,
+    created_at               TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at               TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT pk_check_in_logs PRIMARY KEY (id)
 );
 

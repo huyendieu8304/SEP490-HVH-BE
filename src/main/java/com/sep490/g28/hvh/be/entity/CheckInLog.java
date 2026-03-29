@@ -60,6 +60,9 @@ public class CheckInLog {
     )
     private Point checkInLocation;
 
+    @Column(name = "check_in_accuracy_meters", nullable = false)
+    private Double checkInAccuracyMeters;
+
     @CreationTimestamp
     @Column(
             name = "created_at",
