@@ -5,6 +5,7 @@ import com.sep490.g28.hvh.be.entity.EventImage;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,12 +31,11 @@ public class UpdateEventPayload {
     //event date time
     LocalDate recruitmentEndDate;
     List<EventSession> eventSessions;
-
-    // checkin location
-    Double checkInLocationLat;
-    Double checkInLocationLng;
-    int checkInLocationAccuracyMeters;
-
     LocalDate startDate;
     LocalDate endDate;
+
+    // checkin location
+    Point checkInLocation;
+    Double checkInLocationAccuracyMeters;
+
 }
