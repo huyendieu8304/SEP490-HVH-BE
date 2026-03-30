@@ -246,7 +246,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByHost(pageNumber, pageSize, name, status));
     }
 
-    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#id)")
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#inputId)")
     @GetMapping("/host/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
@@ -286,7 +286,7 @@ public class EventController {
     }
 
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
-    @PostMapping("/host/events/{eventId}/update")
+    @PutMapping("/host/events/{eventId}/update")
     public ResponseEntity<UpdateEventResponse> updateEvent(
             @PathVariable java.util.UUID eventId,
             @Valid @RequestBody UpdateEventRequest request
