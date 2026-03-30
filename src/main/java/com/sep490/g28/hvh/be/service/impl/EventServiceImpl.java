@@ -1170,6 +1170,7 @@ public class EventServiceImpl implements EventService {
         }
 
         //handle update information, map request to payload
+        boolean hasChanges = false;
         boolean updateCritical = false;
         UpdateEventPayload updatePayload = new UpdateEventPayload();
         UpdateEventResponse response = new UpdateEventResponse();
@@ -1179,25 +1180,28 @@ public class EventServiceImpl implements EventService {
 
         //map image
         if (request.getUpdateImages() != null && !request.getUpdateImages().isEmpty()) {
-            updateCritical = true;
+            hasChanges = true;
             response.setUploadUrls(eventImageService.resolveUpdateEventImages(event, request.getUpdateImages(), updatePayload));
         }
         if (request.getDescription() != null
                 && !request.getDescription().isEmpty()
                 && !request.getDescription().equalsIgnoreCase(event.getDescription()))
         {
+            hasChanges = true;
             updatePayload.setDescription(request.getDescription());
         }
 
         if (request.getAutoApprove() != null
                 && !request.getAutoApprove().equals(event.isAutoApprove())
         ) {
+            hasChanges = true;
             updatePayload.setAutoApprove(request.getAutoApprove());
         }
 
         if (request.getServingPlaceType() != null
                 && !request.getServingPlaceType().equals(event.getServingPlaceType())
         ) {
+            hasChanges = true;
             updatePayload.setServingPlaceType(request.getServingPlaceType());
         }
 
@@ -1205,16 +1209,18 @@ public class EventServiceImpl implements EventService {
                 && !request.getAddress().isEmpty()
                 && !request.getAddress().equals(event.getAddress())
         ) {
-            updatePayload.setAddress(request.getAddress());
+            hasChanges = true;
             updateCritical = true;
+            updatePayload.setAddress(request.getAddress());
         }
 
         if (request.getDetailAddress() != null
         && !request.getDetailAddress().isEmpty()
                 && !request.getDetailAddress().equalsIgnoreCase(event.getDetailAddress())
         ) {
-            updatePayload.setDetailAddress(request.getDetailAddress());
+            hasChanges = true;
             updateCritical = true;
+            updatePayload.setDetailAddress(request.getDetailAddress());
         }
 
         if (request.getCheckInLocationLat() != null
@@ -1222,18 +1228,23 @@ public class EventServiceImpl implements EventService {
                 && !request.getCheckInLocationLat().equals(GeoUtils.getLat(event.getCheckInLocation()))
                 && !request.getCheckInLocationLng().equals(GeoUtils.getLng(event.getCheckInLocation()))
         )  {
-            updatePayload.setCheckInLocationLat(request.getCheckInLocationLat());
-            updatePayload.setCheckInLocationLng(request.getCheckInLocationLng());
+            hasChanges = true;
             updateCritical = true;
+            Point point  = GeoUtils.toPoint(request.getCheckInLocationLat(), request.getCheckInLocationLng());
+            updatePayload.setCheckInLocation(point);
         }
 
         if (request.getCheckInLocationAccuracyMeters() != null
             && (double) request.getCheckInLocationAccuracyMeters() != event.getCheckInAccuracyMeters()
         ) {
-            updatePayload.setCheckInLocationAccuracyMeters(request.getCheckInLocationAccuracyMeters());
+            hasChanges = true;
             updateCritical = true;
+            updatePayload.setCheckInLocationAccuracyMeters((double)request.getCheckInLocationAccuracyMeters());
         }
 
+        if (!hasChanges) {
+            throw new AppException(EventErrorCode.NO_CHANGES_IN_UPDATE_REQUEST);
+        }
         //set event's update information
         event.setUpdateEventPayload(updatePayload);
         event.setUpdateCritical(updateCritical);
