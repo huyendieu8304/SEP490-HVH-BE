@@ -419,51 +419,135 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-        //check whether the host is hosting other event or not?
-        List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
-                event.getHost().getId(),
-                eventId,
-                event.getSessions()
-        );
-        if (!conflictSession.isEmpty()) {
-            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
-        }
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //the manager is approving for a create request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            if (today.isAfter(event.getRecruitmentEndDate())){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
 
-        //update in db
-        event.setStatus(EEventStatus.APPROVED_BY_MNG);
-        eventRepository.save(event);
-        log.info("Event is approved by Organization Manager: eventId={}", event.getId());
+            //check whether the host is hosting multiple event session in a day or not?
+            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    eventId,
+                    event.getSessions()
+            );
+            if (!conflictSession.isEmpty()) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
 
-            //send notification
-            notificationService.sendEventCreationApprovedByOrgManagerNotification(event);
-
-        } else if (Boolean.TRUE.equals(event.getUpdateCritical())) {
-            //the manager is approving for an update critical information request
             //update in db
             event.setStatus(EEventStatus.APPROVED_BY_MNG);
             eventRepository.save(event);
-            log.info("Update event is approved by Organization Manager: eventId={}", event.getId());
 
             //send notification
             notificationService.sendEventCreationApprovedByOrgManagerNotification(event);
+            log.info("Event creation is approved by Organization Manager: eventId={}", event.getId());
 
+        } else if (Boolean.TRUE.equals(event.getUpdateCritical())) {
+            //the manager is approving for an update CRITICAL information request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            LocalDate newRecruitmentEndDate =
+                    event.getUpdateEventPayload().getRecruitmentEndDate() == null
+                            ? event.getRecruitmentEndDate()
+                            : event.getUpdateEventPayload().getRecruitmentEndDate();
+            if (today.isAfter(newRecruitmentEndDate)){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
+
+            //update in db
+            event.setStatus(EEventStatus.APPROVED_BY_MNG);
+            eventRepository.save(event);
+
+            //todo send notification
+
+            log.info("Event update (critical) is approved by Organization Manager: eventId={}", event.getId());
         } else {
-            //the manager is approving for an update non-critical information request
+            //the manager is approving for an update NON-CRITICAL information request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            if (today.isAfter(event.getRecruitmentEndDate())){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
 
+            //set the event status back to RECRUITING
+            event.setStatus(EEventStatus.RECRUITING);
+
+            //apply update information
+            applyNonCriticalUpdateEvent(event, event.getUpdateEventPayload());
+
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //todo send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+
+            log.info("Event update (non-critical) is approved by Organization Manager: eventId={}", event.getId());
         }
-
-
     }
 
-//    private void approveCreateEventByManager(Event event) {
-//       //update in db
-//        event.setStatus(EEventStatus.APPROVED_BY_MNG);
-//        eventRepository.save(event);
-//        log.info("Event is approved by Organization Manager: eventId={}", event.getId());
-//
-//        //send notification
-//        notificationService.sendEventApprovedByOrgManagerNotification(event);
-//    }
+    private void applyNonCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
+        //apply images
+        if (payload.getEventImages() != null) {
+            List<EventImage> oldImages = event.getImages();
+            List<EventImage> newImages = payload.getEventImages();
+            eventImageService.deleteRemovedImage(oldImages, newImages);
+            event.setImages(newImages);
+        }
+
+        if (payload.getDescription() != null) {
+            event.setDescription(payload.getDescription());
+        }
+
+        if (payload.getAutoApprove() != null) {
+            event.setAutoApprove(payload.getAutoApprove());
+        }
+
+        if (payload.getServingPlaceType() != null) {
+            event.setServingPlaceType(payload.getServingPlaceType());
+        }
+    }
+
+    private void applyCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
+        if (payload.getEventSessions() != null) {
+            //check whether the host is hosting multiple event session in a day if the update is applied?
+            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    event.getId(),
+                    payload.getEventSessions()
+            );
+            if (!conflictSession.isEmpty()) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
+
+            event.setSessions(payload.getEventSessions());
+            event.setStartDate(payload.getStartDate());
+            event.setEndDate(payload.getEndDate());
+
+        }
+        if (payload.getAddress() != null) {
+            event.setAddress(payload.getAddress());
+        }
+        if (payload.getDetailAddress() != null) {
+            event.setDetailAddress(payload.getDetailAddress());
+        }
+        if (payload.getRecruitmentEndDate() != null) {
+            event.setRecruitmentEndDate(payload.getRecruitmentEndDate());
+        }
+        if (payload.getCheckInLocation() != null) {
+            event.setCheckInLocation(payload.getCheckInLocation());
+        }
+        if (payload.getCheckInLocationAccuracyMeters() != null) {
+            event.setCheckInAccuracyMeters(payload.getCheckInLocationAccuracyMeters());
+        }
+    }
+
 
     @Override
     public void rejectEventByManager(UUID eventId, RejectEventRequest request) {
@@ -503,7 +587,7 @@ public class EventServiceImpl implements EventService {
 //                eventSessionService.findConflictSessionDateOfHost(
 //                        event.getHost().getId(),
 //                        eventId,
-//                        event.getDateTimes()
+//                        event.getSessions()
 //                );
 //        if (!conflictSession.isEmpty()) {
 //            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
