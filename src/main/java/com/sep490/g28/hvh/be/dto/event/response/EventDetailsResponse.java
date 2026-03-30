@@ -22,6 +22,7 @@ public class EventDetailsResponse {
     private List<String> imageUrls;
     private String description;
     private String address;
+    private String detailAddress;
     private String activitySubDomain;
     private EServedTarget servedTarget;
     private EServingPlaceType servingPlaceType;

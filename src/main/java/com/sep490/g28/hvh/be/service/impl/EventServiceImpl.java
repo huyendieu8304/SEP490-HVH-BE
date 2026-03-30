@@ -360,7 +360,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //get lat and lng of check in location
@@ -378,6 +379,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
@@ -690,7 +692,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //check whether the host is hosting other event or not?
@@ -708,7 +711,8 @@ public class EventServiceImpl implements EventService {
                                 es.getStartDateTime(),
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
-                                es.getExpectedSerAmount()
+                                es.getExpectedSerAmount(),
+                                es.getApprovedApplicationCount()
                         )).toList()).orElse(Collections.emptyList());;
 
         if (!conflictSession.isEmpty()) {
@@ -745,6 +749,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
@@ -825,7 +830,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //check whether the host is hosting other event or not?
@@ -843,7 +849,8 @@ public class EventServiceImpl implements EventService {
                                 es.getStartDateTime(),
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
-                                es.getExpectedSerAmount()
+                                es.getExpectedSerAmount(),
+                                es.getApprovedApplicationCount()
                         )).toList()).orElse(Collections.emptyList());;
 
         if (!conflictSession.isEmpty()) {
@@ -871,6 +878,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
@@ -1005,7 +1013,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //get lat and lng of check in location
@@ -1029,6 +1038,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
