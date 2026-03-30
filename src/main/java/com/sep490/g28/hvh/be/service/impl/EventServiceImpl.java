@@ -561,13 +561,43 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-        //update in db
-        event.setStatus(EEventStatus.REJECTED_BY_MNG);
-        eventRepository.save(event);
-        log.info("Event is rejected by Organization Manager: eventId={}", event.getId());
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //the manager is rejecting a create request
+            //update in db
+            event.setStatus(EEventStatus.REJECTED_BY_MNG);
+            eventRepository.save(event);
 
-        //send notification
-        notificationService.sendEventCreationRejectedByOrgManagerNotification(event, request.getReason());
+            //send notification
+            notificationService.sendEventCreationRejectedByOrgManagerNotification(event, request.getReason());
+            log.info("Event creation is rejected by Organization Manager: eventId={}", event.getId());
+        } else {
+            //the manager is rejecting a update request
+
+            //set the event status to  the real status according to time
+            LocalDate today = LocalDate.now();
+            if (!today.isAfter(event.getRecruitmentEndDate())){
+                event.setStatus(EEventStatus.RECRUITING);
+            } else if (today.isBefore(event.getStartDate())){
+                event.setStatus(EEventStatus.UPCOMING);
+            } else if (today.isBefore(event.getEndDate())){
+                event.setStatus(EEventStatus.ONGOING);
+            } else {
+                event.setStatus(EEventStatus.COMPLETED);
+            }
+
+            //delete update information
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //todo send notification to host
+
+            log.info("Event update is rejected by Organization Manager: eventId={}", event.getId());
+        }
     }
 
     @Override
