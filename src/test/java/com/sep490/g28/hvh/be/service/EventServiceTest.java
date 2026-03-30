@@ -5,27 +5,33 @@ import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
 import com.sep490.g28.hvh.be.dto.event.request.CheckEventCheckInCodeRequest;
+import com.sep490.g28.hvh.be.dto.event.request.QuickCheckInEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
+import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
+import com.sep490.g28.hvh.be.util.GeoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Point;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +60,9 @@ public class EventServiceTest {
     EventApplicationRepository eventApplicationRepository;
 
     @Mock
+    CheckInLogRepository checkInLogRepository;
+
+    @Mock
     CurrentUserProvider currentUserProvider;
 
     @Mock
@@ -68,6 +77,7 @@ public class EventServiceTest {
     UUID volunteerId;
     UUID eventId;
     UUID hostId;
+    UUID sessionId;
 
     @BeforeEach
     void setup() {
@@ -75,6 +85,7 @@ public class EventServiceTest {
         volunteerId = UUID.randomUUID();
         eventId = UUID.randomUUID();
         hostId = UUID.randomUUID();
+        sessionId = UUID.randomUUID();
     }
 
     private Event mockEvent() {
@@ -114,7 +125,7 @@ public class EventServiceTest {
         event.setImages(List.of(img1, img2));
 
         EventSession session = new EventSession();
-        session.setId(UUID.randomUUID());
+        session.setId(sessionId);
         session.setStartDateTime(OffsetDateTime.now());
         session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setExpectedVolAmount(5);
@@ -136,6 +147,17 @@ public class EventServiceTest {
         CheckEventCheckInCodeRequest req = new CheckEventCheckInCodeRequest();
         req.setCheckInCode("123456");
         return req;
+    }
+
+    private QuickCheckInEventRequest validQuickCheckInEventRequest() {
+        QuickCheckInEventRequest request = new QuickCheckInEventRequest();
+        request.setEventSessionId(sessionId.toString());
+        request.setDeviceId("device-1");
+        request.setApVersion("1.0");
+        request.setOsVersion("android");
+        request.setCurrentPlaceLat(10.0);
+        request.setCurrentPlaceLng(10.0);
+        return request;
     }
 
     // ==== getEventFeeds ===================================
@@ -1183,5 +1205,257 @@ public class EventServiceTest {
                 AppException.class,
                 () -> eventService.checkEventCheckInCode(request)
         );
+    }
+
+    // ==== quickCheckInEvent ===================================
+    // ===== TC1 =====
+    @Test
+    void quickCheckInEvent_success() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository
+                .existsByDevice(any(), any(), any()))
+                .thenReturn(false);
+
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setDeviceId("device-1");
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.of(volunteer));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            Point mockPoint = mock(Point.class);
+
+            geoMock.when(() -> GeoUtils.toPoint(any(Double.class), any(Double.class)))
+                    .thenReturn(mockPoint);
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(Point.class), any(Point.class)))
+                    .thenReturn(50.0);
+
+            eventService.quickCheckInEvent(request);
+        }
+
+        verify(checkInLogRepository).save(any(CheckInLog.class));
+    }
+
+    // ===== TC2 =====
+    @Test
+    void quickCheckInEvent_already_checked_in() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(new CheckInLog());
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC3 =====
+    @Test
+    void quickCheckInEvent_session_not_exist() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.empty());
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC4 =====
+    @Test
+    void quickCheckInEvent_out_of_range() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+        request.setCurrentPlaceLat(10.0);
+        request.setCurrentPlaceLng(10.0);
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
+                    .thenReturn(mock(Point.class));
+            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
+                    .thenReturn(200.0); // > accuracy
+
+            assertThrows(
+                    AppException.class,
+                    () -> eventService.quickCheckInEvent(request)
+            );
+        }
+    }
+
+    // ===== TC5 =====
+    @Test
+    void quickCheckInEvent_device_already_used() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository
+                .existsByDevice(any(), any(), any()))
+                .thenReturn(true);
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
+                    .thenReturn(mock(Point.class));
+            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
+                    .thenReturn(50.0);
+
+            assertThrows(
+                    AppException.class,
+                    () -> eventService.quickCheckInEvent(request)
+            );
+        }
+    }
+
+    // ===== TC6 =====
+    @Test
+    void quickCheckInEvent_volunteer_not_exist() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository
+                .existsByDevice(any(), any(), any()))
+                .thenReturn(false);
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.empty());
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
+                    .thenReturn(mock(Point.class));
+            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
+                    .thenReturn(50.0);
+
+            assertThrows(
+                    AppException.class,
+                    () -> eventService.quickCheckInEvent(request)
+            );
+        }
+    }
+
+    // ===== TC7 =====
+    @Test
+    void quickCheckInEvent_device_not_match() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository
+                .existsByDevice(any(), any(), any()))
+                .thenReturn(false);
+
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setDeviceId("device-1");
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.of(volunteer));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+        request.setDeviceId("device-2");
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
+                    .thenReturn(mock(Point.class));
+            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
+                    .thenReturn(50.0);
+
+            eventService.quickCheckInEvent(request);
+        }
+
+        verify(checkInLogRepository, never()).save(any());
     }
 }

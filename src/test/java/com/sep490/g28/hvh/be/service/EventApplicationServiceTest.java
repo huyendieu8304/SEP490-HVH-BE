@@ -3,13 +3,12 @@ package com.sep490.g28.hvh.be.service;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.event.response.EventSimpleResponseForHost;
 import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
-import com.sep490.g28.hvh.be.entity.Event;
-import com.sep490.g28.hvh.be.entity.EventApplication;
-import com.sep490.g28.hvh.be.entity.EventSession;
-import com.sep490.g28.hvh.be.entity.Volunteer;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
@@ -22,16 +21,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -114,9 +108,13 @@ public class EventApplicationServiceTest {
     private EventApplication application(EEventApplicationStatus status,
                                          EEventStatus eventStatus) {
 
+        EventImage eventImages = new EventImage();
+        eventImages.setImagePath("img1");
+
         Event event = new Event();
         event.setStatus(eventStatus);
-        event.setRecruitmentEndDate(LocalDate.now().minusDays(1)); // default
+        event.setRecruitmentEndDate(LocalDate.now().minusDays(1));
+        event.setImages(List.of(eventImages));
 
         EventSession session = new EventSession();
         session.setEvent(event);
@@ -756,5 +754,88 @@ public class EventApplicationServiceTest {
                 service.getRegisteredParticipants(0, 10, sessionId);
 
         assertEquals(new ArrayList<>(), response.getRegisteredParticipants());
+    }
+
+    // ==== getEventApplicationsStatus ===================================
+    // ===== TC1 =====
+    @Test
+    void getEventApplicationsStatus_success() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+
+
+        EventApplication eventApplication = application();
+
+        EventImage eventImage = new EventImage();
+        eventImage.setImagePath("img1");
+        eventImage.setEvent(eventApplication.getSession().getEvent());
+
+        eventApplication.getSession().getEvent().setImages(List.of(eventImage));
+
+        Page<EventApplication> page = new PageImpl<>(List.of(eventApplication));
+
+        when(eventApplicationRepository.findByVolunteerId(
+                eq(volunteerId),
+                any(),
+                any()
+        )).thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("img1"))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        Page<EventApplicationsStatusResponse> response =
+                service.getEventApplicationsStatus(0, 10, "PENDING");
+
+        assertEquals(1, response.getContent().size());
+        assertEquals("signed-url",
+                response.getContent().getFirst().getImageUrl());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getEventApplicationsStatus_no_application() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "createdAt"));
+
+        Page<EventApplication> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(eventApplicationRepository.findByVolunteerId(
+                eq(volunteerId),
+                any(),
+                any()
+        )).thenReturn(emptyPage);
+
+        Page<EventApplicationsStatusResponse> response =
+                service.getEventApplicationsStatus(0, 10, "PENDING");
+
+        assertTrue(response.getContent().isEmpty());
+        assertEquals(0, response.getTotalElements());
+    }
+
+    // ===== TC3 =====
+    @Test
+    void getEventApplicationsStatus_parse_null_and_without_image() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventApplication eventApplication = application();
+        eventApplication.getSession().getEvent().setImages(null);
+
+        Page<EventApplication> page = new PageImpl<>(List.of(eventApplication));
+
+        when(eventApplicationRepository.findByVolunteerId(
+                eq(volunteerId),
+                any(),
+                any()
+        )).thenReturn(page);
+
+        Page<EventApplicationsStatusResponse> response =
+                service.getEventApplicationsStatus(0, 10,  null);
+
+        assertEquals(1, response.getContent().size());
+        assertNull(response.getContent().getFirst().getImageUrl());
     }
 }
