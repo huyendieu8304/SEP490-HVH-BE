@@ -140,7 +140,7 @@ public class ActivityDomainServiceImpl implements ActivityDomainService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         //search

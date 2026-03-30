@@ -201,7 +201,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         //search
@@ -427,7 +427,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "created_at")
+                Sort.by(Sort.Direction.DESC, "created_at")
         );
 
         List<Object[]> rawOrgData = organizationRepository.search(name, orgTypes, pageable);

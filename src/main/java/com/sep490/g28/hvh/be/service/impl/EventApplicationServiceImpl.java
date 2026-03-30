@@ -248,7 +248,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         Page<EventApplication> page = eventApplicationRepository.getEventApplicationsBySessionId(sessionId, pageable);
@@ -324,7 +324,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         EEventApplicationStatus status =
