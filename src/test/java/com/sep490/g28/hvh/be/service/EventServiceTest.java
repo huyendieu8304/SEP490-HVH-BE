@@ -84,6 +84,7 @@ public class EventServiceTest {
         event.setName("Charity Event");
         event.setDescription("Helping people");
         event.setAddress("Hanoi");
+        event.setDetailAddress("Hanoi");
         event.setServedTarget(EServedTarget.CHILDREN);
         event.setServingPlaceType(EServingPlaceType.CEMETERY);
         event.setStartDate(LocalDate.now());
@@ -118,6 +119,7 @@ public class EventServiceTest {
         session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setExpectedVolAmount(5);
         session.setExpectedSerAmount(10);
+        session.setApprovedApplicationCount(0);
 
         event.setSessions(List.of(session));
 
