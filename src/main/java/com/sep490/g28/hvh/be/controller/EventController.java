@@ -234,7 +234,7 @@ public class EventController {
             @RequestParam(required = false)
             String name,
 
-            @RequestParam()
+            @RequestParam(defaultValue = "RECRUITING")
             @EventStatus
             String status
     ) {
@@ -263,13 +263,13 @@ public class EventController {
     }
 
     @PreAuthorize("hasRole('VOL')")
-    @PostMapping("/volunteer/events/check-event-check-in-code")
+    @PostMapping("/vol/events/check-event-check-in-code")
     public ResponseEntity<CheckEventCheckInCodeResponse> checkEventCheckInCode(@Valid @RequestBody CheckEventCheckInCodeRequest request) {
         return ResponseEntity.ok(eventService.checkEventCheckInCode(request));
     }
 
     @PreAuthorize("hasRole('VOL')")
-    @PostMapping("/volunteer/events/quick-check-in")
+    @PostMapping("/vol/events/quick-check-in")
     public ResponseEntity<Void> quickCheckIn(@Valid @RequestBody QuickCheckInEventRequest request) {
         eventService.quickCheckInEvent(request);
         return ResponseEntity.ok().build();

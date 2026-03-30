@@ -5,11 +5,9 @@ import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
-import com.sep490.g28.hvh.be.entity.Event;
-import com.sep490.g28.hvh.be.entity.EventApplication;
-import com.sep490.g28.hvh.be.entity.EventSession;
-import com.sep490.g28.hvh.be.entity.Volunteer;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
@@ -22,10 +20,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,7 +55,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         Event event = session.getEvent();
         //only allow application when the event status is RECRUITING
-        if (!event.getStatus().equals(EEventStatus.RECRUITING)){
+        if (!event.getStatus().equals(EEventStatus.RECRUITING)) {
             throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
         }
 
@@ -79,7 +74,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.ALREADY_APPLIED);
         }
         //check expected Vol amount
-        if (session.getExpectedVolAmount() == session.getApprovedApplicationCount()){
+        if (session.getExpectedVolAmount() == session.getApprovedApplicationCount()) {
             throw new AppException(EventErrorCode.EVENT_SESSION_FULL);
         }
 
@@ -127,25 +122,25 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         );
 
         //check the status of the application
-        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)){
-             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
+        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)) {
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
         }
         //check the expected amount
         EventSession eventSession = eventApplication.getSession();
-        if (eventSession.getApprovedApplicationCount() >= eventSession.getExpectedVolAmount()){
+        if (eventSession.getApprovedApplicationCount() >= eventSession.getExpectedVolAmount()) {
             throw new AppException(EventErrorCode.EVENT_SESSION_FULL);
         }
 
         //check the status of the event
         Event event = eventSession.getEvent();
-        if (event.getStatus() != EEventStatus.RECRUITING){
+        if (event.getStatus() != EEventStatus.RECRUITING) {
             throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
         }
 
         eventApplication.setStatus(EEventApplicationStatus.APPROVED);
         eventApplicationRepository.save(eventApplication);
 
-        eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()+1);
+        eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount() + 1);
         eventSessionRepository.save(eventSession);
 
         //subscribe the volunteer's notification token(s) to the topic of notification
@@ -164,7 +159,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         );
 
         //check the status of the application
-        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)){
+        if (!eventApplication.getStatus().equals(EEventApplicationStatus.PENDING)) {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
         }
 
@@ -196,13 +191,13 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Volunteer volunteer = eventApplication.getVolunteer();
 
         //whether the event status allow volunteer to cancel application
-        if (!EEventStatus.volunteerCanCancelledApplication(event.getStatus())){
+        if (!EEventStatus.volunteerCanCancelledApplication(event.getStatus())) {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
         }
 
         //check application status, only PENDING and APPROVED can cancel
         if (eventApplication.getStatus().equals(EEventApplicationStatus.CANCELLED)
-                || eventApplication.getStatus().equals(EEventApplicationStatus.REJECTED)){
+                || eventApplication.getStatus().equals(EEventApplicationStatus.REJECTED)) {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
         }
         LocalDate today = LocalDate.now();
@@ -214,7 +209,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         boolean isMinusScore = false;
         //application is approved -> check the event timeline
-        if (eventApplication.getStatus().equals(EEventApplicationStatus.APPROVED)){
+        if (eventApplication.getStatus().equals(EEventApplicationStatus.APPROVED)) {
             //check event status
             /*
             If an application is approved
@@ -232,7 +227,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             }
 
             //decrease the approved amount of session
-            eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount()-1);
+            eventSession.setApprovedApplicationCount(eventSession.getApprovedApplicationCount() - 1);
             eventSessionRepository.save(eventSession);
         }
 
@@ -263,53 +258,53 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                         .filter(e -> e.getStatus().equals(EEventApplicationStatus.PENDING))
                         .map(e -> {
 
-                    UUID volunteerId = null;
-                    String email = null;
-                    String phone = null;
-                    String nickName = null;
-                    String name = null;
-                    String avatarUrl = null;
+                            UUID volunteerId = null;
+                            String email = null;
+                            String phone = null;
+                            String nickName = null;
+                            String name = null;
+                            String avatarUrl = null;
 
-                    //check if the event application linked with a volunteer
-                    if(e.getVolunteer() != null) {
+                            //check if the event application linked with a volunteer
+                            if (e.getVolunteer() != null) {
 
-                        Volunteer volunteer = e.getVolunteer();
+                                Volunteer volunteer = e.getVolunteer();
 
-                        volunteerId = volunteer.getId();
-                        email = volunteer.getEmail();
-                        phone = volunteer.getPhone();
-                        nickName = volunteer.getNickname();
-                        name = volunteer.getFullName();
+                                volunteerId = volunteer.getId();
+                                email = volunteer.getEmail();
+                                phone = volunteer.getPhone();
+                                nickName = volunteer.getNickname();
+                                name = volunteer.getFullName();
 
-                        //get signed URL of file
-                        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+                                //get signed URL of file
+                                if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
 
-                            CompletableFuture<String> avatarFuture =
-                                    storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
+                                    CompletableFuture<String> avatarFuture =
+                                            storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
 
-                            try {
-                                CompletableFuture.allOf(avatarFuture).join();
-                                avatarUrl = avatarFuture.join();
-                            } catch (CompletionException ex) {
-                                Throwable cause = ex.getCause();
-                                if (cause instanceof AppException ae) {
-                                    //todo: handle app exception in viewEventFeeds
-                                } else {
-                                    throw cause instanceof RuntimeException re ? re : ex;
+                                    try {
+                                        CompletableFuture.allOf(avatarFuture).join();
+                                        avatarUrl = avatarFuture.join();
+                                    } catch (CompletionException ex) {
+                                        Throwable cause = ex.getCause();
+                                        if (cause instanceof AppException ae) {
+                                            //todo: handle app exception in viewEventFeeds
+                                        } else {
+                                            throw cause instanceof RuntimeException re ? re : ex;
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
 
-                    return new RegisteredParticipantSimpleResponse(
-                            volunteerId,
-                            email,
-                            phone,
-                            nickName,
-                            name,
-                            avatarUrl
-                    );
-                }).toList()).orElse(Collections.emptyList());
+                            return new RegisteredParticipantSimpleResponse(
+                                    volunteerId,
+                                    email,
+                                    phone,
+                                    nickName,
+                                    name,
+                                    avatarUrl
+                            );
+                        }).toList()).orElse(Collections.emptyList());
 
         // If after load the page with n size,
         // and page.hasNext() is true (the slice will auto check this)
@@ -320,5 +315,67 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 page.hasNext() ? String.valueOf(pageNumber + 1) : null,
                 page.hasNext()
         );
+    }
+
+    @Override
+    public Page<EventApplicationsStatusResponse> getEventApplicationsStatus(int pageNumber, int pageSize, String inputStatus) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.ASC, "createdAt")
+        );
+
+        EEventApplicationStatus status =
+                (inputStatus == null || inputStatus.isBlank())
+                        ? null
+                        : EEventApplicationStatus.valueOf(inputStatus);
+
+        Page<EventApplication> eventApplication = eventApplicationRepository.findByVolunteerId(volunteerId, status, pageable);
+
+        if(eventApplication.getContent().isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, eventApplication.getTotalElements());
+        }
+
+        return eventApplication.map(e -> {
+
+            Event event = e.getSession().getEvent();
+
+            String firstEventImageUrl = null;
+
+            //get signed URL of file
+            if (event.getImages() != null && !event.getImages().isEmpty()) {
+
+                log.info("image of event: " + event.getImages());
+
+                List<EventImage> eventImageList = event.getImages();
+
+                CompletableFuture<String> firstEventImageFuture =
+                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
+
+                try {
+                    CompletableFuture.allOf(firstEventImageFuture).join();
+                    firstEventImageUrl = firstEventImageFuture.join();
+                } catch (CompletionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof AppException ae) {
+                        //todo: handle app exception in getEventApplicationsStatus
+                    } else {
+                        throw cause instanceof RuntimeException re ? re : ex;
+                    }
+                }
+            }
+
+            return new EventApplicationsStatusResponse(
+                    e.getId(),
+                    event.getId(),
+                    event.getName(),
+                    firstEventImageUrl,
+                    event.getStartDate(),
+                    e.getStatus()
+            );
+
+        });
     }
 }

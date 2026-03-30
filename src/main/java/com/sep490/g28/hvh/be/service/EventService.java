@@ -58,4 +58,6 @@ public interface EventService {
     CheckEventCheckInCodeResponse checkEventCheckInCode(CheckEventCheckInCodeRequest request);
 
     void quickCheckInEvent(QuickCheckInEventRequest request);
+
+
 }
