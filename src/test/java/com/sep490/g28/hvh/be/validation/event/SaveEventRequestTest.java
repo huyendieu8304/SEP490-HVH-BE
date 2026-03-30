@@ -1,6 +1,5 @@
 package com.sep490.g28.hvh.be.validation.event;
 
-import com.sep490.g28.hvh.be.dto.activityDomain.request.ChangeActivitySubDomainVisibilityRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.ValidationErrorCode;
 import jakarta.validation.ConstraintViolation;
