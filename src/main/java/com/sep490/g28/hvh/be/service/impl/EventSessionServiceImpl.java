@@ -267,15 +267,16 @@ public class EventSessionServiceImpl implements EventSessionService {
 
             //edit step
             //iterate through the existing event session and update the one with same id
-            for (EventSession dt : targetEventSessionsList) {
+            for (EventSession session : targetEventSessionsList) {
 
-                EditEventSessionRequest r = editMap.get(dt.getId());
+                EditEventSessionRequest r = editMap.get(session.getId());
                 if (r == null) continue;
 
-                dt.setStartDateTime(r.getStartDateTime());
-                dt.setEndDateTime(r.getEndDateTime());
-                dt.setExpectedVolAmount(r.getExpectedVolAmount());
-                dt.setExpectedSerAmount(r.getExpectedSerAmount());
+                session.setStartDateTime(r.getStartDateTime());
+                session.setEndDateTime(r.getEndDateTime());
+                session.setExpectedVolAmount(r.getExpectedVolAmount());
+                session.setExpectedSerAmount(r.getExpectedSerAmount());
+                session.setApprovedApplicationCount(0);
             }
         }
 
@@ -289,6 +290,7 @@ public class EventSessionServiceImpl implements EventSessionService {
                         session.setEndDateTime(r.getEndDateTime());
                         session.setExpectedVolAmount(r.getExpectedVolAmount());
                         session.setExpectedSerAmount(r.getExpectedSerAmount());
+                        session.setApprovedApplicationCount(0);
                         return session;
                     }).toList()
             );
