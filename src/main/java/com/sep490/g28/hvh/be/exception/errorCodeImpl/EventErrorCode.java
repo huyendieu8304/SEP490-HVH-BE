@@ -41,7 +41,9 @@ public enum EventErrorCode implements ErrorCode {
 
     EVENT_CANNOT_CANCEL(7023, "Sự kiện đang ở trong trạng thái không được hủy", HttpStatus.CONFLICT),
     EVENT_CANNOT_UPDATE(7024, "Sự kiện đang ở trong trạng thái không được cập nhật thông tin", HttpStatus.CONFLICT),
+    NO_CHANGES_IN_UPDATE_REQUEST(7025, "Yêu cầu cập nhật không chứa thay đổi nào", HttpStatus.BAD_REQUEST),
 
+    EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE(7026, "Không thể phê duyệt sự kiện do sự kiện đã quá hạn tuyển người", HttpStatus.CONFLICT),
     ;
 
     private final int code;
