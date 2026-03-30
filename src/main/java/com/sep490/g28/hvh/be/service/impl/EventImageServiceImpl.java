@@ -238,4 +238,31 @@ public class EventImageServiceImpl implements EventImageService {
         updateEventPayload.setEventImages(eventImagesAfterUpdate);
         return Collections.emptyList();
     }
+
+    public void deleteRemovedImage(List<EventImage> oldImages, List<EventImage> newImages) {
+        //get ids of images that would be kept or added
+        Set<UUID> newIds = newImages.stream()
+                .map(EventImage::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        //get the ids of removed images
+        List<EventImage> removedImages = oldImages.stream()
+                .filter(oldImg -> oldImg.getId() != null)
+                .filter(oldImg -> !newIds.contains(oldImg.getId()))
+                .toList();
+
+        // get path to delete
+        List<String> pathsToDelete = removedImages.stream()
+                .map(EventImage::getImagePath)
+                .toList();
+
+        // delete file async
+        List<CompletableFuture<Void>> futures = pathsToDelete.stream()
+                .map(storageService::deleteFileAsync)
+                .toList();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        log.info("Deleted path(s) of removed images");
+    }
 }
