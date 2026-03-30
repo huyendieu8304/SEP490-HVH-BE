@@ -242,7 +242,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByHost(pageNumber, pageSize, name, status));
     }
 
-    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#id)")
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#inputId)")
     @GetMapping("/host/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
