@@ -458,11 +458,23 @@ public class EventServiceImpl implements EventService {
                 throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
             }
 
+            if (event.getUpdateEventPayload().getEventSessions() != null) {
+                //check whether the host is hosting multiple event session in a day if the update is applied?
+                List<EventSession> conflictSession = eventSessionService.findConflictSessionDateOfHost(
+                        event.getHost().getId(),
+                        event.getId(),
+                        event.getUpdateEventPayload().getEventSessions()
+                );
+                if (!conflictSession.isEmpty()) {
+                    throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+                }
+            }
+
             //update in db
             event.setStatus(EEventStatus.APPROVED_BY_MNG);
             eventRepository.save(event);
 
-            //todo send notification
+            //todo send notification to host
 
             log.info("Event update (critical) is approved by Organization Manager: eventId={}", event.getId());
         } else {
@@ -485,6 +497,8 @@ public class EventServiceImpl implements EventService {
 
             //save event
             eventRepository.save(event);
+
+            //todo send notification to host
 
             //todo send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
 
@@ -586,7 +600,6 @@ public class EventServiceImpl implements EventService {
                 event.setStatus(EEventStatus.COMPLETED);
             }
 
-            //delete update information
             //remove update information and update critical
             event.setUpdateCritical(null);
             event.setUpdateEventPayload(null);
@@ -612,24 +625,64 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-//        //check whether the host is hosting other event or not?
-//        List<EventSession> conflictSession =
-//                eventSessionService.findConflictSessionDateOfHost(
-//                        event.getHost().getId(),
-//                        eventId,
-//                        event.getSessions()
-//                );
-//        if (!conflictSession.isEmpty()) {
-//            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
-//        }
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //admin approving create request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            if (today.isAfter(event.getRecruitmentEndDate())){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
 
-        //update in db
-        event.setStatus(EEventStatus.RECRUITING);
-        eventRepository.save(event);
-        log.info("Event is approved by System Admin: eventId={}", event.getId());
+            //check whether the host is hosting multiple event session in a day or not?
+            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    eventId,
+                    event.getSessions()
+            );
+            if (!conflictSession.isEmpty()) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
 
-        //send notification
-        notificationService.sendEventCreationApprovedByAdminNotification(event);
+            //update in db
+            event.setStatus(EEventStatus.RECRUITING);
+            eventRepository.save(event);
+            log.info("Event creation is approved by System Admin: eventId={}", event.getId());
+
+            //send notification
+            notificationService.sendEventCreationApprovedByAdminNotification(event);
+        } else {
+            //the manager is approving for an update CRITICAL information request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            LocalDate newRecruitmentEndDate =
+                    event.getUpdateEventPayload().getRecruitmentEndDate() == null
+                            ? event.getRecruitmentEndDate()
+                            : event.getUpdateEventPayload().getRecruitmentEndDate();
+            if (today.isAfter(newRecruitmentEndDate)){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
+
+            //set the event status back to RECRUITING
+            event.setStatus(EEventStatus.RECRUITING);
+
+            //apply update information
+            applyCriticalUpdateEvent(event, event.getUpdateEventPayload());
+            applyNonCriticalUpdateEvent(event, event.getUpdateEventPayload());
+
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //todo send notification to host and org mng to inform about the approve
+
+            //todo send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+
+            log.info("Event update is approved by System Admin: eventId={}", event.getId());
+        }
     }
 
     @Override
@@ -644,13 +697,43 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-        //update in db
-        event.setStatus(EEventStatus.REJECTED_BY_AD);
-        eventRepository.save(event);
-        log.info("Event is rejected by System Admin: eventId={}", event.getId());
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //the admin is rejecting a create request
+            //update in db
+            event.setStatus(EEventStatus.REJECTED_BY_AD);
+            eventRepository.save(event);
 
-        //send notification
-        notificationService.sendEventCreationRejectedByAdminNotification(event, request.getReason());
+            //send notification
+            notificationService.sendEventCreationRejectedByAdminNotification(event, request.getReason());
+            log.info("Event creation is rejected by System Admin: eventId={}", event.getId());
+        } else {
+            //the admin is rejecting a update request
+
+            //set the event status to  the real status according to time
+            LocalDate today = LocalDate.now();
+            if (!today.isAfter(event.getRecruitmentEndDate())){
+                event.setStatus(EEventStatus.RECRUITING);
+            } else if (today.isBefore(event.getStartDate())){
+                event.setStatus(EEventStatus.UPCOMING);
+            } else if (today.isBefore(event.getEndDate())){
+                event.setStatus(EEventStatus.ONGOING);
+            } else {
+                event.setStatus(EEventStatus.COMPLETED);
+            }
+
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //todo send notification to host
+
+            log.info("Event update is rejected by Organization Manager: eventId={}", event.getId());
+        }
+
     }
 
     //todo unit test for this method
