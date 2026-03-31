@@ -295,6 +295,9 @@ public class EventImageServiceImpl implements EventImageService {
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-       return result;
+        oldImages.clear();
+        oldImages.addAll(result);
+
+       return oldImages;
     }
 }

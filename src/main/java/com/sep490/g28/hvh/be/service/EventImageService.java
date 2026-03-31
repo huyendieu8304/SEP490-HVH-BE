@@ -18,5 +18,9 @@ public interface EventImageService {
             UpdateEventPayload updateEventPayload
     );
 
-    List<EventImage> resolveUpdatedEventImages(Event event, List<EventImage> oldImages, List<UpdateEventImagePayload> updateEventImagePayloads);
+    List<EventImage> resolveUpdatedEventImages(
+            Event event,
+            List<EventImage> oldImages,
+            List<UpdateEventImagePayload> updateEventImagePayloads
+    );
 }
