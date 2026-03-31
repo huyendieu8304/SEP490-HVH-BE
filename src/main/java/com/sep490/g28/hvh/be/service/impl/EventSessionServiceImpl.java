@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.service.impl;
 
+import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
 import com.sep490.g28.hvh.be.entity.ActivityDomain;
@@ -11,6 +13,7 @@ import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.service.EventSessionService;
+import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -78,6 +82,8 @@ public class EventSessionServiceImpl implements EventSessionService {
             session.setEndDateTime(r.getEndDateTime());
             session.setExpectedVolAmount(r.getExpectedVolAmount());
             session.setExpectedSerAmount(r.getExpectedSerAmount());
+            session.setApprovedApplicationCount(0);
+            session.setCheckInCode(RandomStringUtil.random6Numberic());
             return session;
         }).toList());
 
@@ -143,37 +149,45 @@ public class EventSessionServiceImpl implements EventSessionService {
     }
 
     //todo unit test for this method
-    //todo check luôn từ lúc tạo sự kiên, update sự kiện cũng check
     @Override
     public List<EventSession> findConflictSessionDateOfHost(UUID hostId, UUID checkedEventId, List<EventSession> checkedSessions) {
-        List<LocalDate> dates = checkedSessions
-                .stream()
-                .map(s -> s.getStartDateTime().toLocalDate())
-                .toList();
+        if (checkedSessions == null || checkedSessions.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        return eventSessionRepository.findConflictingSessions(
+        // get all session of host, not in this event, those events are at least approved by org mng
+        List<EventSession> allSessions = eventSessionRepository.findByHostExcludingEvent(
                 hostId,
                 checkedEventId,
-                dates
+                Arrays.asList(
+                        EEventStatus.APPROVED_BY_MNG.name(),
+                        EEventStatus.RECRUITING.name(),
+                        EEventStatus.UPCOMING.name(),
+                        EEventStatus.ONGOING.name()
+                )
         );
+
+        Set<LocalDate> checkedDatesVN = checkedSessions.stream()
+                .map(s -> s.getStartDateTime().toLocalDate()) // VN time zone
+                .collect(Collectors.toSet());
+
+        return allSessions.stream()
+                .filter(s -> checkedDatesVN.contains(s.getStartDateTime().toLocalDate()))
+                .toList();
+
     }
 
     private void checkEventDatesConstraint(LocalDate startDate, LocalDate newRecruitmentEndDate) {
         // today
         LocalDate today = LocalDate.now();
 
-        // startDate must after at least 15 days since today
+        // startDate must after at least 15 days since today (sd >= today +15
         if (startDate.isBefore(today.plusDays(15))) {
             throw new AppException(EventErrorCode.INVALID_EVENT_START_DATE);
         }
 
-        //recruitmentEndDate must after at least 3 days since today
-        if (newRecruitmentEndDate.isBefore(today.plusDays(3))) {
-            throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
-        }
-
-        // recruitmentEndDate must before startDate at least 3 days
-        if (!newRecruitmentEndDate.isBefore(startDate.minusDays(3))) {
+        // recruitmentEndDate must before startDate at least 3 days (red <= sd -3)
+        if (newRecruitmentEndDate.isAfter(startDate.minusDays(3))) {
             throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
         }
     }
@@ -291,6 +305,7 @@ public class EventSessionServiceImpl implements EventSessionService {
                         session.setExpectedVolAmount(r.getExpectedVolAmount());
                         session.setExpectedSerAmount(r.getExpectedSerAmount());
                         session.setApprovedApplicationCount(0);
+                        session.setCheckInCode(RandomStringUtil.random6Numberic());
                         return session;
                     }).toList()
             );
@@ -312,11 +327,11 @@ public class EventSessionServiceImpl implements EventSessionService {
 
         //recruitmentEndDate is updated?
         if (updateEventRequest.getRecruitmentEndDate() != null
-                && updateEventRequest.getRecruitmentEndDate().isEqual(event.getRecruitmentEndDate())
+                && !updateEventRequest.getRecruitmentEndDate().isEqual(event.getRecruitmentEndDate())
         ) {
             updateEventDateTime = true;
             recruitmentEndDateAfterUpdate = updateEventRequest.getRecruitmentEndDate();
-            updateEventPayload.setRecruitmentEndDate(updateEventRequest.getRecruitmentEndDate());
+            updateEventPayload.setRecruitmentEndDate(recruitmentEndDateAfterUpdate);
         }
 
         //event sessions is updated?
@@ -334,11 +349,13 @@ public class EventSessionServiceImpl implements EventSessionService {
             updateEventSessions(event, updateEventRequest.getEventSessions(), eventSessionsAfterUpdate);
 
             //check duplicate session date hosted by host after updated
-            if (findConflictSessionDateOfHost(
+            List<EventSession> conflictSession = findConflictSessionDateOfHost(
                     event.getHost().getId(),
                     event.getId(),
                     eventSessionsAfterUpdate
-            ) != null) {
+            );
+
+            if (conflictSession != null && !conflictSession.isEmpty()) {
                 throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
             }
 
@@ -356,16 +373,85 @@ public class EventSessionServiceImpl implements EventSessionService {
                     .orElseThrow();
             updateEventPayload.setStartDate(startDateAfterUpdate);
             updateEventPayload.setEndDate(endDateAfterUpdate);
-            updateEventPayload.setEventSessions(eventSessionsAfterUpdate);
+
+            List<UpdateEventSessionPayload> sessionPayloads = eventSessionsAfterUpdate.stream().map(s -> {
+                UpdateEventSessionPayload p = new UpdateEventSessionPayload();
+                p.setId(s.getId());
+                p.setStartDateTime(s.getStartDateTime());
+                p.setEndDateTime(s.getEndDateTime());
+                p.setExpectedVolAmount(s.getExpectedVolAmount());
+                p.setExpectedSerAmount(s.getExpectedSerAmount());
+                return p;
+            }).toList();
+
+            updateEventPayload.setEventSessions(sessionPayloads);
         }
 
         // event recruitment end date OR event session is updated
-        if (updateEventDateTime) {
-            //check event's dates constraints
-            checkEventDatesConstraint(startDateAfterUpdate, recruitmentEndDateAfterUpdate);
+        // recruitmentEndDate must before startDate at least 3 days  (red <= sd-3)
+        if (updateEventDateTime && recruitmentEndDateAfterUpdate.isAfter(startDateAfterUpdate.minusDays(3))) {
+            throw new AppException(EventErrorCode.INVALID_EVENT_RECRUITMENT_END_DATE);
         }
 
         return updateEventDateTime;
 
+    }
+
+    @Override
+    public List<EventSession> resolveUpdateEventSessions(
+            Event event,
+            List<EventSession> oldSessions,
+            List<UpdateEventSessionPayload> payloads) {
+
+        // Map existing
+        Map<UUID, EventSession> existing = oldSessions.stream()
+                .filter(s -> s.getId() != null)
+                .collect(Collectors.toMap(EventSession::getId, Function.identity()));
+
+        List<EventSession> result = new ArrayList<>(payloads.size());
+        Set<UUID> keepIds = new HashSet<>();
+
+        // Build new list
+        for (UpdateEventSessionPayload p : payloads) {
+            UUID id = p.getId();
+
+            if (id != null && existing.containsKey(id)) {
+                // update
+                EventSession s = existing.get(id);
+                s.setStartDateTime(p.getStartDateTime());
+                s.setEndDateTime(p.getEndDateTime());
+                s.setExpectedVolAmount(p.getExpectedVolAmount());
+                s.setExpectedSerAmount(p.getExpectedSerAmount());
+                s.setApprovedApplicationCount(0); //reset the number of application approved
+
+                result.add(s);
+                keepIds.add(id);
+            } else {
+                // create
+                EventSession s = new EventSession();
+                s.setEvent(event);
+                s.setStartDateTime(p.getStartDateTime());
+                s.setEndDateTime(p.getEndDateTime());
+                s.setExpectedVolAmount(p.getExpectedVolAmount());
+                s.setExpectedSerAmount(p.getExpectedSerAmount());
+                s.setApprovedApplicationCount(0); //reset the number of application approved
+                s.setCheckInCode(RandomStringUtil.random6Numberic());
+                result.add(s);
+            }
+        }
+
+        // Remove orphan
+        // MUST HAVE orphanRemoval = true IN ENTITY, yeah, I already has it
+        List<EventSession> toRemove = oldSessions.stream()
+                .filter(s -> s.getId() != null)
+                .filter(s -> !keepIds.contains(s.getId()))
+                .toList();
+
+        oldSessions.removeAll(toRemove);
+
+        //clear old session and replace by new session
+        oldSessions.clear();
+        oldSessions.addAll(result);
+        return oldSessions;
     }
 }

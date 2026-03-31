@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventImagePayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
 import com.sep490.g28.hvh.be.entity.Event;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -200,6 +202,7 @@ public class EventImageServiceImpl implements EventImageService {
             eventImagesAfterUpdate.removeIf(dt -> removeIds.contains(dt.getId()));
         }
 
+        List<String> uploadUrls = new ArrayList<>();
         //add
         if (!adds.isEmpty()) {
             int remainingSlot = MAX_IMAGES - (existingCount - removeCount);
@@ -230,39 +233,68 @@ public class EventImageServiceImpl implements EventImageService {
 
             CompletableFuture.allOf(urlFutures.toArray(new CompletableFuture[0])).join();
 
-            return urlFutures.stream()
+            uploadUrls =  urlFutures.stream()
                     .map(CompletableFuture::join)
                     .toList();
 
         }
-        updateEventPayload.setEventImages(eventImagesAfterUpdate);
-        return Collections.emptyList();
+
+        //set images' info after update to payload
+        List<UpdateEventImagePayload> imagePayloads = eventImagesAfterUpdate.stream().map(img -> {
+            UpdateEventImagePayload payload = new UpdateEventImagePayload();
+            payload.setId(img.getId());
+            payload.setImagePath(img.getImagePath());
+            return payload;
+        }).toList();
+        updateEventPayload.setEventImages(imagePayloads);
+
+        return uploadUrls;
     }
 
-    public void deleteRemovedImage(List<EventImage> oldImages, List<EventImage> newImages) {
-        //get ids of images that would be kept or added
-        Set<UUID> newIds = newImages.stream()
-                .map(EventImage::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+    @Override
+    public List<EventImage> resolveUpdatedEventImages(
+            Event event,
+            List<EventImage> oldImages,
+            List<UpdateEventImagePayload> payloads
+    ) {
+        // Map existing
+        Map<UUID, EventImage> existing = oldImages.stream()
+                .filter(img -> img.getId() != null)
+                .collect(Collectors.toMap(EventImage::getId, Function.identity()));
 
-        //get the ids of removed images
-        List<EventImage> removedImages = oldImages.stream()
-                .filter(oldImg -> oldImg.getId() != null)
-                .filter(oldImg -> !newIds.contains(oldImg.getId()))
-                .toList();
+        List<EventImage> result = new ArrayList<>(payloads.size());
+        Set<UUID> keepIds = new HashSet<>();
 
-        // get path to delete
-        List<String> pathsToDelete = removedImages.stream()
-                .map(EventImage::getImagePath)
-                .toList();
+        // Build new list + mark keep
+        for (UpdateEventImagePayload p : payloads) {
+            UUID id = p.getId();
 
-        // delete file async
-        List<CompletableFuture<Void>> futures = pathsToDelete.stream()
-                .map(storageService::deleteFileAsync)
-                .toList();
+            if (id != null && existing.containsKey(id)) {
+                EventImage e = existing.get(id);
+                e.setImagePath(p.getImagePath());
+                result.add(e);
+                keepIds.add(id);
+            } else {
+                EventImage e = new EventImage();
+                e.setId(id);
+                e.setImagePath(p.getImagePath());
+                e.setEvent(event);
+                result.add(e);
+            }
+        }
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        log.info("Deleted path(s) of removed images");
+        // Delete removed
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (EventImage old : oldImages) {
+            UUID id = old.getId();
+            if (id != null && !keepIds.contains(id)) {
+                futures.add(storageService.deleteFileAsync(old.getImagePath()));
+            }
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+       return result;
     }
 }

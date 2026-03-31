@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.entity;
 
+import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -55,8 +56,9 @@ public class EventSession {
     @Column(name = "approved_application_count", nullable = false)
     private int approvedApplicationCount = 0; //increase when an application is approved
 
+    //todo, tạo check in code ngay từ lúc tạo mới session
     @Column(name = "check_in_code", length = 6)
-    private String checkInCode;
+    private String checkInCode = RandomStringUtil.random6Numberic();
 
     //--------------------------------------------------------
     @CreationTimestamp

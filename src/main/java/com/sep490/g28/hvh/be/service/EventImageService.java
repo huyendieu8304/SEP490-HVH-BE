@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.service;
 
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventImagePayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
 import com.sep490.g28.hvh.be.entity.Event;
@@ -16,6 +17,6 @@ public interface EventImageService {
             List<EditEventImageRequest> reqImages,
             UpdateEventPayload updateEventPayload
     );
-    void deleteRemovedImage(List<EventImage> oldImages, List<EventImage> newImages);
 
+    List<EventImage> resolveUpdatedEventImages(Event event, List<EventImage> oldImages, List<UpdateEventImagePayload> updateEventImagePayloads);
 }

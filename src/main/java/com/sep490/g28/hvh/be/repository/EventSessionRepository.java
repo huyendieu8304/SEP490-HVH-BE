@@ -19,22 +19,36 @@ public interface EventSessionRepository extends JpaRepository<EventSession, UUID
     List<EventSession> findByEventId(UUID id);
 
     @Query(value = """
-            SELECT s.*
-            FROM event_sessions s
-            JOIN events e ON e.id = s.event_id
-            WHERE e.host_id = :hostId
-            AND e.id <> :eventId
-            AND e.status IN (
-                'APPROVED_BY_MNG',
-                'RECRUITING',
-                'UPCOMING',
-                'ONGOING'
-            )
-            AND s.start_date_time::date IN (:dates)
-            """, nativeQuery = true)
+        SELECT s.*
+        FROM event_sessions s
+        JOIN events e ON e.id = s.event_id
+        WHERE e.host_id = :hostId
+          AND e.id <> :eventId
+          AND e.status IN (
+              'APPROVED_BY_MNG',
+              'RECRUITING',
+              'UPCOMING',
+              'ONGOING'
+          )
+          AND s.start_date_time::date = ANY(:dates)
+        """, nativeQuery = true)
     List<EventSession> findConflictingSessions(
             UUID hostId,
             UUID eventId,
-            List<LocalDate> dates
+            java.sql.Date[] dates
+    );
+
+    @Query(value = """
+        SELECT s.*
+        FROM event_sessions s
+        JOIN events e ON e.id = s.event_id
+        WHERE e.host_id = :hostId
+          AND e.id <> :eventId
+          AND e.status IN (:statuses)
+        """, nativeQuery = true)
+    List<EventSession> findByHostExcludingEvent(
+            UUID hostId,
+            UUID eventId,
+            List<String> statuses
     );
 }

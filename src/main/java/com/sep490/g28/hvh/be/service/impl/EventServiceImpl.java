@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventImagePayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
@@ -407,6 +409,67 @@ public class EventServiceImpl implements EventService {
         volunteerSavedEventRepository.save(volunteerSavedEvent);
     }
 
+
+    private void applyNonCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
+        //apply images
+        if (payload.getEventImages() != null) {
+            List<EventImage> oldImages = event.getImages();
+            List<UpdateEventImagePayload> newImages = payload.getEventImages();
+            event.setImages(eventImageService.resolveUpdatedEventImages(event, oldImages, newImages));
+        }
+
+        if (payload.getDescription() != null) {
+            event.setDescription(payload.getDescription());
+        }
+
+        if (payload.getAutoApprove() != null) {
+            event.setAutoApprove(payload.getAutoApprove());
+        }
+
+        if (payload.getServingPlaceType() != null) {
+            event.setServingPlaceType(payload.getServingPlaceType());
+        }
+    }
+
+    private void applyCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
+        if (payload.getEventSessions() != null) {
+
+            List<EventSession> oldSessions = event.getSessions();
+            List<UpdateEventSessionPayload> newSessions = payload.getEventSessions();
+            List<EventSession> updatedEventSessions = eventSessionService.resolveUpdateEventSessions(event, oldSessions, newSessions);
+
+            //check whether the host is hosting multiple event session in a day if the update is applied?
+            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    event.getId(),
+                    updatedEventSessions
+            );
+            if (!conflictSession.isEmpty()) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
+
+            event.setSessions(updatedEventSessions);
+            event.setStartDate(payload.getStartDate());
+            event.setEndDate(payload.getEndDate());
+
+        }
+        if (payload.getAddress() != null) {
+            event.setAddress(payload.getAddress());
+        }
+        if (payload.getDetailAddress() != null) {
+            event.setDetailAddress(payload.getDetailAddress());
+        }
+        if (payload.getRecruitmentEndDate() != null) {
+            event.setRecruitmentEndDate(payload.getRecruitmentEndDate());
+        }
+        if (payload.getCheckInLocationLat() != null && payload.getCheckInLocationLng() != null) {
+            event.setCheckInLocation(GeoUtils.toPoint(payload.getCheckInLocationLat(), payload.getCheckInLocationLng()));
+        }
+        if (payload.getCheckInLocationAccuracyMeters() != null) {
+            event.setCheckInAccuracyMeters(payload.getCheckInLocationAccuracyMeters());
+        }
+    }
+
     @Override
     public void approveEventByManager(UUID eventId) {
         //get event out from repo
@@ -459,11 +522,20 @@ public class EventServiceImpl implements EventService {
             }
 
             if (event.getUpdateEventPayload().getEventSessions() != null) {
+
+                List<EventSession> newSessions = event.getUpdateEventPayload().getEventSessions().stream()
+                        .map(s -> {
+                            EventSession session = new EventSession();
+                            session.setId(s.getId());
+                            session.setStartDateTime(s.getStartDateTime());
+                            session.setEndDateTime(s.getEndDateTime());
+                            return session;
+                        }).toList();
                 //check whether the host is hosting multiple event session in a day if the update is applied?
                 List<EventSession> conflictSession = eventSessionService.findConflictSessionDateOfHost(
                         event.getHost().getId(),
                         event.getId(),
-                        event.getUpdateEventPayload().getEventSessions()
+                        newSessions
                 );
                 if (!conflictSession.isEmpty()) {
                     throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
@@ -506,61 +578,6 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private void applyNonCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
-        //apply images
-        if (payload.getEventImages() != null) {
-            List<EventImage> oldImages = event.getImages();
-            List<EventImage> newImages = payload.getEventImages();
-            eventImageService.deleteRemovedImage(oldImages, newImages);
-            event.setImages(newImages);
-        }
-
-        if (payload.getDescription() != null) {
-            event.setDescription(payload.getDescription());
-        }
-
-        if (payload.getAutoApprove() != null) {
-            event.setAutoApprove(payload.getAutoApprove());
-        }
-
-        if (payload.getServingPlaceType() != null) {
-            event.setServingPlaceType(payload.getServingPlaceType());
-        }
-    }
-
-    private void applyCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
-        if (payload.getEventSessions() != null) {
-            //check whether the host is hosting multiple event session in a day if the update is applied?
-            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
-                    event.getHost().getId(),
-                    event.getId(),
-                    payload.getEventSessions()
-            );
-            if (!conflictSession.isEmpty()) {
-                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
-            }
-
-            event.setSessions(payload.getEventSessions());
-            event.setStartDate(payload.getStartDate());
-            event.setEndDate(payload.getEndDate());
-
-        }
-        if (payload.getAddress() != null) {
-            event.setAddress(payload.getAddress());
-        }
-        if (payload.getDetailAddress() != null) {
-            event.setDetailAddress(payload.getDetailAddress());
-        }
-        if (payload.getRecruitmentEndDate() != null) {
-            event.setRecruitmentEndDate(payload.getRecruitmentEndDate());
-        }
-        if (payload.getCheckInLocation() != null) {
-            event.setCheckInLocation(payload.getCheckInLocation());
-        }
-        if (payload.getCheckInLocationAccuracyMeters() != null) {
-            event.setCheckInAccuracyMeters(payload.getCheckInLocationAccuracyMeters());
-        }
-    }
 
 
     @Override
@@ -587,7 +604,6 @@ public class EventServiceImpl implements EventService {
             log.info("Event creation is rejected by Organization Manager: eventId={}", event.getId());
         } else {
             //the manager is rejecting a update request
-
             //set the event status to  the real status according to time
             LocalDate today = LocalDate.now();
             if (!today.isAfter(event.getRecruitmentEndDate())){
@@ -676,6 +692,8 @@ public class EventServiceImpl implements EventService {
 
             //save event
             eventRepository.save(event);
+
+            //todo cho đơn apply về cancel hết
 
             //todo send notification to host and org mng to inform about the approve
 
@@ -1373,7 +1391,11 @@ public class EventServiceImpl implements EventService {
         UpdateEventResponse response = new UpdateEventResponse();
 
         //check update event sessions and other start date, end recruitment date and end date
-        updateCritical = eventSessionService.checkAndResolveUpdateEventDateTime(event, request, updatePayload);
+        boolean updateEventDateTime = eventSessionService.checkAndResolveUpdateEventDateTime(event, request, updatePayload);
+        if (updateEventDateTime) {
+            hasChanges = true;
+            updateCritical = true;
+        }
 
         //map image
         if (request.getUpdateImages() != null && !request.getUpdateImages().isEmpty()) {
@@ -1427,8 +1449,8 @@ public class EventServiceImpl implements EventService {
         )  {
             hasChanges = true;
             updateCritical = true;
-            Point point  = GeoUtils.toPoint(request.getCheckInLocationLat(), request.getCheckInLocationLng());
-            updatePayload.setCheckInLocation(point);
+            updatePayload.setCheckInLocationLat(request.getCheckInLocationLat());
+            updatePayload.setCheckInLocationLng(request.getCheckInLocationLng());
         }
 
         if (request.getCheckInLocationAccuracyMeters() != null
@@ -1455,6 +1477,7 @@ public class EventServiceImpl implements EventService {
                 eventId,
                 event.getName()
         );
+        log.info("Event update request is submitted to Org Manager, eventId={}", eventId);
         // todo: should i notify all the volunteer that has been applied to this event
 
         return response;

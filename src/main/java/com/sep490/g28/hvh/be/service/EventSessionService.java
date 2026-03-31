@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
 
@@ -28,5 +29,11 @@ public interface EventSessionService {
             Event event,
             UpdateEventRequest updateEventRequest,
             UpdateEventPayload updateEventPayload
+    );
+
+    List<EventSession> resolveUpdateEventSessions(
+            Event event,
+            List<EventSession> oldSessions,
+            List<UpdateEventSessionPayload> newSessions
     );
 }
