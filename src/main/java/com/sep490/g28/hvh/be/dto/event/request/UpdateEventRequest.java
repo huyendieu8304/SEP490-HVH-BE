@@ -27,7 +27,6 @@ public class UpdateEventRequest {
     @Valid
     List<EditEventImageRequest> updateImages;
 
-    @NotBlank(message = "INVALID_EVENT_DESCRIPTION")
     String description;
 
     Boolean autoApprove;
@@ -36,16 +35,15 @@ public class UpdateEventRequest {
 
     // --------------------------------------------------------
     //CRITICAL FIELDS
-    @NotBlank (message = "INVALID_ADDRESS")
     @ValidWard
     String address;
 
-    @NotBlank(message = "INVALID_EVENT_DETAIL_ADDRESS")
     @Length(max = 200, message = "INVALID_EVENT_DETAIL_ADDRESS")
     String detailAddress;
 
     //event date time
     @Future(message = "INVALID_EVENT_RECRUITMENT_END_DATE")
+    @MinDaysFromToday(days = 3, message = "INVALID_EVENT_RECRUITMENT_END_DATE")
     LocalDate recruitmentEndDate;
 
     @Valid
