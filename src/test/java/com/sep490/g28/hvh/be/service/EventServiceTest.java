@@ -981,7 +981,8 @@ public class EventServiceTest {
 
         EventSession session = new EventSession();
         session.setId(sessionId);
-        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setEvent(event);
         session.setCheckInCode("123456");
 
@@ -1067,7 +1068,8 @@ public class EventServiceTest {
 
         EventSession session = new EventSession();
         session.setId(sessionId);
-        session.setStartDateTime(OffsetDateTime.now().plusHours(1)); // future
+        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2)); // future
 
         EventApplication app = new EventApplication();
         app.setSession(session);
@@ -1088,6 +1090,38 @@ public class EventServiceTest {
     }
 
     // ===== TC5 =====
+    @Test
+    void checkEventCheckInCode_session_ended() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
+        session.setEndDateTime(OffsetDateTime.now().minusHours(1)); // future
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> eventService.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC6 =====
     @Test
     void checkEventCheckInCode_event_not_exist() {
 
@@ -1126,7 +1160,7 @@ public class EventServiceTest {
         );
     }
 
-    // ===== TC6 =====
+    // ===== TC7 =====
     @Test
     void checkEventCheckInCode_event_not_ongoing() {
 
@@ -1166,7 +1200,7 @@ public class EventServiceTest {
         );
     }
 
-    // ===== TC7 =====
+    // ===== TC8 =====
     @Test
     void checkEventCheckInCode_code_not_match() {
 

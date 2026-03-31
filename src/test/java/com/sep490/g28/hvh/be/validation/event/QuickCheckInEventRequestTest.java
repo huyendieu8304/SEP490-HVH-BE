@@ -32,7 +32,7 @@ public class QuickCheckInEventRequestTest {
         req.setEventSessionId(UUID.randomUUID().toString());
         req.setDeviceId("1234567890");
         req.setApVersion("1.0.0");
-        req.setOsVersion("1.0.0");
+        req.setOsVersion("ios");
         req.setCurrentPlaceLat(1.0);
         req.setCurrentPlaceLng(2.0);
         return req;
@@ -66,39 +66,24 @@ public class QuickCheckInEventRequestTest {
     }
 
     @Test
-    void deviceIdNull_shouldFail() {
+    void deviceIdAndApVersionAndOsVersionNull_shouldFail() {
         QuickCheckInEventRequest req = validQuickCheckInEventRequest();
         req.setDeviceId(null);
-
-        Set<ConstraintViolation<QuickCheckInEventRequest>> violations =
-                validator.validate(req);
-
-        assertThat(violations.iterator().next().getMessage())
-                .isEqualTo(ValidationErrorCode.MISSING_REQUIRED_FIELD.name());
-    }
-
-    @Test
-    void apVersionNull_shouldFail() {
-        QuickCheckInEventRequest req = validQuickCheckInEventRequest();
         req.setApVersion(null);
-
-        Set<ConstraintViolation<QuickCheckInEventRequest>> violations =
-                validator.validate(req);
-
-        assertThat(violations.iterator().next().getMessage())
-                .isEqualTo(ValidationErrorCode.MISSING_REQUIRED_FIELD.name());
-    }
-
-    @Test
-    void osVersionNull_shouldFail() {
-        QuickCheckInEventRequest req = validQuickCheckInEventRequest();
         req.setOsVersion(null);
 
         Set<ConstraintViolation<QuickCheckInEventRequest>> violations =
                 validator.validate(req);
 
-        assertThat(violations.iterator().next().getMessage())
-                .isEqualTo(ValidationErrorCode.MISSING_REQUIRED_FIELD.name());
+        assertThat(violations).hasSize(3);
+
+        assertThat(violations)
+                .extracting(ConstraintViolation::getMessage)
+                .containsExactlyInAnyOrder(
+                        ValidationErrorCode.MISSING_REQUIRED_FIELD.name(),
+                        ValidationErrorCode.MISSING_REQUIRED_FIELD.name(),
+                        ValidationErrorCode.MISSING_REQUIRED_FIELD.name()
+                );
     }
 
     @Test
