@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,14 +37,26 @@ public class AtLeastOneFieldNotNullValidator implements ConstraintValidator<AtLe
                 field.setAccessible(true);
                 Object fieldValue = field.get(value);
 
-                if (fieldValue == null) continue;
+                switch (fieldValue) {
+                    case null -> {
+                        continue;
+                    }
 
-                // xử lý String
-                if (fieldValue instanceof String str) {
-                    if (!str.isBlank()) return true;
-                } else {
-                    return true;
+                    // String not blank
+                    case String str -> {
+                        if (!str.isBlank()) return true;
+                    }
+                    //Collection not empty
+                    case Collection<?> col -> {
+                        if (!col.isEmpty()) return true;
+                    }
+
+                    // Other types
+                    default -> {
+                        return true;
+                    }
                 }
+
             }
         } catch (IllegalAccessException e) {
             //todo xử  lí
@@ -52,6 +65,7 @@ public class AtLeastOneFieldNotNullValidator implements ConstraintValidator<AtLe
 
         context.disableDefaultConstraintViolation();
         context.buildConstraintViolationWithTemplate(ValidationErrorCode.AT_LEAST_ONE_FIELD_REQUIRED.name())
+                .addPropertyNode("request")
                 .addConstraintViolation();
 
 
