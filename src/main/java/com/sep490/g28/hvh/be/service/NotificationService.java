@@ -37,4 +37,16 @@ public interface NotificationService {
     void sentEventCancelledByAdminNotification(List<EventApplication> eventApplications, String eventName, String cancelReason);
 
     void sentEventUpdatedByHostNotification(UUID orgManagerId, UUID eventId, String eventName);
+
+    void sendEventUpdateNonCriticalApprovedByOrgManagerNotification(UUID hostId, Event event);
+    void sendEventUpdateNonCriticalApprovedByOrgManagerNotification(List<EventApplication> eventApplications, String eventName);
+
+    void sendEventUpdateCriticalApprovedByOrgManagerNotification(UUID hostId, Event event);
+
+    void sendEventUpdateRejectedByOrgManagerNotification(UUID hostId, Event event);
+
+    void sendEventUpdateCriticalApprovedByAdminNotification(Event event);
+    void sendEventUpdateCriticalApprovedByAdminNotification(List<EventApplication> eventApplications, String eventName);
+
+    void sendEventUpdateCriticalRejectedByAdminNotification(Event event);
 }
