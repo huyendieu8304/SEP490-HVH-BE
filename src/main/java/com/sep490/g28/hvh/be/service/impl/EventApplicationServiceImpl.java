@@ -138,8 +138,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         //check the status of the event
         Event event = eventSession.getEvent();
-        if (EEventStatus.canEventApplicationBeProcessedByHost(event.getStatus())){
-            throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
+        if (!EEventStatus.canEventApplicationBeProcessedByHost(event.getStatus())){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_PROCESS);
         }
 
         eventApplication.setStatus(EEventApplicationStatus.APPROVED);
