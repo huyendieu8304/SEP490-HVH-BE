@@ -38,12 +38,13 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_APPLICATION_CANNOT_CANCEL(7021, "Đơn đăng kí ở trong trạng thái không hủy được", HttpStatus.CONFLICT),
 
     EVENT_NOTIFICATION_CANNOT_SENT(7022, "Trạng thái của sự kiện không cho phép host gửi thông báo", HttpStatus.CONFLICT),
-    EVENT_SESSION_NOT_STARTED(7025, "Buổi tình nguyện chưa diễn ra.", HttpStatus.CONFLICT),
+    EVENT_SESSION_NOT_STARTED(7025, "Phiên sự kiện chưa diễn ra.", HttpStatus.CONFLICT),
     EVENT_NOT_ONGOING(7026, "Sự kiện đang không trong trạng thái diễn ra.", HttpStatus.CONFLICT),
     EVENT_CHECK_IN_CODE_NOT_MATCH(7027, "Mã điểm danh sự kiện không chính xác.", HttpStatus.CONFLICT),
     ALREADY_CHECKED_IN(7028, "Đã điểm danh vào sự kiện này.", HttpStatus.CONFLICT),
     EVENT_CHECK_IN_OUT_OF_RANGE(7029, "Ngoài phạm vi điểm danh sự kiện.", HttpStatus.CONFLICT),
     DEVICE_ALREADY_CHECKED_IN(7030, "Thiết bị đã được sử dụng để điểm danh nhanh.", HttpStatus.CONFLICT),
+    EVENT_SESSION_ENDED(7031, "Phiên sự kiện đã kết thúc.", HttpStatus.CONFLICT)
     ;
 
     private final int code;

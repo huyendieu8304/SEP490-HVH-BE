@@ -1095,6 +1095,10 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
         }
 
+        if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
+        }
+
         //find today's vol event
         UUID eventId = eventSession.getEvent().getId();
 
