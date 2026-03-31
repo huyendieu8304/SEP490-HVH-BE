@@ -41,9 +41,17 @@ public enum EventErrorCode implements ErrorCode {
 
     EVENT_CANNOT_CANCEL(7023, "Sự kiện đang ở trong trạng thái không được hủy", HttpStatus.CONFLICT),
     EVENT_CANNOT_UPDATE(7024, "Sự kiện đang ở trong trạng thái không được cập nhật thông tin", HttpStatus.CONFLICT),
-    NO_CHANGES_IN_UPDATE_REQUEST(7025, "Yêu cầu cập nhật không chứa thay đổi nào", HttpStatus.BAD_REQUEST),
 
-    EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE(7026, "Không thể phê duyệt sự kiện do sự kiện đã quá hạn tuyển người", HttpStatus.CONFLICT),
+    EVENT_SESSION_NOT_STARTED(7025, "Phiên sự kiện chưa diễn ra.", HttpStatus.CONFLICT),
+    EVENT_NOT_ONGOING(7026, "Sự kiện đang không trong trạng thái diễn ra.", HttpStatus.CONFLICT),
+    EVENT_CHECK_IN_CODE_NOT_MATCH(7027, "Mã điểm danh sự kiện không chính xác.", HttpStatus.CONFLICT),
+    ALREADY_CHECKED_IN(7028, "Đã điểm danh vào sự kiện này.", HttpStatus.CONFLICT),
+    EVENT_CHECK_IN_OUT_OF_RANGE(7029, "Ngoài phạm vi điểm danh sự kiện.", HttpStatus.CONFLICT),
+    DEVICE_ALREADY_CHECKED_IN(7030, "Thiết bị đã được sử dụng để điểm danh nhanh.", HttpStatus.CONFLICT),
+    EVENT_SESSION_ENDED(7031, "Phiên sự kiện đã kết thúc.", HttpStatus.CONFLICT),
+
+    NO_CHANGES_IN_UPDATE_REQUEST(7032, "Yêu cầu cập nhật không chứa thay đổi nào", HttpStatus.BAD_REQUEST),
+    EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE(7033, "Không thể phê duyệt sự kiện do sự kiện đã quá hạn tuyển người", HttpStatus.CONFLICT),
     ;
 
     private final int code;

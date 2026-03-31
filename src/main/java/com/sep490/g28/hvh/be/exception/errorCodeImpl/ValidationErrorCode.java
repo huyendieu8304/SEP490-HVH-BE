@@ -77,6 +77,7 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_LAT_LNG(2051, "Địa điểm check in phải có cả kinh độ và vĩ độ.", HttpStatus.BAD_REQUEST),
     AT_LEAST_ONE_FIELD_REQUIRED(2052, "Cần ít nhất 1 trường thông tin trong request body", HttpStatus.BAD_REQUEST),
 
+    INVALID_CHECK_IN_CODE(2053, "Mã check-in không hợp lệ", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;
