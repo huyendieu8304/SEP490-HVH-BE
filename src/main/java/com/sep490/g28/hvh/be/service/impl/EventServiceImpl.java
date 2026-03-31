@@ -62,6 +62,7 @@ public class EventServiceImpl implements EventService {
     CurrentUserProvider currentUserProvider;
 
     EventMapper eventMapper;
+    private final EventApplicationRepository eventApplicationRepository;
 
     @Override
     public EventFeedResponse getEventFeeds(int pageNumber, int pageSize, boolean refresh,
@@ -506,7 +507,7 @@ public class EventServiceImpl implements EventService {
             eventRepository.save(event);
 
             //send notification
-            notificationService.sendEventCreationApprovedByOrgManagerNotification(event);
+            notificationService.sendEventCreateApprovedByOrgManagerNotification(event);
             log.info("Event creation is approved by Organization Manager: eventId={}", event.getId());
 
         } else if (Boolean.TRUE.equals(event.getUpdateCritical())) {
@@ -546,7 +547,8 @@ public class EventServiceImpl implements EventService {
             event.setStatus(EEventStatus.APPROVED_BY_MNG);
             eventRepository.save(event);
 
-            //todo send notification to host
+            //send notification to host
+            notificationService.sendEventUpdateCriticalApprovedByOrgManagerNotification(event.getHost().getId(), event);
 
             log.info("Event update (critical) is approved by Organization Manager: eventId={}", event.getId());
         } else {
@@ -570,9 +572,13 @@ public class EventServiceImpl implements EventService {
             //save event
             eventRepository.save(event);
 
-            //todo send notification to host
+            //send notification to host
+            notificationService.sendEventUpdateNonCriticalApprovedByOrgManagerNotification(event.getHost().getId(), event);
 
-            //todo send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+            //send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+            List<UUID> sessionIds = event.getSessions().stream().map(EventSession::getId).toList();
+            List<EventApplication> applications = eventApplicationRepository.getPendingAndApprovedApplications(sessionIds);
+            notificationService.sendEventUpdateNonCriticalApprovedByOrgManagerNotification(applications, event.getName());
 
             log.info("Event update (non-critical) is approved by Organization Manager: eventId={}", event.getId());
         }
@@ -600,7 +606,7 @@ public class EventServiceImpl implements EventService {
             eventRepository.save(event);
 
             //send notification
-            notificationService.sendEventCreationRejectedByOrgManagerNotification(event, request.getReason());
+            notificationService.sendEventCreateRejectedByOrgManagerNotification(event, request.getReason());
             log.info("Event creation is rejected by Organization Manager: eventId={}", event.getId());
         } else {
             //the manager is rejecting a update request
@@ -623,7 +629,8 @@ public class EventServiceImpl implements EventService {
             //save event
             eventRepository.save(event);
 
-            //todo send notification to host
+            //send notification to host to inform about the rejection
+            notificationService.sendEventUpdateRejectedByOrgManagerNotification(event.getHost().getId(), event);
 
             log.info("Event update is rejected by Organization Manager: eventId={}", event.getId());
         }
@@ -666,7 +673,7 @@ public class EventServiceImpl implements EventService {
             log.info("Event creation is approved by System Admin: eventId={}", event.getId());
 
             //send notification
-            notificationService.sendEventCreationApprovedByAdminNotification(event);
+            notificationService.sendEventCreateApprovedByAdminNotification(event);
         } else {
             //the manager is approving for an update CRITICAL information request
             //approve time must not pass recruitment end date
@@ -693,11 +700,14 @@ public class EventServiceImpl implements EventService {
             //save event
             eventRepository.save(event);
 
-            //todo cho đơn apply về cancel hết
+            //cancel all application that are PENDING or APPROVED
+            List<EventApplication> applications = eventApplicationService.cancelAllApplicationsOfEvent(event);
 
-            //todo send notification to host and org mng to inform about the approve
+            //send notification to host and org mng to inform about the approval
+            notificationService.sendEventUpdateCriticalApprovedByAdminNotification(event);
 
-            //todo send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+            //send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+            notificationService.sendEventUpdateCriticalApprovedByAdminNotification(applications, event.getName());
 
             log.info("Event update is approved by System Admin: eventId={}", event.getId());
         }
@@ -723,11 +733,10 @@ public class EventServiceImpl implements EventService {
             eventRepository.save(event);
 
             //send notification
-            notificationService.sendEventCreationRejectedByAdminNotification(event, request.getReason());
+            notificationService.sendEventCreateRejectedByAdminNotification(event, request.getReason());
             log.info("Event creation is rejected by System Admin: eventId={}", event.getId());
         } else {
-            //the admin is rejecting a update request
-
+            //the admin is rejecting an update request
             //set the event status to  the real status according to time
             LocalDate today = LocalDate.now();
             if (!today.isAfter(event.getRecruitmentEndDate())){
@@ -747,9 +756,10 @@ public class EventServiceImpl implements EventService {
             //save event
             eventRepository.save(event);
 
-            //todo send notification to host
+            //send notification to host and manager to inform about the rejection
+            notificationService.sendEventUpdateCriticalRejectedByAdminNotification(event);
 
-            log.info("Event update is rejected by Organization Manager: eventId={}", event.getId());
+            log.info("Event update is rejected by System Admin: eventId={}", event.getId());
         }
 
     }
@@ -1314,7 +1324,7 @@ public class EventServiceImpl implements EventService {
         organizationService.deductCreditHourOfOrganization(organization, 3);
 
         //cancel all applications of volunteer to the event
-        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsToEvent(event);
+        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsOfEvent(event);
 
         //send notification to all the volunteer that applied to the event
         notificationService.sentEventCancelledByHostNotification(eventApplications, event.getName(), request.getReason());
@@ -1356,7 +1366,7 @@ public class EventServiceImpl implements EventService {
         organizationService.deductCreditHourOfOrganization(organization, 3);
 
         //cancel all applications of volunteer to the event
-        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsToEvent(event);
+        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsOfEvent(event);
 
         //send notification to all the volunteer that applied to the event
         notificationService.sentEventCancelledByAdminNotification(eventApplications, event.getName(), request.getReason());

@@ -74,4 +74,9 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
     List<EventApplication> cancelApplicationsBySessions(
             List<UUID> sessionIds
     );
+
+    @Query(value = """
+            SELECT * FROM event_applications WHERE session_id IN (:sessionIds) AND status IN ('PENDING', 'APPROVED')
+            """, nativeQuery = true)
+    List<EventApplication> getPendingAndApprovedApplications(List<UUID> sessionIds);
 }

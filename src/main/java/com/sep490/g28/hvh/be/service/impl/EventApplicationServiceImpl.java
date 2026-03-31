@@ -324,7 +324,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     }
 
     @Override
-    public List<EventApplication> cancelAllApplicationsToEvent(Event event) {
+    public List<EventApplication> cancelAllApplicationsOfEvent(Event event) {
         //update all the applications of the volunteer to CANCELLED status
         List<EventSession> eventSessions = event.getSessions();
         List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
