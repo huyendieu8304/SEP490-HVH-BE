@@ -142,8 +142,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         //check the status of the event
         Event event = eventSession.getEvent();
-        if (event.getStatus() != EEventStatus.RECRUITING) {
-            throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
+        if (!EEventStatus.canEventApplicationBeProcessedByHost(event.getStatus())){
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_PROCESS);
         }
 
         eventApplication.setStatus(EEventApplicationStatus.APPROVED);
@@ -156,7 +156,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         notificationService.subscribeUserToTopicOfEvent(eventApplication.getVolunteer().getId(), event.getId());
 
         //send notification to vol
-        notificationService.sendEventApplicationApproved(eventApplication.getVolunteer().getId(), event, eventApplication);
+        notificationService.sendEventApplicationApprovedNotification(eventApplication.getVolunteer().getId(), event, eventApplication);
         log.info("Approved event application eventApplicationId={}", eventApplication.getId());
     }
 
@@ -172,6 +172,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
         }
 
+        //todo liệu có cần kiểm tra thông tin status của event ở chỗ này không?
+        //todo có khi thêm cron job, khi event chuyển status qua ONGOING cái là tự động reject hết đơn đăng kí luôn
         eventApplication.setStatus(EEventApplicationStatus.REJECTED);
         eventApplicationRepository.save(eventApplication);
         log.info("Reject event application eventApplicationId={}", eventApplication.getId());
@@ -179,7 +181,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Event event = eventApplication.getSession().getEvent();
 
         //send notification to vol
-        notificationService.sendEventApplicationRejected(
+        notificationService.sendEventApplicationRejectedNotification(
                 eventApplication.getVolunteer().getId(),
                 event,
                 eventApplication,
@@ -200,7 +202,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Volunteer volunteer = eventApplication.getVolunteer();
 
         //whether the event status allow volunteer to cancel application
-        if (!EEventStatus.volunteerCanCancelledApplication(event.getStatus())) {
+        if (!EEventStatus.canEventApplicationBeCancelledByVolunteer(event.getStatus())){
             throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
         }
 
@@ -247,7 +249,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         notificationService.unsubscribeUserFromTopicOfEvent(currentUserProvider.getId(), event.getId());
 
         //send notification to the volunteer
-        notificationService.sendEventApplicationCancelledSuccessfully(volunteer.getId(), event, eventApplication, isMinusScore);
+        notificationService.sendEventApplicationCancelledSuccessfullyNotification(volunteer.getId(), event, eventApplication, isMinusScore);
         log.info("Volunteer cancelled event application eventApplicationId={}", eventApplication.getId());
     }
 
@@ -324,6 +326,16 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 page.hasNext() ? String.valueOf(pageNumber + 1) : null,
                 page.hasNext()
         );
+    }
+
+    @Override
+    public List<EventApplication> cancelAllApplicationsOfEvent(Event event) {
+        //update all the applications of the volunteer to CANCELLED status
+        List<EventSession> eventSessions = event.getSessions();
+        List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
+        List<EventApplication> eventApplications =  eventApplicationRepository.cancelApplicationsBySessions(sessionIds);
+        log.info("All the applications of volunteer has been cancelled");
+        return eventApplications;
     }
 
     @Override

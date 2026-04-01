@@ -1,70 +1,97 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
+import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
-import com.sep490.g28.hvh.be.entity.Event;
-import com.sep490.g28.hvh.be.entity.EventSession;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.service.impl.EventSessionServiceImpl;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class EventSessionServiceTest {
 
+    @Mock
+    private EventSessionRepository eventSessionRepository;
+
+    @Spy
     @InjectMocks
-    EventSessionServiceImpl service;
+    private EventSessionServiceImpl service;
 
-    Event event;
+    private Event event;
+    private EventSession existing;
 
-    @BeforeEach
-    void setup() {
+
+    Event mockEventForCreate() {
+        Event e = new Event();
+        e.setId(UUID.randomUUID());
+
+        ActivityDomain domain = new ActivityDomain();
+        domain.setSpecialSessionMaxTime((short) 4);
+
+        ActivitySubDomain sub = new ActivitySubDomain();
+        sub.setActivityDomain(domain);
+
+        e.setActivitySubDomain(sub);
+        Host host = new Host();
+        host.setId(UUID.randomUUID());
+        e.setHost(host);
+
+        e.setRecruitmentEndDate(LocalDate.now().plusDays(5));
+        return e;
+    }
+
+    Event mockEventForUpdate(){
         event = new Event();
         event.setId(UUID.randomUUID());
-        event.setImages(new ArrayList<>());
+
+        Host host = new Host();
+        host.setId(UUID.randomUUID());
+        event.setHost(host);
+
+        ActivityDomain domain = new ActivityDomain();
+        domain.setSpecialSessionMaxTime((short) 4);
+
+        ActivitySubDomain sub = new ActivitySubDomain();
+        sub.setActivityDomain(domain);
+        event.setStartDate(LocalDate.now().plusDays(15));
+
+        event.setActivitySubDomain(sub);
+        event.setRecruitmentEndDate(LocalDate.now().plusDays(10));
+
+        existing = session(OffsetDateTime.now().plusDays(15));
+        event.setSessions(new ArrayList<>(List.of(existing)));
+
+        return event;
     }
 
-    private OffsetDateTime start(int plusDays) {
-        return OffsetDateTime.now().plusDays(plusDays);
-    }
 
-    private LocalDate validRecruitmentEndDate() {
-        return LocalDate.now().plusDays(10);
-    }
-
-    private EditEventSessionRequest sessionReq(OffsetDateTime start, OffsetDateTime end) {
+    private EditEventSessionRequest req(EUpdateAction action, OffsetDateTime start, OffsetDateTime end) {
         EditEventSessionRequest r = new EditEventSessionRequest();
-        r.setUpdateAction(EUpdateAction.ADD);
+        r.setUpdateAction(action);
         r.setStartDateTime(start);
         r.setEndDateTime(end);
-        r.setExpectedSerAmount(10);
-        r.setExpectedVolAmount(10);
-        return r;
-    }
-
-    private EditEventSessionRequest removeReq(UUID id) {
-        EditEventSessionRequest r = new EditEventSessionRequest();
-        r.setUpdateAction(EUpdateAction.REMOVE);
-        r.setEventSessionId(id);
-        return r;
-    }
-
-    private EditEventSessionRequest editReq(UUID id, OffsetDateTime start, OffsetDateTime end) {
-        EditEventSessionRequest r = sessionReq(start, end);
-        r.setUpdateAction(EUpdateAction.EDIT);
-        r.setEventSessionId(id);
+        r.setExpectedVolAmount(100);
+        r.setExpectedSerAmount(200);
         return r;
     }
 
@@ -72,405 +99,554 @@ public class EventSessionServiceTest {
         EventSession s = new EventSession();
         s.setId(UUID.randomUUID());
         s.setStartDateTime(start);
-        s.setEndDateTime(start.plus(Duration.ofHours(2)));
+        s.setEndDateTime(start.plusHours(2));
+        s.setExpectedVolAmount(100);
+        s.setExpectedSerAmount(200);
+        s.setApprovedApplicationCount(0);
         return s;
     }
 
-    // ==== addEventSessionsForCreateEvent ===================================
+    private EventSession session() {
+        EventSession s = new EventSession();
+        s.setId(UUID.randomUUID());
+        s.setStartDateTime(OffsetDateTime.now().plusDays(5));
+        s.setEndDateTime(OffsetDateTime.now().plusDays(5).plusHours(2));
+        s.setExpectedVolAmount(100);
+        s.setExpectedSerAmount(200);
+        s.setApprovedApplicationCount(0);
+        return s;
+    }
+
+
+    EditEventSessionRequest req(EUpdateAction action) {
+        EditEventSessionRequest r = new EditEventSessionRequest();
+        r.setUpdateAction(action);
+        r.setExpectedSerAmount(1);
+        r.setExpectedVolAmount(1);
+        return r;
+    }
+
+    private UpdateEventSessionPayload payload(UUID id, OffsetDateTime start) {
+        UpdateEventSessionPayload p = new UpdateEventSessionPayload();
+        p.setId(id);
+        p.setStartDateTime(start);
+        p.setEndDateTime(start.plusHours(2));
+        p.setExpectedVolAmount(10);
+        p.setExpectedSerAmount(5);
+        return p;
+    }
+    // ==== addEventSessionForCreateEvent ===================================
     // TC01
     @Test
-    void addEventSessions_nullRequest_shouldThrow() {
-
+    void nullRequest_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
         assertThrows(AppException.class,
-                () -> service.addEventSessionsForCreateEvent(
-                        event,
-                        validRecruitmentEndDate(),
-                        null,
-                        (short) 4
-                ));
+                () -> service.addEventSessionsForCreateEvent(event, null));
     }
 
     // TC02
     @Test
-    void addEventSessions_emptyRequest_shouldThrow() {
-
+    void emptyRequest_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
         assertThrows(AppException.class,
-                () -> service.addEventSessionsForCreateEvent(
-                        event,
-                        validRecruitmentEndDate(),
-                        List.of(),
-                        (short) 4
-                ));
+                () -> service.addEventSessionsForCreateEvent(event, List.of()));
     }
 
     // TC03
     @Test
-    void addEventSessions_exceedSessionMaxTime_shouldThrow() {
-
-        EditEventSessionRequest r = sessionReq(
-                start(20),
-                start(20).plusHours(10) // exceed max
-        );
+    void noAddAction_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
+        EditEventSessionRequest r = req(EUpdateAction.EDIT);
 
         assertThrows(AppException.class,
-                () -> service.addEventSessionsForCreateEvent(
-                        event,
-                        validRecruitmentEndDate(),
-                        List.of(r),
-                        (short) 4
-                ));
+                () -> service.addEventSessionsForCreateEvent(event, List.of(r)));
     }
 
     // TC04
     @Test
-    void addEventSessions_oneValid_shouldAdd() {
+    void durationTooLong_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
+        OffsetDateTime start = OffsetDateTime.now().plusDays(20);
 
-        EditEventSessionRequest r = sessionReq(
-                start(20),
-                start(20).plusHours(2)
-        );
+        EditEventSessionRequest r = req(EUpdateAction.ADD);
+        r.setStartDateTime(start);
+        r.setEndDateTime(start.plusHours(10)); // > 4h
 
-        service.addEventSessionsForCreateEvent(
-                event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
-        );
-
-        assertEquals(1, event.getSessions().size());
-        assertNotNull(event.getStartDate());
+        assertThrows(AppException.class,
+                () -> service.addEventSessionsForCreateEvent(event, List.of(r)));
     }
 
     // TC05
     @Test
-    void addEventSessions_multipleValid_shouldAddAll() {
+    void duplicateSessionDay_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
+        OffsetDateTime start = OffsetDateTime.now().plusDays(20);
 
-        EditEventSessionRequest r1 = sessionReq(start(20), start(20).plusHours(2));
-        EditEventSessionRequest r2 = sessionReq(start(21), start(21).plusHours(2));
+        EditEventSessionRequest r1 = req(EUpdateAction.ADD);
+        r1.setStartDateTime(start);
+        r1.setEndDateTime(start.plusHours(2));
 
-        service.addEventSessionsForCreateEvent(
-                event,
-                validRecruitmentEndDate(),
-                List.of(r1, r2),
-                (short) 4
-        );
+        EditEventSessionRequest r2 = req(EUpdateAction.ADD);
+        r2.setStartDateTime(start.plusHours(3)); // cùng ngày
+        r2.setEndDateTime(start.plusHours(5));
 
-        assertEquals(2, event.getSessions().size());
+        assertThrows(AppException.class,
+                () -> service.addEventSessionsForCreateEvent(event, List.of(r1, r2)));
     }
 
     // TC06
     @Test
-    void addEventSessions_duplicateDay_shouldThrow() {
+    void conflictHost_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
+        OffsetDateTime date = OffsetDateTime.now().plusDays(20);
 
-        OffsetDateTime base = OffsetDateTime.of(
-                2030, 1, 1, 10, 0, 0, 0,
-                ZoneOffset.of("+07:00")
-        ).plusDays(20);
-        OffsetDateTime start1 = base;
-        OffsetDateTime end1 = base.plusHours(1);
+        EditEventSessionRequest r = req(EUpdateAction.ADD);
+        r.setStartDateTime(date);
+        r.setEndDateTime(date.plusHours(2));
 
-        OffsetDateTime start2 = base.plusHours(2);
-        OffsetDateTime end2 = base.plusHours(3);
+        EventSession exist = new EventSession();
+        exist.setStartDateTime(date); // trùng ngày
 
-        EditEventSessionRequest r1 = sessionReq(start1, end1);
-        EditEventSessionRequest r2 = sessionReq(start2, end2);
-
-        assertThrows(AppException.class,
-                () -> service.addEventSessionsForCreateEvent(
-                        event,
-                        validRecruitmentEndDate(),
-                        List.of(r1, r2),
-                        (short) 4
-                ));
-    }
-
-    // ==== updateEventSessions ===================================
-    // TC01
-    @Test
-    void updateEventSessions_nullRequest_shouldReturn() {
-
-        service.updateEventSessions(
-                event,
-                validRecruitmentEndDate(),
-                null,
-                (short) 4
-        );
-
-        assertTrue(event.getSessions().isEmpty());
-    }
-
-    // TC02
-    @Test
-    void updateEventSessions_emptyRequest_shouldReturn() {
-
-        service.updateEventSessions(
-                event,
-                validRecruitmentEndDate(),
-                List.of(),
-                (short) 4
-        );
-
-        assertTrue(event.getSessions().isEmpty());
-    }
-
-    // TC03
-    @Test
-    void updateEventSessions_remove_shouldDelete() {
-
-        EventSession s1 = session(start(20));
-        EventSession s2 = session(start(21));
-
-        event.getSessions().addAll(List.of(s1, s2));
-
-        EditEventSessionRequest r = removeReq(s1.getId());
-
-        service.updateEventSessions(
-                event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
-        );
-
-        assertEquals(1, event.getSessions().size());
-        assertEquals(s2.getId(), event.getSessions().get(0).getId());
-    }
-
-    // TC04
-    @Test
-    void updateEventSessions_edit_shouldUpdateValues() {
-
-        EventSession s = session(start(20));
-        event.getSessions().add(s);
-
-        OffsetDateTime newStart = start(25);
-        OffsetDateTime newEnd = newStart.plus(Duration.ofHours(2));
-
-        EditEventSessionRequest r = editReq(
-                s.getId(),
-                newStart,
-                newEnd
-        );
-
-        service.updateEventSessions(
-                event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
-        );
-
-        assertEquals(newStart, s.getStartDateTime());
-        assertEquals(newEnd, s.getEndDateTime());
-    }
-
-    // TC05
-    @Test
-    void updateEventSessions_add_shouldInsert() {
-
-        EventSession s = session(start(20));
-        event.getSessions().add(s);
-
-        EditEventSessionRequest r = sessionReq(
-                start(22),
-                start(22).plusHours(2)
-        );
-
-        service.updateEventSessions(
-                event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
-        );
-
-        assertEquals(2, event.getSessions().size());
-    }
-
-    // TC06
-    @Test
-    void updateEventSessions_removeAll_shouldThrow() {
-
-        EventSession s = session(start(20));
-        event.getSessions().add(s);
-
-        EditEventSessionRequest r = removeReq(s.getId());
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(List.of(exist));
 
         assertThrows(AppException.class,
-                () -> service.updateEventSessions(
-                        event,
-                        validRecruitmentEndDate(),
-                        List.of(r),
-                        (short) 4
-                ));
+                () -> service.addEventSessionsForCreateEvent(event, List.of(r)));
     }
 
     // TC07
     @Test
-    void updateEventSessions_duplicateDayAfterEdit_shouldThrow() {
+    void startDateTooSoon_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
+        OffsetDateTime date = OffsetDateTime.now().plusDays(5);
 
-        EventSession s1 = session(start(20));
-        EventSession s2 = session(start(21));
+        EditEventSessionRequest r = req(EUpdateAction.ADD);
+        r.setStartDateTime(date);
+        r.setEndDateTime(date.plusHours(2));
 
-        event.getSessions().addAll(List.of(s1, s2));
-
-        EditEventSessionRequest r = editReq(
-                s2.getId(),
-                start(20),
-                start(20).plusHours(2)
-        );
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
 
         assertThrows(AppException.class,
-                () -> service.updateEventSessions(
-                        event,
-                        validRecruitmentEndDate(),
-                        List.of(r),
-                        (short) 4
-                ));
+                () -> service.addEventSessionsForCreateEvent(event, List.of(r)));
     }
 
     // TC08
     @Test
-    void updateEventSessions_editNonExistId_shouldIgnoreEdit() {
+    void invalidRecruitmentEndDate_shouldThrow() {
+        event = mockEventForCreate(); // gọi factory method
+        OffsetDateTime date = OffsetDateTime.now().plusDays(20);
 
-        EventSession s1 = session(start(20));
-        EventSession s2 = session(start(21));
+        event.setRecruitmentEndDate(date.toLocalDate().minusDays(1)); // sai
 
-        event.getSessions().addAll(List.of(s1, s2));
+        EditEventSessionRequest r = req(EUpdateAction.ADD);
+        r.setStartDateTime(date);
+        r.setEndDateTime(date.plusHours(2));
 
-        UUID nonExistId = UUID.randomUUID();
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
 
-        EditEventSessionRequest r = editReq(
-                nonExistId,
-                start(22),
-                start(22).plusHours(2)
-        );
+        assertThrows(AppException.class,
+                () -> service.addEventSessionsForCreateEvent(event, List.of(r)));
+    }
 
-        service.updateEventSessions(
-                event,
-                validRecruitmentEndDate(),
-                List.of(r),
-                (short) 4
-        );
+    // TC09
+    @Test
+    void validSingleSession_shouldSetCorrect() {
+        event = mockEventForCreate(); // gọi factory method
+        OffsetDateTime date = OffsetDateTime.now().plusDays(20);
 
-        // sessions remain unchanged
+        EditEventSessionRequest r = req(EUpdateAction.ADD);
+        r.setStartDateTime(date);
+        r.setEndDateTime(date.plusHours(2));
+
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        service.addEventSessionsForCreateEvent(event, List.of(r));
+
+        assertEquals(1, event.getSessions().size());
+        assertEquals(date.toLocalDate(), event.getStartDate());
+        assertEquals(date.toLocalDate(), event.getEndDate());
+    }
+
+    // TC10
+    @Test
+    void validMultipleSessions_shouldResolveMinMaxDate() {
+        event = mockEventForCreate(); // gọi factory method
+        OffsetDateTime d1 = OffsetDateTime.now().plusDays(20);
+        OffsetDateTime d2 = OffsetDateTime.now().plusDays(25);
+
+        EditEventSessionRequest r1 = req(EUpdateAction.ADD);
+        r1.setStartDateTime(d1);
+        r1.setEndDateTime(d1.plusHours(2));
+
+        EditEventSessionRequest r2 = req(EUpdateAction.ADD);
+        r2.setStartDateTime(d2);
+        r2.setEndDateTime(d2.plusHours(2));
+
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        service.addEventSessionsForCreateEvent(event, List.of(r1, r2));
+
+        assertEquals(d1.toLocalDate(), event.getStartDate());
+        assertEquals(d2.toLocalDate(), event.getEndDate());
+    }
+
+
+    @Test
+    void updateEventSessions_editExistingSession_shouldUpdateAndResolveDate() {
+        event = mockEventForUpdate();
+        OffsetDateTime newDate = OffsetDateTime.now().plusDays(20);
+
+        EditEventSessionRequest r = new EditEventSessionRequest();
+        r.setUpdateAction(EUpdateAction.EDIT);
+        r.setEventSessionId(existing.getId());
+        r.setStartDateTime(newDate);
+        r.setEndDateTime(newDate.plusHours(2));
+        r.setExpectedVolAmount(100);
+        r.setExpectedSerAmount(200);
+
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        service.updateEventSessions(event, List.of(r));
+
+        assertEquals(1, event.getSessions().size());
+        assertEquals(newDate.toLocalDate(), event.getStartDate());
+        assertEquals(newDate.toLocalDate(), event.getEndDate());
+    }
+
+    @Test
+    void updateEventSessions_addSession_shouldKeepOldAndResolveMinMax() {
+        event = mockEventForUpdate();
+        OffsetDateTime newDate = OffsetDateTime.now().plusDays(25);
+
+        EditEventSessionRequest r = req(EUpdateAction.ADD, newDate, newDate.plusHours(2));
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        service.updateEventSessions(event, List.of(r));
+
         assertEquals(2, event.getSessions().size());
 
-        EventSession rs1 = event.getSessions().stream()
-                .filter(s -> s.getId().equals(s1.getId()))
-                .findFirst()
-                .orElseThrow();
+        LocalDate expectedStart = existing.getStartDateTime().toLocalDate();
+        LocalDate expectedEnd = newDate.toLocalDate();
 
-        EventSession rs2 = event.getSessions().stream()
-                .filter(s -> s.getId().equals(s2.getId()))
-                .findFirst()
-                .orElseThrow();
-
-        assertEquals(s1.getStartDateTime(), rs1.getStartDateTime());
-        assertEquals(s2.getStartDateTime(), rs2.getStartDateTime());
-
+        assertEquals(expectedStart, event.getStartDate());
+        assertEquals(expectedEnd, event.getEndDate());
     }
 
-
-    // ==== validate ===================================
-    private LocalDate invokeValidate(LocalDate recruitmentEndDate, List<EventSession> sessions, Event targetEvent) throws Exception {
-
-        Method m = EventSessionServiceImpl.class
-                .getDeclaredMethod(
-                        "validateAndResolveEventStartEndDate",
-                        LocalDate.class,
-                        List.class,
-                        Event.class
-                );
-
-        m.setAccessible(true);
-
-        return (LocalDate) m.invoke(service, recruitmentEndDate, sessions, targetEvent);
-    }
-
-    // TC01
     @Test
-    void validateAndResolveStartDate_valid_shouldReturnStartDate() throws Exception {
+    void updateEventSessions_removeOneOfMultiple_shouldPass() {
+        event = mockEventForUpdate();
+        EventSession s2 = session(OffsetDateTime.now().plusDays(20));
+        event.getSessions().add(s2);
 
-        ZoneId vn = ZoneId.of("Asia/Ho_Chi_Minh");
+        EditEventSessionRequest r = new EditEventSessionRequest();
+        r.setUpdateAction(EUpdateAction.REMOVE);
+        r.setEventSessionId(existing.getId());
 
-        EventSession s1 = session(start(20));
-        EventSession s2 = session(start(25));
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
 
-        LocalDate recruitmentEnd = LocalDate.now(vn).plusDays(10);
+        service.updateEventSessions(event, List.of(r));
 
-        LocalDate result = invokeValidate(
-                recruitmentEnd,
-                List.of(s1, s2),
-                event
-        );
-
-        LocalDate expected = s1.getStartDateTime()
-                .atZoneSameInstant(vn)
-                .toLocalDate();
-
-        assertEquals(event.getStartDate(), s1.getStartDateTime().toLocalDate());
-        assertEquals(event.getEndDate(), s1.getEndDateTime().toLocalDate());
+        assertEquals(1, event.getSessions().size());
     }
 
-    // TC02
     @Test
-    void validateAndResolveStartDate_duplicateDay_shouldThrow() {
+    void updateEventSessions_removeAllSessions_shouldThrow() {
+        event = mockEventForUpdate();
+        EditEventSessionRequest r = new EditEventSessionRequest();
+        r.setUpdateAction(EUpdateAction.REMOVE);
+        r.setEventSessionId(existing.getId());
 
-        OffsetDateTime base = OffsetDateTime.of(
-                2030, 1, 1, 10, 0, 0, 0,
-                ZoneOffset.of("+07:00")
-        ).plusDays(20);
-
-        EventSession s1 = session(base);
-        EventSession s2 = session(base.plus(Duration.ofHours(2)));
-
-        LocalDate recruitmentEnd = validRecruitmentEndDate();
-
-        assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s1, s2), event));
+        assertThrows(AppException.class,
+                () -> service.updateEventSessions(event, List.of(r)));
     }
 
-    // TC03
     @Test
-    void validateAndResolveStartDate_recruitmentTooSoon_shouldThrow() {
+    void updateEventSessions_addAndEdit_shouldWorkTogether() {
+        event = mockEventForUpdate();
+        OffsetDateTime d1 = OffsetDateTime.now().plusDays(20);
+        OffsetDateTime d2 = OffsetDateTime.now().plusDays(25);
 
-        ZoneId vn = ZoneId.of("Asia/Ho_Chi_Minh");
+        EditEventSessionRequest edit = new EditEventSessionRequest();
+        edit.setUpdateAction(EUpdateAction.EDIT);
+        edit.setEventSessionId(existing.getId());
+        edit.setStartDateTime(d1);
+        edit.setEndDateTime(d1.plusHours(2));
+        edit.setExpectedVolAmount(100);
+        edit.setExpectedSerAmount(200);
 
-        EventSession s = session(start(20));
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d2, d2.plusHours(2));
 
-        LocalDate recruitmentEnd = LocalDate.now(vn).plusDays(1);
+        when(eventSessionRepository.findByHostExcludingEvent(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
 
-        assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s), event));
+        service.updateEventSessions(event, List.of(edit, add));
+
+        assertEquals(2, event.getSessions().size());
+        assertEquals(d1.toLocalDate(), event.getStartDate());
+        assertEquals(d2.toLocalDate(), event.getEndDate());
     }
 
-    // TC04
     @Test
-    void validateAndResolveStartDate_startTooSoon_shouldThrow() {
+    void updateEventSessions_sessionTooLong_shouldThrow() {
+        event = mockEventForUpdate();
+        OffsetDateTime d = OffsetDateTime.now().plusDays(20);
 
-        ZoneId vn = ZoneId.of("Asia/Ho_Chi_Minh");
+        EditEventSessionRequest r = req(EUpdateAction.ADD, d, d.plusHours(10));
 
-        EventSession s = session(start(5));
-
-        LocalDate recruitmentEnd = LocalDate.now(vn).plusDays(10);
-
-        assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s), event));
+        assertThrows(AppException.class,
+                () -> service.updateEventSessions(event, List.of(r)));
     }
 
-    // TC05
     @Test
-    void validateAndResolveStartDate_recruitmentTooLate_shouldThrow() {
+    void updateEventSessions_conflictDate_shouldThrow() {
+        event = mockEventForUpdate();
+        OffsetDateTime d = existing.getStartDateTime();
 
-        ZoneId vn = ZoneId.of("Asia/Ho_Chi_Minh");
+        EditEventSessionRequest r = req(EUpdateAction.ADD, d, d.plusHours(2));
 
-        OffsetDateTime start = start(20);
+        r.setExpectedVolAmount(100);
+        r.setExpectedSerAmount(200);
 
-        EventSession s = session(start);
+        EventSession conflict = session(d);
+        conflict.setStartDateTime(d);
 
-        LocalDate startDate = start.atZoneSameInstant(vn).toLocalDate();
+        assertThrows(AppException.class,
+                () -> service.updateEventSessions(event, List.of(r)));
+    }
 
-        LocalDate recruitmentEnd = startDate.minusDays(2);
+    // ====== checkAndResolveUpdateEventDateTime ======
+    @Test
+    void checkAndResolveUpdateEventDateTime_noUpdate_shouldReturnFalse() {
+                event = mockEventForUpdate();
 
-        assertThrows(InvocationTargetException.class,
-                () -> invokeValidate(recruitmentEnd, List.of(s), event));
+        UpdateEventRequest req = new UpdateEventRequest();
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateRecruitmentDate_shouldSetPayload() {
+                event = mockEventForUpdate();
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        LocalDate newDate = event.getStartDate().minusDays(3);
+        req.setRecruitmentEndDate(newDate);
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertTrue(result);
+        assertEquals(newDate, payload.getRecruitmentEndDate());
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_recruitmentDateInvalid_shouldThrow() {
+                event = mockEventForUpdate();
+
+        UpdateEventRequest req = new UpdateEventRequest();
+
+        // violate: recruitmentEndDate > startDate - 3
+        LocalDate invalid = event.getStartDate().minusDays(1);
+        req.setRecruitmentEndDate(invalid);
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        assertThrows(AppException.class,
+                () -> service.checkAndResolveUpdateEventDateTime(event, req, payload));
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateSessions_shouldResolvePayload() {
+                event = mockEventForUpdate();
+
+        OffsetDateTime d = OffsetDateTime.now().plusDays(25);
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(2));
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertTrue(result);
+        assertEquals(2, payload.getEventSessions().size());
+
+        assertEquals(existing.getStartDateTime().toLocalDate(), payload.getStartDate());
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateSessions_conflict_shouldThrow() {
+                event = mockEventForUpdate();
+
+        OffsetDateTime d = existing.getStartDateTime();
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(2));
+
+        doReturn(List.of(new EventSession()))
+                .when(service)
+                .findConflictSessionDateOfHost(any(), any(), any());
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        assertThrows(AppException.class,
+                () -> service.checkAndResolveUpdateEventDateTime(event, req, payload));
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateSessions_recruitmentInvalid_shouldThrow() {
+                event = mockEventForUpdate();
+
+        OffsetDateTime d = OffsetDateTime.now().plusDays(2);
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(2));
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+
+        // recruitmentEndDate hiện tại sẽ vi phạm rule
+        event.setRecruitmentEndDate(d.toLocalDate().minusDays(1));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        assertThrows(AppException.class,
+                () -> service.checkAndResolveUpdateEventDateTime(event, req, payload));
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateBoth_shouldWork() {
+        event = mockEventForUpdate();
+
+        OffsetDateTime d = OffsetDateTime.now().plusDays(10);
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(3));
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+        req.setRecruitmentEndDate(d.toLocalDate().minusDays(5));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertTrue(result);
+        assertEquals(2, payload.getEventSessions().size());
+        assertEquals(d.toLocalDate().minusDays(5), payload.getRecruitmentEndDate());
+    }
+
+    // ====== resolveUpdateEventSessions =====
+    @Test
+    void updateExistingSession_shouldUpdateFields() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload p = payload(s.getId(), OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(1, result.size());
+        EventSession updated = result.get(0);
+
+        assertEquals(p.getStartDateTime(), updated.getStartDateTime());
+        assertEquals(0, updated.getApprovedApplicationCount());
+    }
+
+    @Test
+    void createNewSession_shouldAdd() {
+        EventSession existing = session();
+        List<EventSession> old = new ArrayList<>(List.of(existing));
+
+        UpdateEventSessionPayload p = payload(null, OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(1, result.size());
+
+        EventSession created = result.get(0);
+        assertNull(created.getId()); // chưa persist
+        assertEquals(event, created.getEvent());
+        assertNotNull(created.getCheckInCode());
+    }
+
+    @Test
+    void mixUpdateAndCreate_shouldWork() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload update = payload(s.getId(), OffsetDateTime.now().plusDays(10));
+        UpdateEventSessionPayload create = payload(null, OffsetDateTime.now().plusDays(20));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(update, create));
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void orphanSession_shouldBeRemoved() {
+        EventSession s1 = session();
+        EventSession s2 = session();
+
+        List<EventSession> old = new ArrayList<>(List.of(s1, s2));
+
+        // chỉ giữ s1
+        UpdateEventSessionPayload p = payload(s1.getId(), OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(1, result.size());
+        assertEquals(s1.getId(), result.get(0).getId());
+    }
+
+    @Test
+    void shouldReplaceEntireList() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload p = payload(null, OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        // old list phải bị replace hoàn toàn
+        assertSame(old, result);
+        assertEquals(1, old.size());
+    }
+
+    @Test
+    void update_shouldResetApprovedCount() {
+        EventSession s = session();
+        s.setApprovedApplicationCount(5);
+
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload p = payload(s.getId(), OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(0, result.get(0).getApprovedApplicationCount());
+    }
+
+    @Test
+    void emptyPayload_shouldClearAll() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of());
+
+        assertTrue(result.isEmpty());
     }
 }

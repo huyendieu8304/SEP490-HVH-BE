@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface NotificationService {
@@ -20,15 +21,32 @@ public interface NotificationService {
 //    List<UserNotification> getLatestNotification(OffsetDateTime cursor);
 
     void sendEventCreatedNotification(Event event, Host host);
-    void sendEventApprovedByOrgManagerNotification(Event event);
-    void sendEventRejectedByOrgManagerNotification(Event event, String reason);
+    void sendEventCreateApprovedByOrgManagerNotification(Event event);
+    void sendEventCreateRejectedByOrgManagerNotification(Event event, String reason);
 
-    void sendEventApprovedByAdminNotification(Event event);
-    void sendEventRejectedByAdminNotification(Event event, String reason);
+    void sendEventCreateApprovedByAdminNotification(Event event);
+    void sendEventCreateRejectedByAdminNotification(Event event, String reason);
 
-    void sendEventApplicationApproved(UUID volunteerId, Event event, EventApplication application);
-    void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason);
-    void sendEventApplicationCancelledSuccessfully(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore);
+    void sendEventApplicationApprovedNotification(UUID volunteerId, Event event, EventApplication application);
+    void sendEventApplicationRejectedNotification(UUID volunteerId, Event event, EventApplication application, String rejectionReason);
+    void sendEventApplicationCancelledSuccessfullyNotification(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore);
 
     void sendNotificationToVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
+
+    void sentEventCancelledByHostNotification(List<EventApplication> eventApplications, String eventName, String cancelReason);
+    void sentEventCancelledByAdminNotification(List<EventApplication> eventApplications, String eventName, String cancelReason);
+
+    void sentEventUpdatedByHostNotification(UUID orgManagerId, UUID eventId, String eventName);
+
+    void sendEventUpdateNonCriticalApprovedByOrgManagerNotification(UUID hostId, Event event);
+    void sendEventUpdateNonCriticalApprovedByOrgManagerNotification(List<EventApplication> eventApplications, String eventName);
+
+    void sendEventUpdateCriticalApprovedByOrgManagerNotification(UUID hostId, Event event);
+
+    void sendEventUpdateRejectedByOrgManagerNotification(UUID hostId, Event event);
+
+    void sendEventUpdateCriticalApprovedByAdminNotification(Event event);
+    void sendEventUpdateCriticalApprovedByAdminNotification(List<EventApplication> eventApplications, String eventName);
+
+    void sendEventUpdateCriticalRejectedByAdminNotification(Event event);
 }

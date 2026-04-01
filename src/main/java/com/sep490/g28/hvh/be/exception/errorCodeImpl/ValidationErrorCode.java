@@ -57,7 +57,7 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_EVENT_SESSION_START_END_TIME(2035, "Thời gian kết thúc phải sau thời gian bắt đầu.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_START_TIME(2036, "Thời gian bắt đầu không được sớm hơn 5 giờ sáng.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_END_TIME(2037, "Thời gian kết thúc không được muộn hơn 23 giờ.", HttpStatus.BAD_REQUEST),
-    INVALID_EVENT_CHECKIN_ACCURACY_RANGE(2038, "Phạm vi check in phải lớn hơn 300m, và nhỏ hơn 3000m", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_CHECKIN_ACCURACY_RANGE(2038, "Phạm vi check in cần tối thiểu là 300m, và tối đa là 3000m", HttpStatus.BAD_REQUEST),
     INVALID_NOTIFICATION_TOKEN(2039, "Token để nhận thông báo không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_DEVICE_ID(2040, "ID thiết bị không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_STATUS(2041, "Trạng thái sự kiện không tồn tại", HttpStatus.BAD_REQUEST ),
@@ -69,6 +69,14 @@ public enum ValidationErrorCode implements ErrorCode {
 
     INVALID_NOTIFICATION_TITLE(2046, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
     INVALID_NOTIFICATION_BODY(2047, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+
+    INVALID_EVENT_REJECT_REASON(2048, "Lí do từ chối phê duyệt sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_CANCEL_REASON(2049, "Lí do hủy sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+
+    INVALID_EVENT_DESCRIPTION(2050, "Mô tả sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+    INVALID_LAT_LNG(2051, "Địa điểm check in phải có cả kinh độ và vĩ độ.", HttpStatus.BAD_REQUEST),
+    AT_LEAST_ONE_FIELD_REQUIRED(2052, "Cần ít nhất 1 trường thông tin trong request body", HttpStatus.BAD_REQUEST),
+
     INVALID_CHECK_IN_CODE(2053, "Mã check-in không hợp lệ", HttpStatus.BAD_REQUEST),
     ;
 

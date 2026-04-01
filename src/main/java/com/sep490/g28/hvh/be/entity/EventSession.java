@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.entity;
 
+import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -55,8 +56,8 @@ public class EventSession {
     @Column(name = "approved_application_count", nullable = false)
     private int approvedApplicationCount = 0; //increase when an application is approved
 
-    @Column(name = "check_in_code", length = 6)
-    private String checkInCode;
+    @Column(name = "check_in_code", length = 6, nullable = false)
+    private String checkInCode = RandomStringUtil.random6Numberic();
 
     //--------------------------------------------------------
     @CreationTimestamp
@@ -75,4 +76,16 @@ public class EventSession {
             columnDefinition = "TIMESTAMP WITH TIME ZONE"
     )
     private OffsetDateTime updatedAt;
+
+    public EventSession(EventSession session) {
+        this.id = session.id;
+        this.event = session.event;
+        this.startDateTime = session.startDateTime;
+        this.endDateTime = session.endDateTime;
+        this.expectedVolAmount = session.expectedVolAmount;
+        this.expectedSerAmount = session.expectedSerAmount;
+        this.approvedApplicationCount = session.approvedApplicationCount;
+        this.createdAt = session.createdAt;
+        this.updatedAt = session.updatedAt;
+    }
 }

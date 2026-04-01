@@ -10,8 +10,8 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RejectEventRequest {
-    @NotBlank(message = "INVALID_EVENT_REJECT_REASON")
-    @NotNull(message = "INVALID_EVENT_REJECT_REASON")
+public class CancelEventRequest {
+    @NotBlank(message = "INVALID_EVENT_CANCEL_REASON")
+    @NotNull(message = "INVALID_EVENT_CANCEL_REASON")
     String reason;
 }

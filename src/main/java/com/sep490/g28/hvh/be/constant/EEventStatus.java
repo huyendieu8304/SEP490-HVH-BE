@@ -13,19 +13,19 @@ public enum EEventStatus {
     COMPLETED,
     CANCELLED;
 
-    public static boolean editable(EEventStatus status) {
+    public static boolean canEventBeEdited(EEventStatus status) {
         return  (status.equals(EDITING) || status.equals(REJECTED_BY_MNG) || status.equals(REJECTED_BY_AD));
     }
 
-    public static boolean updatetable(EEventStatus status) {
-        return  (status.equals(RECRUITING) || status.equals(UPCOMING));
+    public static boolean canEventBeUpdated(EEventStatus status) {
+        return  (status.equals(RECRUITING) );
     }
 
-//    public static boolean cancellable(EEventStatus status) {
-//        return  (status.equals(RECRUITING) || status.equals(UPCOMING));
-//    }
+    public static boolean canEventBeCancelled(EEventStatus status) {
+        return  (status.equals(RECRUITING) || status.equals(UPCOMING) || status.equals(ONGOING));
+    }
 
-    public static boolean volunteerCanCancelledApplication(EEventStatus status) {
+    public static boolean canEventApplicationBeCancelledByVolunteer(EEventStatus status) {
         return  (status.equals(EDITING)
                 || status.equals(SUBMITTED)
                 || status.equals(APPROVED_BY_MNG)
@@ -35,5 +35,9 @@ public enum EEventStatus {
                 || status.equals(UPCOMING)
                 || status.equals(ONGOING)
         );
+    }
+
+    public static boolean canEventApplicationBeProcessedByHost(EEventStatus status) {
+        return  (status.equals(RECRUITING) || status.equals(UPCOMING));
     }
 }

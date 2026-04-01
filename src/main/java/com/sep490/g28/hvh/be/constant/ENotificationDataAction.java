@@ -7,4 +7,5 @@ public enum ENotificationDataAction {
     ADM_EVENT_DETAILS,
 
     VOL_APPLICATION_DETAILS,
+
 }

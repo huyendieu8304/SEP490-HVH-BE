@@ -6,11 +6,13 @@ import com.sep490.g28.hvh.be.entity.EventSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,6 +64,23 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
     Page<EventApplication> getEventApplicationsBySessionId(UUID sessionId, Pageable pageable);
 
     boolean existsByIdAndVolunteer_Id(UUID applicationId, UUID volunteerId);
+
+    @Modifying
+    @Query(value = """
+            UPDATE event_applications
+            SET status = 'CANCELLED'
+            WHERE session_id IN (:sessionIds)
+              AND status IN ('PENDING', 'APPROVED')
+            RETURNING *
+            """, nativeQuery = true)
+    List<EventApplication> cancelApplicationsBySessions(
+            List<UUID> sessionIds
+    );
+
+    @Query(value = """
+            SELECT * FROM event_applications WHERE session_id IN (:sessionIds) AND status IN ('PENDING', 'APPROVED')
+            """, nativeQuery = true)
+    List<EventApplication> getPendingAndApprovedApplications(List<UUID> sessionIds);
 
     @Query("""
                 SELECT e

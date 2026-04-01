@@ -8,7 +8,10 @@ import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCode
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import org.springframework.data.domain.Page;
+import com.sep490.g28.hvh.be.entity.Event;
+import com.sep490.g28.hvh.be.entity.EventApplication;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface EventApplicationService {
@@ -21,6 +24,8 @@ public interface EventApplicationService {
     void cancelApplication(UUID applicationId);
 
     EventApplicationsResponse getRegisteredParticipants(int pageNumber, int pageSize, UUID sessionId);
+
+    List<EventApplication> cancelAllApplicationsOfEvent(Event event);
 
     Page<EventApplicationsStatusResponse> getEventApplicationsStatus(int pageNumber, int pageSize, String inputStatus);
 

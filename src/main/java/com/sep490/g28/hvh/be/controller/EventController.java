@@ -259,6 +259,34 @@ public class EventController {
     ) {
         eventService.announceVolunteersOfEvent(eventId, request);
         return ResponseEntity.ok().build();
+    }
 
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PutMapping("/host/events/{eventId}/cancel")
+    public ResponseEntity<Void> cancelEventByHost(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid CancelEventRequest request
+    ) {
+        eventService.cancelEventByHost(eventId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PutMapping("/sys-admin/events/{eventId}/cancel")
+    public ResponseEntity<Void> cancelEventByAdmin(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid CancelEventRequest request
+    ) {
+        eventService.cancelEventByAdmin(eventId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PutMapping("/host/events/{eventId}/update")
+    public ResponseEntity<UpdateEventResponse> updateEvent(
+            @PathVariable java.util.UUID eventId,
+            @Valid @RequestBody UpdateEventRequest request
+    ){
+        return ResponseEntity.ok(eventService.updateEvent(eventId, request));
     }
 }

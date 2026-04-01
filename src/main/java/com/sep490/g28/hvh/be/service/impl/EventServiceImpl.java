@@ -1,8 +1,12 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventImagePayload;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
+import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
@@ -10,14 +14,12 @@ import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.ActivityDomainErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
+import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.*;
-import com.sep490.g28.hvh.be.service.EventSessionService;
-import com.sep490.g28.hvh.be.service.EventImageService;
-import com.sep490.g28.hvh.be.service.EventService;
-import com.sep490.g28.hvh.be.service.NotificationService;
+import com.sep490.g28.hvh.be.service.*;
 import com.sep490.g28.hvh.be.util.GeoUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -47,14 +49,15 @@ public class EventServiceImpl implements EventService {
     VolunteerRepository volunteerRepository;
     VolunteerSavedEventRepository volunteerSavedEventRepository;
     OrganizationManagerRepository organizationManagerRepository;
-    EventSessionRepository eventSessionRepository;
-    CheckInLogRepository checkInLogRepository;
 
     StorageService storageService;
 
     EventImageService eventImageService;
     EventSessionService eventSessionService;
+    EventApplicationService eventApplicationService;
+    OrganizationService organizationService;
     NotificationService notificationService;
+    EmailService emailService;
 
     CurrentUserProvider currentUserProvider;
 
@@ -203,13 +206,10 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new AppException(ActivityDomainErrorCode.SUBDOMAIN_NOT_EXISTED));
         event.setActivitySubDomain(activitySubDomain);
 
-        ActivityDomain activityDomain = activitySubDomain.getActivityDomain();
-        Short sessionMaxTime = activityDomain.getSpecialSessionMaxTime() == null ? 4 : activityDomain.getSpecialSessionMaxTime();
+        event.setRecruitmentEndDate(request.getRecruitmentEndDate());
         eventSessionService.addEventSessionsForCreateEvent(
                 event,
-                request.getRecruitmentEndDate(),
-                request.getEventSessions(),
-                sessionMaxTime
+                request.getEventSessions()
         );
 
         //set event's information
@@ -235,7 +235,7 @@ public class EventServiceImpl implements EventService {
 
     private EditEventResponse editEvent(EditEventRequest request, Event event, EEventStatus eventStatus) {
         EditEventResponse response = new EditEventResponse();
-        if (!EEventStatus.editable(event.getStatus()))
+        if (!EEventStatus.canEventBeEdited(event.getStatus()))
             //event is not edit table
             throw new AppException(EventErrorCode.EVENT_NOT_EDITABLE);
 
@@ -249,16 +249,10 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new AppException(ActivityDomainErrorCode.SUBDOMAIN_NOT_EXISTED));
         event.setActivitySubDomain(activitySubDomain);
 
-        ActivityDomain activityDomain = activitySubDomain.getActivityDomain();
-        Short sessionMaxTime =
-                activityDomain.getSpecialSessionMaxTime() == null
-                        ? 4
-                        : activityDomain.getSpecialSessionMaxTime();
+        event.setRecruitmentEndDate(request.getRecruitmentEndDate());
         eventSessionService.updateEventSessions(
                 event,
-                request.getRecruitmentEndDate(),
-                request.getEventSessions(),
-                sessionMaxTime
+                request.getEventSessions()
         );
 
         //set event's information
@@ -299,8 +293,6 @@ public class EventServiceImpl implements EventService {
         event.setServingActivity(request.getServingActivity());
         event.setServedTarget(request.getServedTarget());
         event.setServingPlaceType(request.getServingPlaceType());
-
-        event.setRecruitmentEndDate(request.getRecruitmentEndDate());
     }
 
     @Override
@@ -420,6 +412,67 @@ public class EventServiceImpl implements EventService {
         volunteerSavedEventRepository.save(volunteerSavedEvent);
     }
 
+
+    private void applyNonCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
+        //apply images
+        if (payload.getEventImages() != null) {
+            List<EventImage> oldImages = event.getImages();
+            List<UpdateEventImagePayload> newImages = payload.getEventImages();
+            event.setImages(eventImageService.resolveUpdatedEventImages(event, oldImages, newImages));
+        }
+
+        if (payload.getDescription() != null) {
+            event.setDescription(payload.getDescription());
+        }
+
+        if (payload.getAutoApprove() != null) {
+            event.setAutoApprove(payload.getAutoApprove());
+        }
+
+        if (payload.getServingPlaceType() != null) {
+            event.setServingPlaceType(payload.getServingPlaceType());
+        }
+    }
+
+    private void applyCriticalUpdateEvent(Event event, UpdateEventPayload payload) {
+        if (payload.getEventSessions() != null) {
+
+            List<EventSession> oldSessions = event.getSessions();
+            List<UpdateEventSessionPayload> newSessions = payload.getEventSessions();
+            List<EventSession> updatedEventSessions = eventSessionService.resolveUpdateEventSessions(event, oldSessions, newSessions);
+
+            //check whether the host is hosting multiple event session in a day if the update is applied?
+            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    event.getId(),
+                    updatedEventSessions
+            );
+            if (!conflictSession.isEmpty()) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
+
+            event.setSessions(updatedEventSessions);
+            event.setStartDate(payload.getStartDate());
+            event.setEndDate(payload.getEndDate());
+
+        }
+        if (payload.getAddress() != null) {
+            event.setAddress(payload.getAddress());
+        }
+        if (payload.getDetailAddress() != null) {
+            event.setDetailAddress(payload.getDetailAddress());
+        }
+        if (payload.getRecruitmentEndDate() != null) {
+            event.setRecruitmentEndDate(payload.getRecruitmentEndDate());
+        }
+        if (payload.getCheckInLocationLat() != null && payload.getCheckInLocationLng() != null) {
+            event.setCheckInLocation(GeoUtils.toPoint(payload.getCheckInLocationLat(), payload.getCheckInLocationLng()));
+        }
+        if (payload.getCheckInLocationAccuracyMeters() != null) {
+            event.setCheckInAccuracyMeters(payload.getCheckInLocationAccuracyMeters());
+        }
+    }
+
     @Override
     public void approveEventByManager(UUID eventId) {
         //get event out from repo
@@ -432,24 +485,108 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-        //check whether the host is hosting other event or not?
-        List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
-                event.getHost().getId(),
-                eventId,
-                event.getSessions()
-        );
-        if (!conflictSession.isEmpty()) {
-            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //the manager is approving for a create request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            if (today.isAfter(event.getRecruitmentEndDate())){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
+
+            //check whether the host is hosting multiple event session in a day or not?
+            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    eventId,
+                    event.getSessions()
+            );
+            if (!conflictSession.isEmpty()) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
+
+            //update in db
+            event.setStatus(EEventStatus.APPROVED_BY_MNG);
+            eventRepository.save(event);
+
+            //send notification
+            notificationService.sendEventCreateApprovedByOrgManagerNotification(event);
+            log.info("Event creation is approved by Organization Manager: eventId={}", event.getId());
+
+        } else if (Boolean.TRUE.equals(event.getUpdateCritical())) {
+            //the manager is approving for an update CRITICAL information request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            LocalDate newRecruitmentEndDate =
+                    event.getUpdateEventPayload().getRecruitmentEndDate() == null
+                            ? event.getRecruitmentEndDate()
+                            : event.getUpdateEventPayload().getRecruitmentEndDate();
+            if (today.isAfter(newRecruitmentEndDate)){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
+
+            if (event.getUpdateEventPayload().getEventSessions() != null) {
+
+                List<EventSession> newSessions = event.getUpdateEventPayload().getEventSessions().stream()
+                        .map(s -> {
+                            EventSession session = new EventSession();
+                            session.setId(s.getId());
+                            session.setStartDateTime(s.getStartDateTime());
+                            session.setEndDateTime(s.getEndDateTime());
+                            return session;
+                        }).toList();
+                //check whether the host is hosting multiple event session in a day if the update is applied?
+                List<EventSession> conflictSession = eventSessionService.findConflictSessionDateOfHost(
+                        event.getHost().getId(),
+                        event.getId(),
+                        newSessions
+                );
+                if (!conflictSession.isEmpty()) {
+                    throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+                }
+            }
+
+            //update in db
+            event.setStatus(EEventStatus.APPROVED_BY_MNG);
+            eventRepository.save(event);
+
+            //send notification to host
+            notificationService.sendEventUpdateCriticalApprovedByOrgManagerNotification(event.getHost().getId(), event);
+
+            log.info("Event update (critical) is approved by Organization Manager: eventId={}", event.getId());
+        } else {
+            //the manager is approving for an update NON-CRITICAL information request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            if (today.isAfter(event.getRecruitmentEndDate())){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
+
+            //set the event status back to RECRUITING
+            event.setStatus(EEventStatus.RECRUITING);
+
+            //apply update information
+            applyNonCriticalUpdateEvent(event, event.getUpdateEventPayload());
+
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //send notification to host
+            notificationService.sendEventUpdateNonCriticalApprovedByOrgManagerNotification(event.getHost().getId(), event);
+
+            //send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+            List<UUID> sessionIds = event.getSessions().stream().map(EventSession::getId).toList();
+            List<EventApplication> applications = eventApplicationRepository.getPendingAndApprovedApplications(sessionIds);
+            notificationService.sendEventUpdateNonCriticalApprovedByOrgManagerNotification(applications, event.getName());
+
+            log.info("Event update (non-critical) is approved by Organization Manager: eventId={}", event.getId());
         }
-
-        //update in db
-        event.setStatus(EEventStatus.APPROVED_BY_MNG);
-        eventRepository.save(event);
-        log.info("Event is approved by Organization Manager: eventId={}", event.getId());
-
-        //send notification
-        notificationService.sendEventApprovedByOrgManagerNotification(event);
     }
+
+
 
     @Override
     public void rejectEventByManager(UUID eventId, RejectEventRequest request) {
@@ -463,13 +600,42 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-        //update in db
-        event.setStatus(EEventStatus.REJECTED_BY_MNG);
-        eventRepository.save(event);
-        log.info("Event is rejected by Organization Manager: eventId={}", event.getId());
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //the manager is rejecting a create request
+            //update in db
+            event.setStatus(EEventStatus.REJECTED_BY_MNG);
+            eventRepository.save(event);
 
-        //send notification
-        notificationService.sendEventRejectedByOrgManagerNotification(event, request.getReason());
+            //send notification
+            notificationService.sendEventCreateRejectedByOrgManagerNotification(event, request.getReason());
+            log.info("Event creation is rejected by Organization Manager: eventId={}", event.getId());
+        } else {
+            //the manager is rejecting a update request
+            //set the event status to  the real status according to time
+            LocalDate today = LocalDate.now();
+            if (!today.isAfter(event.getRecruitmentEndDate())){
+                event.setStatus(EEventStatus.RECRUITING);
+            } else if (today.isBefore(event.getStartDate())){
+                event.setStatus(EEventStatus.UPCOMING);
+            } else if (today.isBefore(event.getEndDate())){
+                event.setStatus(EEventStatus.ONGOING);
+            } else {
+                event.setStatus(EEventStatus.COMPLETED);
+            }
+
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //send notification to host to inform about the rejection
+            notificationService.sendEventUpdateRejectedByOrgManagerNotification(event.getHost().getId(), event);
+
+            log.info("Event update is rejected by Organization Manager: eventId={}", event.getId());
+        }
     }
 
     @Override
@@ -484,24 +650,69 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-//        //check whether the host is hosting other event or not?
-//        List<EventSession> conflictSession =
-//                eventSessionService.findConflictSessionDateOfHost(
-//                        event.getHost().getId(),
-//                        eventId,
-//                        event.getDateTimes()
-//                );
-//        if (!conflictSession.isEmpty()) {
-//            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
-//        }
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //admin approving create request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            if (today.isAfter(event.getRecruitmentEndDate())){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
 
-        //update in db
-        event.setStatus(EEventStatus.RECRUITING);
-        eventRepository.save(event);
-        log.info("Event is approved by System Admin: eventId={}", event.getId());
+            //check whether the host is hosting multiple event session in a day or not?
+            List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                    event.getHost().getId(),
+                    eventId,
+                    event.getSessions()
+            );
+            if (!conflictSession.isEmpty()) {
+                throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+            }
 
-        //send notification
-        notificationService.sendEventApprovedByAdminNotification(event);
+            //update in db
+            event.setStatus(EEventStatus.RECRUITING);
+            eventRepository.save(event);
+            log.info("Event creation is approved by System Admin: eventId={}", event.getId());
+
+            //send notification
+            notificationService.sendEventCreateApprovedByAdminNotification(event);
+        } else {
+            //the manager is approving for an update CRITICAL information request
+            //approve time must not pass recruitment end date
+            LocalDate today = LocalDate.now();
+            LocalDate newRecruitmentEndDate =
+                    event.getUpdateEventPayload().getRecruitmentEndDate() == null
+                            ? event.getRecruitmentEndDate()
+                            : event.getUpdateEventPayload().getRecruitmentEndDate();
+            if (today.isAfter(newRecruitmentEndDate)){
+                throw new AppException(EventErrorCode.EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE);
+            }
+
+            //set the event status back to RECRUITING
+            event.setStatus(EEventStatus.RECRUITING);
+
+            //apply update information
+            applyCriticalUpdateEvent(event, event.getUpdateEventPayload());
+            applyNonCriticalUpdateEvent(event, event.getUpdateEventPayload());
+
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //cancel all application that are PENDING or APPROVED
+            List<EventApplication> applications = eventApplicationService.cancelAllApplicationsOfEvent(event);
+
+            //send notification to host and org mng to inform about the approval
+            notificationService.sendEventUpdateCriticalApprovedByAdminNotification(event);
+
+            //send notification to applied volunteers to inform about the change (both PENDING and APPROVED)
+            notificationService.sendEventUpdateCriticalApprovedByAdminNotification(applications, event.getName());
+
+            log.info("Event update is approved by System Admin: eventId={}", event.getId());
+        }
     }
 
     @Override
@@ -516,13 +727,43 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.ACTION_NOT_EXECUTABLE);
         }
 
-        //update in db
-        event.setStatus(EEventStatus.REJECTED_BY_AD);
-        eventRepository.save(event);
-        log.info("Event is rejected by System Admin: eventId={}", event.getId());
+        //Is this event being created or being updated
+        if (event.getUpdateCritical() == null) {
+            //the admin is rejecting a create request
+            //update in db
+            event.setStatus(EEventStatus.REJECTED_BY_AD);
+            eventRepository.save(event);
 
-        //send notification
-        notificationService.sendEventRejectedByAdminNotification(event, request.getReason());
+            //send notification
+            notificationService.sendEventCreateRejectedByAdminNotification(event, request.getReason());
+            log.info("Event creation is rejected by System Admin: eventId={}", event.getId());
+        } else {
+            //the admin is rejecting an update request
+            //set the event status to  the real status according to time
+            LocalDate today = LocalDate.now();
+            if (!today.isAfter(event.getRecruitmentEndDate())){
+                event.setStatus(EEventStatus.RECRUITING);
+            } else if (today.isBefore(event.getStartDate())){
+                event.setStatus(EEventStatus.UPCOMING);
+            } else if (today.isBefore(event.getEndDate())){
+                event.setStatus(EEventStatus.ONGOING);
+            } else {
+                event.setStatus(EEventStatus.COMPLETED);
+            }
+
+            //remove update information and update critical
+            event.setUpdateCritical(null);
+            event.setUpdateEventPayload(null);
+
+            //save event
+            eventRepository.save(event);
+
+            //send notification to host and manager to inform about the rejection
+            notificationService.sendEventUpdateCriticalRejectedByAdminNotification(event);
+
+            log.info("Event update is rejected by System Admin: eventId={}", event.getId());
+        }
+
     }
 
     //todo unit test for this method
@@ -1065,12 +1306,202 @@ public class EventServiceImpl implements EventService {
 
         //host can only send notification to registered Volunteer when the event is in status UPCOMING and ONGOING
         if (!(event.getStatus().equals(EEventStatus.UPCOMING) || event.getStatus().equals(EEventStatus.ONGOING))){
-            throw new AppException(EventErrorCode.EVENT_NOTIFICATION_CANNOT_SENT);
+            throw new AppException(EventErrorCode.EVENT_ANNOUNCEMENT_CANNOT_SENT);
         }
 
         //send notification
         notificationService.sendNotificationToVolunteersOfEvent(event.getId(), request);
     }
 
+    @Transactional
+    @Override
+    public void cancelEventByHost(UUID eventId, CancelEventRequest request) {
+        //find the event
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check the event status cancelable?
+        if (!EEventStatus.canEventBeCancelled(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
+        }
+
+        //update event status to cancelled
+        event.setStatus(EEventStatus.CANCELLED);
+        eventRepository.save(event);
+
+        //deduct the credit hour of the organization by 3
+        Organization organization = event.getOrganization();
+        organizationService.deductCreditHourOfOrganization(organization, 3);
+
+        //cancel all applications of volunteer to the event
+        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsOfEvent(event);
+
+        //send notification to all the volunteer that applied to the event
+        notificationService.sentEventCancelledByHostNotification(eventApplications, event.getName(), request.getReason());
+
+        //send email to the org manager
+        OrganizationManager manager = organization.getOrganizationManager();
+        Host host = event.getHost();
+        emailService.sendEventCancelledByHostEmail(
+                manager.getEmail(),
+                manager.getFullName(),
+                organization.getName(),
+                event.getName(),
+                host.getFullName(),
+                host.getEmail(),
+                request.getReason()
+        );
+        log.info("The event was cancelled by host, eventId={}", eventId);
+
+    }
+
+    @Override
+    public void cancelEventByAdmin(UUID eventId, CancelEventRequest request) {
+        //find the event
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check the event status cancelable?
+        if (!EEventStatus.canEventBeCancelled(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
+        }
+
+        //update event status to cancelled
+        event.setStatus(EEventStatus.CANCELLED);
+        eventRepository.save(event);
+
+        //deduct the credit hour of the organization by 3
+        Organization organization = event.getOrganization();
+        organizationService.deductCreditHourOfOrganization(organization, 3);
+
+        //cancel all applications of volunteer to the event
+        List<EventApplication> eventApplications = eventApplicationService.cancelAllApplicationsOfEvent(event);
+
+        //send notification to all the volunteer that applied to the event
+        notificationService.sentEventCancelledByAdminNotification(eventApplications, event.getName(), request.getReason());
+
+        //send email to the org manager
+        OrganizationManager manager = organization.getOrganizationManager();
+        emailService.sendEventCancelledByAdminEmail(
+                manager.getEmail(),
+                manager.getFullName(),
+                organization.getName(),
+                event.getName(),
+                request.getReason()
+        );
+        log.info("The event was cancelled by admin, eventId={}", eventId);
+    }
+
+    @Override
+    public UpdateEventResponse updateEvent(UUID eventId, UpdateEventRequest request) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check event status
+        if (!EEventStatus.canEventBeUpdated(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_UPDATE);
+        }
+
+        //handle update information, map request to payload
+        boolean hasChanges = false;
+        boolean updateCritical = false;
+        UpdateEventPayload updatePayload = new UpdateEventPayload();
+        UpdateEventResponse response = new UpdateEventResponse();
+
+        //check update event sessions and other start date, end recruitment date and end date
+        boolean updateEventDateTime = eventSessionService.checkAndResolveUpdateEventDateTime(event, request, updatePayload);
+        if (updateEventDateTime) {
+            hasChanges = true;
+            updateCritical = true;
+        }
+
+        //map image
+        if (request.getUpdateImages() != null && !request.getUpdateImages().isEmpty()) {
+            hasChanges = true;
+            response.setUploadUrls(eventImageService.resolveUpdateEventImagesPayload(event, request.getUpdateImages(), updatePayload));
+        }
+        if (request.getDescription() != null
+                && !request.getDescription().isEmpty()
+                && !request.getDescription().equalsIgnoreCase(event.getDescription()))
+        {
+            hasChanges = true;
+            updatePayload.setDescription(request.getDescription());
+        }
+
+        if (request.getAutoApprove() != null
+                && !request.getAutoApprove().equals(event.isAutoApprove())
+        ) {
+            hasChanges = true;
+            updatePayload.setAutoApprove(request.getAutoApprove());
+        }
+
+        if (request.getServingPlaceType() != null
+                && !request.getServingPlaceType().equals(event.getServingPlaceType())
+        ) {
+            hasChanges = true;
+            updatePayload.setServingPlaceType(request.getServingPlaceType());
+        }
+
+        if (request.getAddress() != null
+                && !request.getAddress().isEmpty()
+                && !request.getAddress().equals(event.getAddress())
+        ) {
+            hasChanges = true;
+            updateCritical = true;
+            updatePayload.setAddress(request.getAddress());
+        }
+
+        if (request.getDetailAddress() != null
+        && !request.getDetailAddress().isEmpty()
+                && !request.getDetailAddress().equalsIgnoreCase(event.getDetailAddress())
+        ) {
+            hasChanges = true;
+            updateCritical = true;
+            updatePayload.setDetailAddress(request.getDetailAddress());
+        }
+
+        if (request.getCheckInLocationLat() != null
+                && request.getCheckInLocationLng() != null
+                && !request.getCheckInLocationLat().equals(GeoUtils.getLat(event.getCheckInLocation()))
+                && !request.getCheckInLocationLng().equals(GeoUtils.getLng(event.getCheckInLocation()))
+        )  {
+            hasChanges = true;
+            updateCritical = true;
+            updatePayload.setCheckInLocationLat(request.getCheckInLocationLat());
+            updatePayload.setCheckInLocationLng(request.getCheckInLocationLng());
+        }
+
+        if (request.getCheckInLocationAccuracyMeters() != null
+            && (double) request.getCheckInLocationAccuracyMeters() != event.getCheckInAccuracyMeters()
+        ) {
+            hasChanges = true;
+            updateCritical = true;
+            updatePayload.setCheckInLocationAccuracyMeters((double)request.getCheckInLocationAccuracyMeters());
+        }
+
+        if (!hasChanges) {
+            throw new AppException(EventErrorCode.NO_CHANGES_IN_UPDATE_REQUEST);
+        }
+        //set event's update information
+        event.setUpdateEventPayload(updatePayload);
+        event.setUpdateCritical(updateCritical);
+        //set event  status to SUBMITTED
+        event.setStatus(EEventStatus.SUBMITTED);
+        eventRepository.save(event);
+
+        //notify org manager about the update
+        notificationService.sentEventUpdatedByHostNotification(
+                event.getOrganization().getOrganizationManager().getId(),
+                eventId,
+                event.getName()
+        );
+        log.info("Event update request is submitted to Org Manager, eventId={}", eventId);
+        // todo: should i notify all the volunteer that has been applied to this event
+
+        return response;
+    }
 }
 
