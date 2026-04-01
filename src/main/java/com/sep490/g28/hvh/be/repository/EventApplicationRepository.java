@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.repository;
 
+import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import org.springframework.data.domain.Page;
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -57,7 +59,7 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
     @Query("""
             SELECT e
             FROM EventApplication e
-            WHERE e.id = :sessionId
+            WHERE e.session.id = :sessionId
             """)
     Page<EventApplication> getEventApplicationsBySessionId(UUID sessionId, Pageable pageable);
 
@@ -79,4 +81,23 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             SELECT * FROM event_applications WHERE session_id IN (:sessionIds) AND status IN ('PENDING', 'APPROVED')
             """, nativeQuery = true)
     List<EventApplication> getPendingAndApprovedApplications(List<UUID> sessionIds);
+
+    @Query("""
+                SELECT e
+                FROM EventApplication e
+                WHERE e.volunteer.id = :volunteerId
+                AND e.sessionDate = :sessionDate
+            """)
+    EventApplication findEventApplicationByVolunteerIdAndSessionDate(UUID volunteerId, LocalDate sessionDate);
+
+    @Query("""
+            SELECT e
+            FROM EventApplication e
+            WHERE e.volunteer.id = :volunteerId
+            AND (:status IS NULL OR e.status = :status)
+            """)
+    Page<EventApplication> findByVolunteerId(
+            UUID volunteerId,
+            @Param("status") EEventApplicationStatus status,
+            Pageable pageable);
 }

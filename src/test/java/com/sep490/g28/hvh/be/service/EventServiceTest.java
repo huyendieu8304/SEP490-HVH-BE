@@ -8,14 +8,12 @@ import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
+import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
-import com.sep490.g28.hvh.be.repository.EventRepository;
-import com.sep490.g28.hvh.be.repository.EventSessionRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerSavedEventRepository;
+import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,10 +25,8 @@ import org.springframework.data.domain.*;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +50,12 @@ public class EventServiceTest {
 
 
     @Mock
+    EventApplicationRepository eventApplicationRepository;
+
+    @Mock
+    CheckInLogRepository checkInLogRepository;
+
+    @Mock
     CurrentUserProvider currentUserProvider;
 
     @Mock
@@ -68,6 +70,7 @@ public class EventServiceTest {
     UUID volunteerId;
     UUID eventId;
     UUID hostId;
+    UUID sessionId;
 
     @BeforeEach
     void setup() {
@@ -75,6 +78,7 @@ public class EventServiceTest {
         volunteerId = UUID.randomUUID();
         eventId = UUID.randomUUID();
         hostId = UUID.randomUUID();
+        sessionId = UUID.randomUUID();
     }
 
     private Event mockEvent() {
@@ -84,6 +88,7 @@ public class EventServiceTest {
         event.setName("Charity Event");
         event.setDescription("Helping people");
         event.setAddress("Hanoi");
+        event.setDetailAddress("Hanoi");
         event.setServedTarget(EServedTarget.CHILDREN);
         event.setServingPlaceType(EServingPlaceType.CEMETERY);
         event.setStartDate(LocalDate.now());
@@ -113,11 +118,12 @@ public class EventServiceTest {
         event.setImages(List.of(img1, img2));
 
         EventSession session = new EventSession();
-        session.setId(UUID.randomUUID());
+        session.setId(sessionId);
         session.setStartDateTime(OffsetDateTime.now());
         session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setExpectedVolAmount(5);
         session.setExpectedSerAmount(10);
+        session.setApprovedApplicationCount(0);
 
         event.setSessions(List.of(session));
 
@@ -776,7 +782,7 @@ public class EventServiceTest {
         )).thenReturn(emptyPage);
 
         Page<EventSimpleResponseForHost> response =
-                eventService.getEventsByHost(0, 10, null, null);
+                eventService.getEventsByHost(0, 10, null, "RECRUITING");
 
         assertTrue(response.getContent().isEmpty());
         assertEquals(0, response.getTotalElements());
@@ -853,21 +859,20 @@ public class EventServiceTest {
 
     // ===== TC3 =====
     @Test
-    void getEventDetailsByHost_null_activity_sub_domain() {
+    void getEventDetailsByHost_null_activity_sub_domain_null_image() {
 
         Event event = mockEvent();
+        event.setImages(null);
 
         event.setActivitySubDomain(null);
 
         when(eventRepository.findById(eventId))
                 .thenReturn(Optional.of(event));
 
-        when(storageService.getSignedUrlAsync(any()))
-                .thenReturn(CompletableFuture.completedFuture("url"));
-
         EventDetailsResponseForHost response = eventService.getEventDetailsByHost(eventId);
 
         assertEquals("", response.getActivitySubDomain());
+        assertEquals(new ArrayList<>(),response.getImageUrls());
     }
 
     // ==== announceVolunteersOfEvent ===================================
@@ -937,5 +942,4 @@ public class EventServiceTest {
 
         verifyNoInteractions(notificationService);
     }
-
 }

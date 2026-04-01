@@ -9,6 +9,7 @@ import com.sep490.g28.hvh.be.dto.organization.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.OrganizationErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.SupabaseErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
@@ -674,9 +675,14 @@ public class OrganizationServiceTest {
         when(organizationRepository.findById(orgId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
+        AppException ex = assertThrows(
                 AppException.class,
                 () -> organizationService.getOrganizationDetailsBySystemAdmin(orgId)
+        );
+
+        assertEquals(
+                OrganizationErrorCode.ORGANIZATION_NOT_EXISTED.getCode(),
+                ex.getCode()
         );
     }
 

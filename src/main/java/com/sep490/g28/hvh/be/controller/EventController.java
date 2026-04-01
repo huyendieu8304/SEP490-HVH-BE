@@ -1,11 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
-import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.validation.EventStatus;
@@ -238,7 +234,7 @@ public class EventController {
             @RequestParam(required = false)
             String name,
 
-            @RequestParam()
+            @RequestParam(defaultValue = "RECRUITING")
             @EventStatus
             String status
     ) {

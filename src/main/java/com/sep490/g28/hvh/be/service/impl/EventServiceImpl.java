@@ -72,7 +72,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         //Get the slice based on the current action is refresh (swipe up) or load more (scroll end)
@@ -352,7 +352,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //get lat and lng of check in location
@@ -370,6 +371,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
@@ -770,7 +772,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "created_at")
+                Sort.by(Sort.Direction.DESC, "created_at")
         );
         UUID managerId = currentUserProvider.getId();
         OrganizationManager manager = organizationManagerRepository.getReferenceById(managerId);
@@ -797,7 +799,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "created_at")
+                Sort.by(Sort.Direction.DESC, "created_at")
         );
         UUID managerId = currentUserProvider.getId();
         OrganizationManager manager = organizationManagerRepository.getReferenceById(managerId);
@@ -827,7 +829,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "created_at")
+                Sort.by(Sort.Direction.DESC, "created_at")
         );
 
         List<String> pendingStatus = Stream.of(
@@ -848,7 +850,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "created_at")
+                Sort.by(Sort.Direction.DESC, "created_at")
         );
 
         List<String> runningStatus = Stream.of(
@@ -931,7 +933,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //check whether the host is hosting other event or not?
@@ -949,7 +952,8 @@ public class EventServiceImpl implements EventService {
                                 es.getStartDateTime(),
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
-                                es.getExpectedSerAmount()
+                                es.getExpectedSerAmount(),
+                                es.getApprovedApplicationCount()
                         )).toList()).orElse(Collections.emptyList());;
 
         if (!conflictSession.isEmpty()) {
@@ -986,6 +990,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
@@ -1066,7 +1071,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //check whether the host is hosting other event or not?
@@ -1084,7 +1090,8 @@ public class EventServiceImpl implements EventService {
                                 es.getStartDateTime(),
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
-                                es.getExpectedSerAmount()
+                                es.getExpectedSerAmount(),
+                                es.getApprovedApplicationCount()
                         )).toList()).orElse(Collections.emptyList());;
 
         if (!conflictSession.isEmpty()) {
@@ -1112,6 +1119,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
@@ -1138,7 +1146,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         EEventStatus status =
@@ -1148,6 +1156,7 @@ public class EventServiceImpl implements EventService {
 
         Page<Event> events = eventRepository.findEventsByHostId(hostId, status, eventName, pageable);
 
+        //check if there's no event with input status
         if(events.getContent().isEmpty()) {
             return new PageImpl<>(Collections.emptyList(), pageable, events.getTotalElements());
         }
@@ -1245,7 +1254,8 @@ public class EventServiceImpl implements EventService {
                         es.getStartDateTime(),
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
-                        es.getExpectedSerAmount()
+                        es.getExpectedSerAmount(),
+                        es.getApprovedApplicationCount()
                 )).toList();
 
         //get lat and lng of check in location
@@ -1269,6 +1279,7 @@ public class EventServiceImpl implements EventService {
                 .imageUrls(imagesUrls)
                 .description(event.getDescription())
                 .address(event.getAddress())
+                .detailAddress(event.getDetailAddress())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())
