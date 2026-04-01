@@ -75,11 +75,11 @@ public class Event {
     @JoinColumn(name = "activity_sub_domain_id", referencedColumnName = "id", nullable = false)
     private ActivitySubDomain activitySubDomain;
 
-    @Column(name = "served_target")
+    @Column(name = "served_target", nullable = false)
     @Enumerated(EnumType.STRING)
     private EServedTarget servedTarget;
 
-    @Column(name = "serving_place_type")
+    @Column(name = "serving_place_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private EServingPlaceType servingPlaceType;
 
