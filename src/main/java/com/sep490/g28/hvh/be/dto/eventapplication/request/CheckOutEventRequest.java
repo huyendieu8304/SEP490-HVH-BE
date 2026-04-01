@@ -14,7 +14,7 @@ import org.hibernate.validator.constraints.UUID;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class QuickCheckInEventRequest {
+public class CheckOutEventRequest {
 
     @NotBlank(message = "INVALID_UUID")
     @UUID(message = "INVALID_UUID")
@@ -37,4 +37,6 @@ public class QuickCheckInEventRequest {
     @NotNull(message = "INVALID_LONGITUDE")
     @ValidLongitude
     Double currentPlaceLng;
+
+
 }

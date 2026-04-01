@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckOutEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
@@ -28,6 +29,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -401,14 +403,24 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         //find today's vol event session
         UUID eventSessionId = eventApplication.getSession().getId();
 
+        CheckInLog checkInLog = checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(eventSessionId, volunteerId);
+
+        //check if vol check-in log exists
+        if (checkInLog != null) {
+            throw new AppException(EventErrorCode.ALREADY_CHECKED_IN);
+        }
+
         EventSession eventSession = eventSessionRepository.findById(eventSessionId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
         );
 
+        //Check if event session is started
         if(!OffsetDateTime.now().isAfter(eventSession.getStartDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
         }
 
+        //Check if event session is ended
         if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
         }
@@ -441,7 +453,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         UUID volunteerId = currentUserProvider.getId();
 
         CheckInLog checkInLog = checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, UUID.fromString(request.getEventSessionId()));
+                .findByEventSessionIdAndVolunteerId(UUID.fromString(request.getEventSessionId()), volunteerId);
 
         //check if vol check-in log exists
         if (checkInLog != null) {
@@ -452,13 +464,35 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         EventSession eventSession = eventSessionRepository.findById(UUID.fromString(request.getEventSessionId())).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
         );
+
+        //Check if event session is started
+        if(!OffsetDateTime.now().isAfter(eventSession.getStartDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
+        }
+
+        //Check if event session is ended
+        if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
+        }
+
         Event event = eventSession.getEvent();
+
+        //Check if current vol applied event exist
+        if(event == null) {
+            throw new AppException(EventErrorCode.EVENT_NOT_EXISTED);
+        }
+
+        //check if event is in status ONGOING
+        if(!event.getStatus().equals(EEventStatus.ONGOING)) {
+            throw new AppException(EventErrorCode.EVENT_NOT_ONGOING);
+        }
 
         //check if current vol position is in check-in location
         Point currentPosition = GeoUtils.toPoint(request.getCurrentPlaceLat(), request.getCurrentPlaceLng());
 
         double distance = GeoUtils.distanceMeters(currentPosition,event.getCheckInLocation());
 
+        //Check if current user's position is in check-in location
         if (distance > event.getCheckInAccuracyMeters()) {
             throw new AppException(EventErrorCode.EVENT_CHECK_IN_OUT_OF_RANGE);
         }
@@ -488,7 +522,74 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             newCheckInLog.setApVersion(request.getApVersion());
             newCheckInLog.setOsVersion(request.getOsVersion());
             newCheckInLog.setCheckInLocation(currentPosition);
+            newCheckInLog.setCheckInTime(OffsetDateTime.now());
+            newCheckInLog.setCreditHour((short) 0);
             checkInLogRepository.save(newCheckInLog);
         }
+    }
+
+    @Override
+    public void checkOutEvent(CheckOutEventRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        //get current vol check-in log
+        CheckInLog checkInLog = checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, UUID.fromString(request.getEventSessionId()));
+
+        //check if vol check-in log exists
+        if (checkInLog == null) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_NOT_CHECKED_IN);
+        }
+
+        //find today's vol event
+        EventSession eventSession = eventSessionRepository.findById(UUID.fromString(request.getEventSessionId())).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
+        );
+
+        //Check if event session is started
+        if(!OffsetDateTime.now().isAfter(eventSession.getStartDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
+        }
+
+        //Check if event session is ended
+        if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
+        }
+
+        Event event = eventSession.getEvent();
+
+        //Check if current vol applied event exist
+        if(event == null) {
+            throw new AppException(EventErrorCode.EVENT_NOT_EXISTED);
+        }
+
+        //check if event is in status ONGOING
+        if(!event.getStatus().equals(EEventStatus.ONGOING)) {
+            throw new AppException(EventErrorCode.EVENT_NOT_ONGOING);
+        }
+
+        //check if current vol position is in check-in location
+        Point currentPosition = GeoUtils.toPoint(request.getCurrentPlaceLat(), request.getCurrentPlaceLng());
+
+        double distance = GeoUtils.distanceMeters(currentPosition,event.getCheckInLocation());
+
+        //Check if current user's position is in check-in location
+        if (distance > event.getCheckInAccuracyMeters()) {
+            throw new AppException(EventErrorCode.EVENT_CHECK_IN_OUT_OF_RANGE);
+        }
+
+        //check if current user's device is match with checked-in user's device
+        boolean existsByDeviceAndVolunteerId = checkInLogRepository
+                .existsByDeviceAndVolunteerId(request.getDeviceId(), request.getApVersion(), request.getOsVersion(), volunteerId);
+
+        if(!existsByDeviceAndVolunteerId) {
+            throw new AppException(EventErrorCode.DEVICE_NOT_CHECKED_IN);
+        }
+
+        //Save credit hour
+        Duration duration = Duration.between(checkInLog.getCheckInTime(), OffsetDateTime.now());
+        double creditHour = duration.toHours() + (duration.toMinutesPart() / 60.0);
+        checkInLog.setCreditHour((short) Math.round(creditHour));
+        checkInLogRepository.save(checkInLog);
     }
 }

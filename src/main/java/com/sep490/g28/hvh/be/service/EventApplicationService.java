@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckOutEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
@@ -26,4 +27,6 @@ public interface EventApplicationService {
     CheckEventCheckInCodeResponse checkEventCheckInCode(CheckEventCheckInCodeRequest request);
 
     void quickCheckInEvent(QuickCheckInEventRequest request);
+
+    void checkOutEvent(CheckOutEventRequest request);
 }
