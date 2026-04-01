@@ -1210,10 +1210,6 @@ public class EventApplicationServiceTest {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(new CheckInLog());
-
         CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
 
         assertThrows(
@@ -1231,14 +1227,13 @@ public class EventApplicationServiceTest {
 
         Event event = mockEvent();
         event.setCheckInAccuracyMeters(100.0);
+        event.setStatus(EEventStatus.ONGOING);
 
         EventSession session = new EventSession();
+        session.setStartDateTime(OffsetDateTime.now());
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setId(sessionId);
         session.setEvent(event);
-
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(null);
 
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
@@ -1277,10 +1272,6 @@ public class EventApplicationServiceTest {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(new CheckInLog());
-
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
 
         assertThrows(
@@ -1294,10 +1285,6 @@ public class EventApplicationServiceTest {
     void quickCheckInEvent_session_not_exist() {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
-
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(null);
 
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.empty());
@@ -1320,12 +1307,10 @@ public class EventApplicationServiceTest {
         event.setCheckInAccuracyMeters(100.0);
 
         EventSession session = new EventSession();
+        session.setStartDateTime(OffsetDateTime.now());
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setId(sessionId);
         session.setEvent(event);
-
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(null);
 
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
@@ -1357,19 +1342,13 @@ public class EventApplicationServiceTest {
         event.setCheckInAccuracyMeters(100.0);
 
         EventSession session = new EventSession();
+        session.setStartDateTime(OffsetDateTime.now());
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setId(sessionId);
         session.setEvent(event);
 
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(null);
-
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
-
-        when(checkInLogRepository
-                .existsByDevice(any(), any(), any()))
-                .thenReturn(true);
 
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
 
@@ -1396,22 +1375,13 @@ public class EventApplicationServiceTest {
         event.setCheckInAccuracyMeters(100.0);
 
         EventSession session = new EventSession();
+        session.setStartDateTime(OffsetDateTime.now());
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setId(sessionId);
         session.setEvent(event);
 
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(null);
-
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
-
-        when(checkInLogRepository
-                .existsByDevice(any(), any(), any()))
-                .thenReturn(false);
-
-        when(volunteerRepository.findById(volunteerId))
-                .thenReturn(Optional.empty());
 
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
 
@@ -1436,21 +1406,16 @@ public class EventApplicationServiceTest {
 
         Event event = mockEvent();
         event.setCheckInAccuracyMeters(100.0);
+        event.setStatus(EEventStatus.ONGOING);
 
         EventSession session = new EventSession();
+        session.setStartDateTime(OffsetDateTime.now());
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
         session.setId(sessionId);
         session.setEvent(event);
 
-        when(checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
-                .thenReturn(null);
-
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
-
-        when(checkInLogRepository
-                .existsByDevice(any(), any(), any()))
-                .thenReturn(false);
 
         Volunteer volunteer = new Volunteer();
         volunteer.setId(volunteerId);
@@ -1491,13 +1456,6 @@ public class EventApplicationServiceTest {
         EventApplication app = new EventApplication();
         app.setSession(session);
 
-        when(eventApplicationRepository
-                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-                .thenReturn(app);
-
-        when(eventSessionRepository.findById(sessionId))
-                .thenReturn(Optional.of(session));
-
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
 
         assertThrows(
@@ -1522,13 +1480,6 @@ public class EventApplicationServiceTest {
 
         EventApplication app = new EventApplication();
         app.setSession(session);
-
-        when(eventApplicationRepository
-                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-                .thenReturn(app);
-
-        when(eventSessionRepository.findById(sessionId))
-                .thenReturn(Optional.of(session));
 
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
 
@@ -1560,16 +1511,6 @@ public class EventApplicationServiceTest {
         EventApplication app = new EventApplication();
         app.setSession(session);
 
-        when(eventApplicationRepository
-                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-                .thenReturn(app);
-
-        when(eventSessionRepository.findById(sessionId))
-                .thenReturn(Optional.of(session));
-
-        when(eventRepository.findById(eventId))
-                .thenReturn(Optional.empty());
-
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
 
         assertThrows(
@@ -1600,13 +1541,6 @@ public class EventApplicationServiceTest {
 
         EventApplication app = new EventApplication();
         app.setSession(session);
-
-        when(eventApplicationRepository
-                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-                .thenReturn(app);
-
-        when(eventSessionRepository.findById(sessionId))
-                .thenReturn(Optional.of(session));
 
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
 
