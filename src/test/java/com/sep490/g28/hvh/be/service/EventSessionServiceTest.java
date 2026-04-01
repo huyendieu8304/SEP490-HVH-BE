@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
 import com.sep490.g28.hvh.be.entity.*;
@@ -105,6 +106,18 @@ public class EventSessionServiceTest {
         return s;
     }
 
+    private EventSession session() {
+        EventSession s = new EventSession();
+        s.setId(UUID.randomUUID());
+        s.setStartDateTime(OffsetDateTime.now().plusDays(5));
+        s.setEndDateTime(OffsetDateTime.now().plusDays(5).plusHours(2));
+        s.setExpectedVolAmount(100);
+        s.setExpectedSerAmount(200);
+        s.setApprovedApplicationCount(0);
+        return s;
+    }
+
+
     EditEventSessionRequest req(EUpdateAction action) {
         EditEventSessionRequest r = new EditEventSessionRequest();
         r.setUpdateAction(action);
@@ -113,6 +126,15 @@ public class EventSessionServiceTest {
         return r;
     }
 
+    private UpdateEventSessionPayload payload(UUID id, OffsetDateTime start) {
+        UpdateEventSessionPayload p = new UpdateEventSessionPayload();
+        p.setId(id);
+        p.setStartDateTime(start);
+        p.setEndDateTime(start.plusHours(2));
+        p.setExpectedVolAmount(10);
+        p.setExpectedSerAmount(5);
+        return p;
+    }
     // ==== addEventSessionForCreateEvent ===================================
     // TC01
     @Test
@@ -525,5 +547,106 @@ public class EventSessionServiceTest {
         assertTrue(result);
         assertEquals(2, payload.getEventSessions().size());
         assertEquals(d.toLocalDate().minusDays(5), payload.getRecruitmentEndDate());
+    }
+
+    // ====== resolveUpdateEventSessions =====
+    @Test
+    void updateExistingSession_shouldUpdateFields() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload p = payload(s.getId(), OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(1, result.size());
+        EventSession updated = result.get(0);
+
+        assertEquals(p.getStartDateTime(), updated.getStartDateTime());
+        assertEquals(0, updated.getApprovedApplicationCount());
+    }
+
+    @Test
+    void createNewSession_shouldAdd() {
+        EventSession existing = session();
+        List<EventSession> old = new ArrayList<>(List.of(existing));
+
+        UpdateEventSessionPayload p = payload(null, OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(1, result.size());
+
+        EventSession created = result.get(0);
+        assertNull(created.getId()); // chưa persist
+        assertEquals(event, created.getEvent());
+        assertNotNull(created.getCheckInCode());
+    }
+
+    @Test
+    void mixUpdateAndCreate_shouldWork() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload update = payload(s.getId(), OffsetDateTime.now().plusDays(10));
+        UpdateEventSessionPayload create = payload(null, OffsetDateTime.now().plusDays(20));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(update, create));
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void orphanSession_shouldBeRemoved() {
+        EventSession s1 = session();
+        EventSession s2 = session();
+
+        List<EventSession> old = new ArrayList<>(List.of(s1, s2));
+
+        // chỉ giữ s1
+        UpdateEventSessionPayload p = payload(s1.getId(), OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(1, result.size());
+        assertEquals(s1.getId(), result.get(0).getId());
+    }
+
+    @Test
+    void shouldReplaceEntireList() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload p = payload(null, OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        // old list phải bị replace hoàn toàn
+        assertSame(old, result);
+        assertEquals(1, old.size());
+    }
+
+    @Test
+    void update_shouldResetApprovedCount() {
+        EventSession s = session();
+        s.setApprovedApplicationCount(5);
+
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        UpdateEventSessionPayload p = payload(s.getId(), OffsetDateTime.now().plusDays(10));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of(p));
+
+        assertEquals(0, result.get(0).getApprovedApplicationCount());
+    }
+
+    @Test
+    void emptyPayload_shouldClearAll() {
+        EventSession s = session();
+        List<EventSession> old = new ArrayList<>(List.of(s));
+
+        List<EventSession> result = service.resolveUpdateEventSessions(event, old, List.of());
+
+        assertTrue(result.isEmpty());
     }
 }
