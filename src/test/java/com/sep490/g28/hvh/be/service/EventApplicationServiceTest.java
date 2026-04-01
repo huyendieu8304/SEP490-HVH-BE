@@ -6,6 +6,7 @@ import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckOutEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
@@ -204,6 +205,17 @@ public class EventApplicationServiceTest {
 
     private QuickCheckInEventRequest validQuickCheckInEventRequest() {
         QuickCheckInEventRequest request = new QuickCheckInEventRequest();
+        request.setEventSessionId(sessionId.toString());
+        request.setDeviceId("device-1");
+        request.setApVersion("1.0");
+        request.setOsVersion("android");
+        request.setCurrentPlaceLat(10.0);
+        request.setCurrentPlaceLng(10.0);
+        return request;
+    }
+
+    private CheckOutEventRequest validCheckOutEventRequest() {
+        CheckOutEventRequest request = new CheckOutEventRequest();
         request.setEventSessionId(sessionId.toString());
         request.setDeviceId("device-1");
         request.setApVersion("1.0");
@@ -1192,6 +1204,24 @@ public class EventApplicationServiceTest {
         );
     }
 
+    // ===== TC9 =====
+    @Test
+    void checkEventCheckInCode_already_checked_in() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        when(checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, sessionId))
+                .thenReturn(new CheckInLog());
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.checkEventCheckInCode(request)
+        );
+    }
+
     // ==== quickCheckInEvent ===================================
     // ===== TC1 =====
     @Test
@@ -1442,5 +1472,147 @@ public class EventApplicationServiceTest {
         }
 
         verify(checkInLogRepository, never()).save(any());
+    }
+
+    // ===== TC8 =====
+    @Test
+    void quickCheckInEvent_session_not_started() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2)); // future
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC9 =====
+    @Test
+    void quickCheckInEvent_session_ended() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
+        session.setEndDateTime(OffsetDateTime.now().minusHours(1)); // future
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC10 =====
+    @Test
+    void quickCheckInEvent_event_not_exist() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEvent(event);
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.empty());
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC11 =====
+    @Test
+    void quickCheckInEvent_event_not_ongoing() {
+
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setStatus(EEventStatus.UPCOMING); // not ONGOING
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
+        session.setEvent(event);
+
+        EventApplication app = new EventApplication();
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(app);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
     }
 }
