@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventImage;
@@ -39,11 +40,30 @@ public class EventImageServiceTest {
 
     Event event;
 
+    private static final int MAX_IMAGES = 5; // phải match constant thật
+
+
     @BeforeEach
     void setup() {
         event = new Event();
         event.setId(UUID.randomUUID());
         event.setImages(new ArrayList<>());
+    }
+
+    private Event eventWithImages(int n) {
+        Event e = new Event();
+        e.setId(UUID.randomUUID());
+
+        List<EventImage> imgs = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            EventImage img = new EventImage();
+            img.setId(UUID.randomUUID());
+            img.setEvent(e);
+            img.setImagePath("old-" + i);
+            imgs.add(img);
+        }
+        e.setImages(imgs);
+        return e;
     }
 
     private EditEventImageRequest addReq() {
@@ -263,4 +283,163 @@ public class EventImageServiceTest {
 
         assertTrue(result.isEmpty());
     }
+
+    // ===== resolveUpdateEventImagesPayload
+    // TC1: only remove
+    @Test
+    void resolveUpdateEventImagesPayload_onlyRemove_shouldWork() {
+        Event e = eventWithImages(2);
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        UUID removeId = e.getImages().get(0).getId();
+
+        List<String> res = service.resolveUpdateEventImagesPayload(
+                e,
+                List.of(removeReq(removeId)),
+                payload
+        );
+
+        assertTrue(res.isEmpty());
+        assertEquals(1, payload.getEventImages().size());
+    }
+
+    // TC2: only add
+    @Test
+    void resolveUpdateEventImagesPayload_onlyAdd_shouldReturnUploadUrls() {
+        Event e = eventWithImages(1);
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        when(storagePathGenerator.eventImage(any(), any(), any()))
+                .thenReturn("path");
+
+        when(storageService.getUploadUrlAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture("url"));
+
+        List<String> res = service.resolveUpdateEventImagesPayload(
+                e,
+                List.of(addReq(), addReq()),
+                payload
+        );
+
+        assertEquals(2, res.size());
+        assertEquals(3, payload.getEventImages().size());
+    }
+
+    // TC3: remove + add
+    @Test
+    void resolveUpdateEventImagesPayload_removeAndAdd_shouldWork() {
+        Event e = eventWithImages(2);
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        UUID removeId = e.getImages().get(0).getId();
+
+        when(storagePathGenerator.eventImage(any(), any(), any()))
+                .thenReturn("path");
+
+        when(storageService.getUploadUrlAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture("url"));
+
+        List<String> res = service.resolveUpdateEventImagesPayload(
+                e,
+                List.of(removeReq(removeId), addReq()),
+                payload
+        );
+
+        assertEquals(1, res.size());
+        assertEquals(2, payload.getEventImages().size());
+    }
+
+    // TC4: exceed MAX_IMAGES
+    @Test
+    void resolveUpdateEventImagesPayload_exceedMaxImages_shouldThrow() {
+        Event e = eventWithImages(MAX_IMAGES);
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        assertThrows(AppException.class,
+                () -> service.resolveUpdateEventImagesPayload(
+                        e,
+                        List.of(addReq()),
+                        payload
+                ));
+    }
+
+    // TC5: removeIds empty (id null or not exist)
+    @Test
+    void resolveUpdateEventImagesPayload_removeIdsEmpty_shouldIgnore() {
+        Event e = eventWithImages(2);
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        EditEventImageRequest r = new EditEventImageRequest();
+        r.setUpdateAction(EUpdateAction.REMOVE);
+        r.setImageId(UUID.randomUUID()); // not exist
+
+        List<String> res = service.resolveUpdateEventImagesPayload(
+                e,
+                List.of(r),
+                payload
+        );
+
+        assertEquals(2, payload.getEventImages().size());
+    }
+
+    // TC6: adds empty
+    @Test
+    void resolveUpdateEventImagesPayload_addsEmpty_shouldNoUpload() {
+        Event e = eventWithImages(2);
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        List<String> res = service.resolveUpdateEventImagesPayload(
+                e,
+                Collections.emptyList(),
+                payload
+        );
+
+        assertTrue(res.isEmpty());
+        assertEquals(2, payload.getEventImages().size());
+    }
+
+    // TC7: limit by remainingSlot
+    @Test
+    void resolveUpdateEventImages_Payload_addExceedRemainingSlot_shouldLimit() {
+        Event e = eventWithImages(MAX_IMAGES - 3); //exist 2 image
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        when(storagePathGenerator.eventImage(any(), any(), any()))
+                .thenReturn("path");
+
+        when(storageService.getUploadUrlAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture("url"));
+
+        List<EditEventImageRequest> reqs = List.of(
+                addReq(), addReq(), addReq() // > remaining slot
+        );
+
+        List<String> res = service.resolveUpdateEventImagesPayload(e, reqs, payload);
+
+        //add 1 -> become 3 image
+        assertEquals(3, res.size());
+        assertEquals(MAX_IMAGES, payload.getEventImages().size());
+    }
+
+    // TC8: async multiple futures
+    @Test
+    void resolveUpdateEventImagesPayload_asyncUpload_shouldJoinAll() {
+        Event e = eventWithImages(0);
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        when(storagePathGenerator.eventImage(any(), any(), any()))
+                .thenReturn("path");
+
+        when(storageService.getUploadUrlAsync(any()))
+                .thenAnswer(inv -> CompletableFuture.completedFuture(UUID.randomUUID().toString()));
+
+        List<String> res = service.resolveUpdateEventImagesPayload(
+                e,
+                List.of(addReq(), addReq(), addReq()),
+                payload
+        );
+
+        assertEquals(3, res.size());
+    }
+
 }

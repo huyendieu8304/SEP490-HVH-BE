@@ -12,7 +12,7 @@ public interface EventImageService {
 
     List<String> addEventImages(Event event, List<EditEventImageRequest> addImages);
     List<String> updateEventImages(Event event, List<EditEventImageRequest> reqImages);
-    List<String> resolveUpdateEventImages(
+    List<String> resolveUpdateEventImagesPayload(
             Event event,
             List<EditEventImageRequest> reqImages,
             UpdateEventPayload updateEventPayload

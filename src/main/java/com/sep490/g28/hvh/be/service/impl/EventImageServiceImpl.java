@@ -155,7 +155,7 @@ public class EventImageServiceImpl implements EventImageService {
      * @return list of upload image url
      */
     @Override
-    public List<String> resolveUpdateEventImages(
+    public List<String> resolveUpdateEventImagesPayload(
             Event event,
             List<EditEventImageRequest> reqImages,
             UpdateEventPayload updateEventPayload

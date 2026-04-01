@@ -977,7 +977,7 @@ public class EventServiceEditEventTest {
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
                 .thenReturn(false);
 
-        when(eventImageService.resolveUpdateEventImages(any(), any(), any()))
+        when(eventImageService.resolveUpdateEventImagesPayload(any(), any(), any()))
                 .thenReturn(List.of("url1", "url2"));
 
         UpdateEventRequest req = new UpdateEventRequest();

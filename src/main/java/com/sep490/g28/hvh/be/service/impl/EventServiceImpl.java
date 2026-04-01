@@ -1410,7 +1410,7 @@ public class EventServiceImpl implements EventService {
         //map image
         if (request.getUpdateImages() != null && !request.getUpdateImages().isEmpty()) {
             hasChanges = true;
-            response.setUploadUrls(eventImageService.resolveUpdateEventImages(event, request.getUpdateImages(), updatePayload));
+            response.setUploadUrls(eventImageService.resolveUpdateEventImagesPayload(event, request.getUpdateImages(), updatePayload));
         }
         if (request.getDescription() != null
                 && !request.getDescription().isEmpty()
