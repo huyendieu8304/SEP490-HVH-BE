@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -200,7 +201,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void sendEventApprovedByOrgManagerNotification(Event event) {
+    public void sendEventCreateApprovedByOrgManagerNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
         UUID hostId = event.getHost().getId();
@@ -208,11 +209,11 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForHost.setTitle("Sự kiện đã được Quản lí tổ chức phê duyệt");
         notificationForHost.setBody(String.format("Sự kiện %s đã được phê duyệt bởi quản lí tổ chức và đang chờ duyệt từ Admin.", event.getName()));
         notificationForHost.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_APPROVED_BY_MNG.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_CREATE_APPROVED_BY_MNG.name(),
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
         ));
-        notificationForHost.setType(ENotificationType.HOST_EVENT_APPROVED_BY_MNG);
+        notificationForHost.setType(ENotificationType.HOST_EVENT_CREATE_APPROVED_BY_MNG);
 
         //save notification
         notificationForHost = saveNotificationForUser(notificationForHost, hostId);
@@ -223,11 +224,11 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForAdmin.setTitle("Sự kiện đã được Quản lí tổ chức phê duyệt");
         notificationForAdmin.setBody(String.format("Sự kiện %s đã được phê duyệt bởi quản lí tổ chức và cần bạn xác nhận.", event.getName()));
         notificationForAdmin.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.ADM_EVENT_APPROVED_BY_MNG.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.ADM_EVENT_CREATE_APPROVED_BY_MNG.name(),
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.ADM_EVENT_DETAILS.name()
         ));
-        notificationForAdmin.setType(ENotificationType.ADM_EVENT_APPROVED_BY_MNG);
+        notificationForAdmin.setType(ENotificationType.ADM_EVENT_CREATE_APPROVED_BY_MNG);
         notificationRepository.save(notificationForAdmin);
 
         //send notification
@@ -236,7 +237,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventRejectedByOrgManagerNotification(Event event, String reason) {
+    public void sendEventCreateRejectedByOrgManagerNotification(Event event, String reason) {
         //send notification to host
         Notification notification = new Notification();
         UUID hostId = event.getHost().getId();
@@ -244,11 +245,11 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setTitle("Sự kiện không được chấp thuận bởi Quản lí tổ chức");
         notification.setBody(String.format("Quản lí tổ chức đã không chấp thuận tạo sự kiện %s. Lí do: %s", event.getName(), reason));
         notification.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_REJECTED_BY_MNG.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_CREATE_REJECTED_BY_MNG.name(),
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
         ));
-        notification.setType(ENotificationType.HOST_EVENT_REJECTED_BY_MNG);
+        notification.setType(ENotificationType.HOST_EVENT_CREATE_REJECTED_BY_MNG);
 
         //save notification
         notification = saveNotificationForUser(notification, hostId);
@@ -257,7 +258,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApprovedByAdminNotification(Event event) {
+    public void sendEventCreateApprovedByAdminNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
         UUID hostId = event.getHost().getId();
@@ -265,11 +266,11 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForHost.setTitle("Sự kiện đã được Admin phê duyệt");
         notificationForHost.setBody(String.format("Sự kiện %s đã được phê duyệt bởi Admin và bước vào tranng thái tuyển người.", event.getName()));
         notificationForHost.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_APPROVED_BY_AD.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_CREATE_APPROVED_BY_ADM.name(),
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
         ));
-        notificationForHost.setType(ENotificationType.HOST_EVENT_APPROVED_BY_AD);
+        notificationForHost.setType(ENotificationType.HOST_EVENT_CREATE_APPROVED_BY_ADM);
 
         //save notification
         notificationForHost = saveNotificationForUser(notificationForHost, hostId);
@@ -280,11 +281,11 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForManager.setTitle("Sự kiện đã được Admin phê duyệt");
         notificationForManager.setBody(String.format("Sự kiện %s đã được phê duyệt bởi Admin và bước vào tranng thái tuyển người.", event.getName()));
         notificationForManager.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_APPROVED_BY_AD.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_CREATE_APPROVED_BY_ADM.name(),
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
         ));
-        notificationForManager.setType(ENotificationType.MNG_EVENT_APPROVED_BY_AD);
+        notificationForManager.setType(ENotificationType.MNG_EVENT_CREATE_APPROVED_BY_ADM);
 
         //save notification
         notificationForManager = saveNotificationForUser(notificationForManager, orgManagerId);
@@ -295,7 +296,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventRejectedByAdminNotification(Event event, String reason) {
+    public void sendEventCreateRejectedByAdminNotification(Event event, String reason) {
         //send notification to host
         Notification notificationForHost = new Notification();
         UUID hostId = event.getHost().getId();
@@ -303,11 +304,11 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForHost.setTitle("Sự kiện không được chấp thuận bởi Admin");
         notificationForHost.setBody(String.format("Sự kiện %s đã không được chấp thuận bởi admin với lí do: %s.", event.getName(), reason));
         notificationForHost.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_REJECTED_BY_AD.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_CREATE_REJECTED_BY_ADM.name(),
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
         ));
-        notificationForHost.setType(ENotificationType.HOST_EVENT_REJECTED_BY_AD);
+        notificationForHost.setType(ENotificationType.HOST_EVENT_CREATE_REJECTED_BY_ADM);
 
         //save notification
         notificationForHost = saveNotificationForUser(notificationForHost, hostId);
@@ -319,11 +320,11 @@ public class NotificationServiceImpl implements NotificationService {
         notificationForManager.setTitle("Sự kiện không được chấp thuận bởi Admin");
         notificationForManager.setBody(String.format("Sự kiện %s đã không được chấp thuận bởi admin với lí do: %s.", event.getName(), reason));
         notificationForManager.setData(Map.of(
-                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_REJECTED_BY_AD.name(),
+                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_CREATE_REJECTED_BY_ADM.name(),
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
         ));
-        notificationForManager.setType(ENotificationType.MNG_EVENT_REJECTED_BY_AD);
+        notificationForManager.setType(ENotificationType.MNG_EVENT_CREATE_REJECTED_BY_ADM);
 
         //save notification
         notificationForManager = saveNotificationForUser(notificationForManager, orgManagerId);
@@ -333,7 +334,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationApproved(UUID volunteerId, Event event, EventApplication application) {
+    public void sendEventApplicationApprovedNotification(UUID volunteerId, Event event, EventApplication application) {
         //send notification to host
         Notification notification = new Notification();
 
@@ -353,7 +354,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationRejected(UUID volunteerId, Event event, EventApplication application, String rejectionReason) {
+    public void sendEventApplicationRejectedNotification(UUID volunteerId, Event event, EventApplication application, String rejectionReason) {
         //send notification to volunteer
         Notification notification = new Notification();
 
@@ -377,7 +378,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventApplicationCancelledSuccessfully(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
+    public void sendEventApplicationCancelledSuccessfullyNotification(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
         //send notification to volunteer
         Notification notification = new Notification();
 
@@ -421,6 +422,307 @@ public class NotificationServiceImpl implements NotificationService {
 
         //send notification to topic
         notificationPublisher.enqueueNotification(notificationForVolunteers, null);
+    }
+
+    @Override
+    public void sentEventCancelledByHostNotification(List<EventApplication> eventApplications, String eventName, String cancelReason) {
+
+        //ListNotification
+        List<Notification> notifications = new ArrayList<>();
+        for (EventApplication application : eventApplications) {
+            Notification notification = buildEventCancelledByHostNotification(eventName, cancelReason, application);
+            notifications.add(notification);
+        }
+        notifications = notificationRepository.saveAll(notifications);
+
+        pushNotificationsToMessageQueue(eventApplications, notifications);
+    }
+
+    private Notification buildEventCancelledByHostNotification(String eventName, String cancelReason, EventApplication application) {
+        Notification notification = new Notification();
+        notification.setTitle("Sự kiện đã bị hủy bởi Host");
+        notification.setBody(String.format(
+                "Sự kiện %s đã bị Host hủy và không tiếp tục diễn ra với lí do: %s. " +
+                        "Đơn đăng kí tham gia sự kiện vào ngày %s của bạn sẽ được tự động hủy và sẽ không ảnh hưởng đến số điểm hiện tại bạn đang có.",
+                eventName, cancelReason, application.getSessionDate().toString()
+        ));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_CANCELLED_BY_HOST.name(),
+                DATA_REF_ID_KEY, application.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_EVENT_CANCELLED_BY_HOST);
+        return notification;
+    }
+
+    @Override
+    public void sentEventCancelledByAdminNotification(List<EventApplication> eventApplications, String eventName, String cancelReason) {
+
+        //ListNotification
+        List<Notification> notifications = new ArrayList<>();
+        for (EventApplication application : eventApplications) {
+            Notification notification = buildEventCancelledByAdminNotification(eventName, cancelReason, application);
+            notifications.add(notification);
+        }
+        notifications = notificationRepository.saveAll(notifications);
+
+        pushNotificationsToMessageQueue(eventApplications, notifications);
+    }
+
+    private Notification buildEventCancelledByAdminNotification(String eventName, String cancelReason, EventApplication application) {
+        Notification notification = new Notification();
+        notification.setTitle("Sự kiện đã bị hủy bởi quản trị viên hệ thống");
+        notification.setBody(String.format(
+                "Sự kiện %s đã bị quản trị viên hệ thống hủy và không tiếp tục diễn ra với lí do: %s. " +
+                        "Đơn đăng kí tham gia sự kiện vào ngày %s của bạn sẽ được tự động hủy và sẽ không ảnh hưởng đến số điểm hiện tại bạn đang có.",
+                eventName, cancelReason, application.getSessionDate().toString()
+        ));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_CANCELLED_BY_AD.name(),
+                DATA_REF_ID_KEY, application.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_EVENT_CANCELLED_BY_AD);
+        return notification;
+    }
+
+    private void pushNotificationsToMessageQueue(List<EventApplication> eventApplications, List<Notification> notifications) {
+        //link volunteer to notification
+        List<UserNotification> userNotifications = new ArrayList<>();
+        for (int i = 0; i < notifications.size(); i++) {
+            EventApplication app = eventApplications.get(i);
+            Notification noti = notifications.get(i);
+
+            UserNotification un = new UserNotification();
+            un.setNotification(noti);
+            un.setUser(userRepository.getReferenceById(app.getVolunteer().getId()));
+
+            userNotifications.add(un);
+        }
+        userNotificationRepository.saveAll(userNotifications);
+
+        //push notification
+        for (int i = 0; i < notifications.size(); i++) {
+            notificationPublisher.enqueueNotification(
+                    notifications.get(i),
+                    eventApplications.get(i).getVolunteer().getId()
+            );
+        }
+    }
+
+
+    @Override
+    public void sentEventUpdatedByHostNotification(UUID orgManagerId, UUID eventId, String eventName) {
+        Notification notification = new Notification();
+
+        notification.setType(ENotificationType.MNG_EVENT_UPDATED_BY_HOST);
+        notification.setTitle("Sự kiện được cập nhật thông tin");
+        notification.setBody(String.format("Sự kiện \"%s\" vừa được cập nhật thông tin và cần xác nhận.",eventName));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_UPDATED_BY_HOST.name(),
+                DATA_REF_ID_KEY, eventId.toString(),
+                DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
+        ));
+
+        notification = saveNotificationForUser(notification, orgManagerId);
+
+        notificationPublisher.enqueueNotification(notification, orgManagerId);
+    }
+
+    @Override
+    public void sendEventUpdateNonCriticalApprovedByOrgManagerNotification(UUID hostId, Event event) {
+        //send notification to host
+        Notification notificationForHost = new Notification();
+
+        notificationForHost.setTitle("Cập nhật sự kiện đã được quản lí tổ chức phê duyệt");
+        notificationForHost.setBody(String.format("Sự kiện %s đã được phê duyệt cập nhật bởi quản lí tổ chức.", event.getName()));
+        notificationForHost.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_UPDATE_NON_CRITICAL_APPROVED_BY_MNG.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notificationForHost.setType(ENotificationType.HOST_EVENT_UPDATE_NON_CRITICAL_APPROVED_BY_MNG);
+
+        //save notification
+        notificationForHost = saveNotificationForUser(notificationForHost, hostId);
+
+        notificationPublisher.enqueueNotification(notificationForHost, hostId);
+    }
+
+    @Override
+    public void sendEventUpdateNonCriticalApprovedByOrgManagerNotification(List<EventApplication> eventApplications, String eventName) {
+        List<Notification> notifications = new ArrayList<>();
+
+        for (EventApplication app : eventApplications) {
+            Notification notification = new Notification();
+            notification.setTitle("Cập nhật thông tin sự kiện");
+            notification.setBody(String.format(
+                    "Sự kiện %s đã được cập nhật một số thông tin, bạn hãy kiểm lại để đảm bảo nắm được thông tin thay đổi.",
+                    eventName
+            ));
+            notification.setData(Map.of(
+                    DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_UPDATE_NON_CRITICAL_APPROVED_BY_MNG.name(),
+                    DATA_REF_ID_KEY, app.getId().toString(),
+                    DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+            ));
+            notification.setType(ENotificationType.VOL_EVENT_UPDATE_NON_CRITICAL_APPROVED_BY_MNG);
+
+            notifications.add(notification);
+        }
+
+        notifications = notificationRepository.saveAll(notifications);
+        pushNotificationsToMessageQueue(eventApplications, notifications);
+    }
+
+    @Override
+    public void sendEventUpdateCriticalApprovedByOrgManagerNotification(UUID hostId, Event event) {
+        Notification notification = new Notification();
+
+        notification.setTitle("Cập nhật quan trọng đã được phê duyệt");
+        notification.setBody(String.format(
+                "Cập nhật quan trọng của sự kiện %s đã được quản lí tổ chức phê duyệt và đang chờ Admin.",
+                event.getName()
+        ));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_UPDATE_CRITICAL_APPROVED_BY_MNG.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.HOST_EVENT_UPDATE_CRITICAL_APPROVED_BY_MNG);
+
+        notification = saveNotificationForUser(notification, hostId);
+        notificationPublisher.enqueueNotification(notification, hostId);
+    }
+
+    @Override
+    public void sendEventUpdateRejectedByOrgManagerNotification(UUID hostId, Event event) {
+        Notification notification = new Notification();
+
+        notification.setTitle("Yêu cầu cập nhật bị quản lí tổ chức từ chối");
+        notification.setBody(String.format(
+                "Yêu cầu cập nhật sự kiện %s đã bị quản lí tổ chức từ chối.",
+                event.getName()
+        ));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_UPDATE_REJECTED_BY_MNG.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.HOST_EVENT_UPDATE_REJECTED_BY_MNG);
+
+        notification = saveNotificationForUser(notification, hostId);
+        notificationPublisher.enqueueNotification(notification, hostId);
+    }
+
+    @Override
+    public void sendEventUpdateCriticalApprovedByAdminNotification(Event event) {
+        // host
+        UUID hostId = event.getHost().getId();
+
+        Notification notiHost = new Notification();
+        notiHost.setTitle("Yêu cầu cập nhật quan trọng đã được Admin phê duyệt");
+        notiHost.setBody(String.format(
+                "Yêu cầu cập nhật quan trọng của sự kiện %s đã được Admin phê duyệt.",
+                event.getName()
+        ));
+        notiHost.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_UPDATE_CRITICAL_APPROVED_BY_ADM.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notiHost.setType(ENotificationType.HOST_EVENT_UPDATE_CRITICAL_APPROVED_BY_ADM);
+
+        notiHost = saveNotificationForUser(notiHost, hostId);
+
+        // manager
+        UUID managerId = event.getOrganization().getOrganizationManager().getId();
+
+        Notification notiMng = new Notification();
+        notiMng.setTitle("Yêu cầu cập nhật quan trọng đã được Admin phê duyệt");
+        notiMng.setBody(String.format(
+                "Yêu cầu cập nhật quan trọng của sự kiện %s đã được Admin phê duyệt.",
+                event.getName()
+        ));
+        notiMng.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_UPDATE_CRITICAL_APPROVED_BY_ADM.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
+        ));
+        notiMng.setType(ENotificationType.MNG_EVENT_UPDATE_CRITICAL_APPROVED_BY_ADM);
+
+        notiMng = saveNotificationForUser(notiMng, managerId);
+
+        notificationPublisher.enqueueNotification(notiHost, hostId);
+        notificationPublisher.enqueueNotification(notiMng, managerId);
+    }
+
+    @Override
+    public void sendEventUpdateCriticalApprovedByAdminNotification(List<EventApplication> eventApplications, String eventName) {
+        List<Notification> notifications = new ArrayList<>();
+
+        for (EventApplication app : eventApplications) {
+            Notification notification = new Notification();
+            notification.setTitle("Cập nhật sự kiện");
+            notification.setBody(String.format(
+                    "Sự kiện %s đã được cập nhật một số thông tin quan trọng, " +
+                            "do đó, đơn đăng kí buổi tình nguyện ngày %s của bạn đã bị hủy, " +
+                            "hãy đăng kí lại nếu bạn vẫn muốn tham gia sự kiện.",
+                    eventName,
+                    app.getSessionDate()
+            ));
+            notification.setData(Map.of(
+                    DATA_NOTIFICATION_TYPE, ENotificationType.VOL_EVENT_UPDATE_CRITICAL_APPROVED_BY_ADM.name(),
+                    DATA_REF_ID_KEY, app.getId().toString(),
+                    DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+            ));
+            notification.setType(ENotificationType.VOL_EVENT_UPDATE_CRITICAL_APPROVED_BY_ADM);
+
+            notifications.add(notification);
+        }
+
+        notifications = notificationRepository.saveAll(notifications);
+        pushNotificationsToMessageQueue(eventApplications, notifications);
+    }
+
+    @Override
+    public void sendEventUpdateCriticalRejectedByAdminNotification(Event event) {
+        UUID hostId = event.getHost().getId();
+
+        Notification notiHost = new Notification();
+        notiHost.setTitle("Yêu cầu cập nhật quan trọng bị Admin từ chối");
+        notiHost.setBody(String.format(
+                "Yêu cầu cập nhật quan trọng của sự kiện %s đã bị Admin từ chối.",
+                event.getName()
+        ));
+        notiHost.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_UPDATE_CRITICAL_REJECTED_BY_ADM.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notiHost.setType(ENotificationType.HOST_EVENT_UPDATE_CRITICAL_REJECTED_BY_ADM);
+
+        notiHost = saveNotificationForUser(notiHost, hostId);
+
+        // manager
+        UUID managerId = event.getOrganization().getOrganizationManager().getId();
+
+        Notification notiMng = new Notification();
+        notiMng.setTitle("Yêu cầu cập nhật quan trọng bị Admin từ chối");
+        notiMng.setBody(String.format(
+                "Yêu cầu cập nhật quan trọng của sự kiện %s đã bị Admin từ chối.",
+                event.getName()
+        ));
+        notiMng.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_UPDATE_CRITICAL_REJECTED_BY_ADM.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
+        ));
+        notiMng.setType(ENotificationType.MNG_EVENT_UPDATE_CRITICAL_REJECTED_BY_ADM);
+
+        notiMng = saveNotificationForUser(notiMng, managerId);
+
+        notificationPublisher.enqueueNotification(notiHost, hostId);
+        notificationPublisher.enqueueNotification(notiMng, managerId);
     }
 
 

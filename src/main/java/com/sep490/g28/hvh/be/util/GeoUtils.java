@@ -44,25 +44,25 @@ public class GeoUtils {
                 lng >= -180 && lng <= 180;
     }
 
-//    /**
-//     * distance between 2 points in meters
-//     */
-//    public static double distanceMeters(Point p1, Point p2) {
-//        if (p1 == null || p2 == null) return 0;
-//
-//        double earthRadius = 6371000; // meters
-//
-//        double lat1 = Math.toRadians(getLat(p1));
-//        double lat2 = Math.toRadians(getLat(p2));
-//        double deltaLat = lat2 - lat1;
-//        double deltaLng = Math.toRadians(getLng(p2) - getLng(p1));
-//
-//        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2)
-//                + Math.cos(lat1) * Math.cos(lat2)
-//                * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
-//
-//        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-//
-//        return earthRadius * c;
-//    }
+    /**
+     * distance between 2 points in meters
+     */
+    public static double distanceMeters(Point p1, Point p2) {
+        if (p1 == null || p2 == null) return 0;
+
+        double earthRadius = 6371000; // meters
+
+        double lat1 = Math.toRadians(getLat(p1));
+        double lat2 = Math.toRadians(getLat(p2));
+        double deltaLat = lat2 - lat1;
+        double deltaLng = Math.toRadians(getLng(p2) - getLng(p1));
+
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2)
+                + Math.cos(lat1) * Math.cos(lat2)
+                * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return earthRadius * c;
+    }
 }

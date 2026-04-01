@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.controller;
 
+import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
@@ -244,7 +246,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByHost(pageNumber, pageSize, name, status));
     }
 
-    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#id)")
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#inputId)")
     @GetMapping("/host/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
@@ -261,6 +263,34 @@ public class EventController {
     ) {
         eventService.announceVolunteersOfEvent(eventId, request);
         return ResponseEntity.ok().build();
+    }
 
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PutMapping("/host/events/{eventId}/cancel")
+    public ResponseEntity<Void> cancelEventByHost(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid CancelEventRequest request
+    ) {
+        eventService.cancelEventByHost(eventId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PutMapping("/sys-admin/events/{eventId}/cancel")
+    public ResponseEntity<Void> cancelEventByAdmin(
+            @PathVariable java.util.UUID eventId,
+            @RequestBody @Valid CancelEventRequest request
+    ) {
+        eventService.cancelEventByAdmin(eventId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PutMapping("/host/events/{eventId}/update")
+    public ResponseEntity<UpdateEventResponse> updateEvent(
+            @PathVariable java.util.UUID eventId,
+            @Valid @RequestBody UpdateEventRequest request
+    ){
+        return ResponseEntity.ok(eventService.updateEvent(eventId, request));
     }
 }

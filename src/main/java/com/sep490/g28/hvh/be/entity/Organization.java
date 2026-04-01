@@ -68,4 +68,10 @@ public class Organization {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "id")
     private SystemAdmin createBy;
+
+    @Column(name = "credit_hour", nullable = false)
+    private int creditHour = 0;
+
+    @OneToOne(mappedBy = "organization", fetch = FetchType.LAZY)
+    private OrganizationManager organizationManager;
 }

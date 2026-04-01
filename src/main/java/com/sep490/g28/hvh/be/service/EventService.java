@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.service;
 
+import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import org.springframework.data.domain.Page;
@@ -56,4 +58,10 @@ public interface EventService {
     EventDetailsResponseForHost getEventDetailsByHost(UUID eventId);
 
     void announceVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
+
+    void cancelEventByHost(UUID eventId, CancelEventRequest request);
+
+    void cancelEventByAdmin(UUID eventId, CancelEventRequest request);
+
+    UpdateEventResponse updateEvent(UUID eventId, UpdateEventRequest request);
 }

@@ -314,7 +314,7 @@ public class EventApplicationServiceTest {
         verify(eventApplicationRepository).save(app);
         verify(eventSessionRepository).save(app.getSession());
 
-        verify(notificationService).sendEventApplicationApproved(
+        verify(notificationService).sendEventApplicationApprovedNotification(
                 eq(app.getVolunteer().getId()),
                 eq(app.getSession().getEvent()),
                 eq(app)
@@ -393,7 +393,7 @@ public class EventApplicationServiceTest {
 
         verify(eventApplicationRepository).save(app);
 
-        verify(notificationService).sendEventApplicationRejected(
+        verify(notificationService).sendEventApplicationRejectedNotification(
                 eq(app.getVolunteer().getId()),
                 eq(app.getSession().getEvent()),
                 eq(app),
@@ -451,7 +451,7 @@ public class EventApplicationServiceTest {
 
         verify(eventApplicationRepository).save(app);
 
-        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+        verify(notificationService).sendEventApplicationCancelledSuccessfullyNotification(
                 eq(app.getVolunteer().getId()),
                 eq(app.getSession().getEvent()),
                 eq(app),
@@ -487,7 +487,7 @@ public class EventApplicationServiceTest {
 
         assertEquals(4, app.getSession().getApprovedApplicationCount());
 
-        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+        verify(notificationService).sendEventApplicationCancelledSuccessfullyNotification(
                 eq(app.getVolunteer().getId()),
                 any(),
                 eq(app),
@@ -516,7 +516,7 @@ public class EventApplicationServiceTest {
 
         verify(eventSessionRepository).save(app.getSession());
 
-        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+        verify(notificationService).sendEventApplicationCancelledSuccessfullyNotification(
                 eq(app.getVolunteer().getId()),
                 any(),
                 eq(app),
@@ -608,7 +608,7 @@ public class EventApplicationServiceTest {
 
         verify(volunteerRepository).save(app.getVolunteer());
 
-        verify(notificationService).sendEventApplicationCancelledSuccessfully(
+        verify(notificationService).sendEventApplicationCancelledSuccessfullyNotification(
                 eq(app.getVolunteer().getId()),
                 any(),
                 eq(app),
