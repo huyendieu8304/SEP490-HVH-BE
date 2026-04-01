@@ -44,7 +44,9 @@ public enum EventErrorCode implements ErrorCode {
     ALREADY_CHECKED_IN(7028, "Đã điểm danh vào sự kiện này.", HttpStatus.CONFLICT),
     EVENT_CHECK_IN_OUT_OF_RANGE(7029, "Ngoài phạm vi điểm danh sự kiện.", HttpStatus.CONFLICT),
     DEVICE_ALREADY_CHECKED_IN(7030, "Thiết bị đã được sử dụng để điểm danh nhanh.", HttpStatus.CONFLICT),
-    EVENT_SESSION_ENDED(7031, "Phiên sự kiện đã kết thúc.", HttpStatus.CONFLICT)
+    EVENT_SESSION_ENDED(7031, "Phiên sự kiện đã kết thúc.", HttpStatus.CONFLICT),
+    EVENT_SESSION_NOT_CHECKED_IN(7032, "Chưa điểm danh trong sự kiện hiện tại.", HttpStatus.CONFLICT),
+    DEVICE_NOT_CHECKED_IN(7033, "Thiết bị chưa được sử dụng để điểm danh.", HttpStatus.CONFLICT),
     ;
 
     private final int code;
