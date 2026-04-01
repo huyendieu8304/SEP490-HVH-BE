@@ -55,9 +55,4 @@ public interface EventService {
 
     void announceVolunteersOfEvent(UUID eventId, AnnounceVolunteerRequest request);
 
-    CheckEventCheckInCodeResponse checkEventCheckInCode(CheckEventCheckInCodeRequest request);
-
-    void quickCheckInEvent(QuickCheckInEventRequest request);
-
-
 }

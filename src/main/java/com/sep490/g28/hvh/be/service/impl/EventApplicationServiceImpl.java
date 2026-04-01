@@ -3,28 +3,33 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
-import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
-import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
-import com.sep490.g28.hvh.be.repository.EventSessionRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
+import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
 import com.sep490.g28.hvh.be.service.NotificationService;
+import com.sep490.g28.hvh.be.util.GeoUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +45,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     EventSessionRepository eventSessionRepository;
     EventApplicationRepository eventApplicationRepository;
     VolunteerRepository volunteerRepository;
+    EventRepository eventRepository;
+    CheckInLogRepository checkInLogRepository;
     StorageService storageService;
 
     CurrentUserProvider currentUserProvider;
@@ -377,5 +384,111 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             );
 
         });
+    }
+
+    @Override
+    public CheckEventCheckInCodeResponse checkEventCheckInCode(CheckEventCheckInCodeRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        //find today's vol event application
+        EventApplication eventApplication = eventApplicationRepository.findEventApplicationByVolunteerIdAndSessionDate(volunteerId, LocalDate.now());
+
+        //check if event application exists
+        if (eventApplication == null) {
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED);
+        }
+
+        //find today's vol event session
+        UUID eventSessionId = eventApplication.getSession().getId();
+
+        EventSession eventSession = eventSessionRepository.findById(eventSessionId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
+        );
+
+        if(!OffsetDateTime.now().isAfter(eventSession.getStartDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
+        }
+
+        if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
+        }
+
+        //find today's vol event
+        UUID eventId = eventSession.getEvent().getId();
+
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check if event is in status ONGOING
+        if (!event.getStatus().equals(EEventStatus.ONGOING)) {
+            throw new AppException(EventErrorCode.EVENT_NOT_ONGOING);
+        }
+
+        //check if check-in code is correct
+        if (!eventSession.getCheckInCode().equals(request.getCheckInCode())) {
+            throw new AppException(EventErrorCode.EVENT_CHECK_IN_CODE_NOT_MATCH);
+        }
+
+        return CheckEventCheckInCodeResponse.builder()
+                .eventId(eventId)
+                .eventSessionId(eventSessionId)
+                .build();
+    }
+
+    @Override
+    public void quickCheckInEvent(QuickCheckInEventRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        CheckInLog checkInLog = checkInLogRepository
+                .findByEventSessionIdAndVolunteerId(volunteerId, UUID.fromString(request.getEventSessionId()));
+
+        //check if vol check-in log exists
+        if (checkInLog != null) {
+            throw new AppException(EventErrorCode.ALREADY_CHECKED_IN);
+        }
+
+        //find today's vol event
+        EventSession eventSession = eventSessionRepository.findById(UUID.fromString(request.getEventSessionId())).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
+        );
+        Event event = eventSession.getEvent();
+
+        //check if current vol position is in check-in location
+        Point currentPosition = GeoUtils.toPoint(request.getCurrentPlaceLat(), request.getCurrentPlaceLng());
+
+        double distance = GeoUtils.distanceMeters(currentPosition,event.getCheckInLocation());
+
+        if (distance > event.getCheckInAccuracyMeters()) {
+            throw new AppException(EventErrorCode.EVENT_CHECK_IN_OUT_OF_RANGE);
+        }
+
+        //check if current user's device is not used to check in by another user
+        boolean existsByDevice = checkInLogRepository
+                .existsByDevice(request.getDeviceId(), request.getApVersion(), request.getOsVersion());
+
+        if(existsByDevice) {
+            throw new AppException(EventErrorCode.DEVICE_ALREADY_CHECKED_IN);
+        }
+
+        //get logged in vol
+        Volunteer volunteer = volunteerRepository.findById(volunteerId).orElseThrow(
+                () -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED)
+        );
+
+        //todo handle what if current user's device is not match with stored user's device
+        //check if current user's device is match with stored user's device
+        if(request.getDeviceId().equals(volunteer.getDeviceId())) {
+
+            //save new check-in log into db
+            CheckInLog newCheckInLog = new CheckInLog();
+            newCheckInLog.setVolunteer(volunteer);
+            newCheckInLog.setSession(eventSession);
+            newCheckInLog.setDeviceId(request.getDeviceId());
+            newCheckInLog.setApVersion(request.getApVersion());
+            newCheckInLog.setOsVersion(request.getOsVersion());
+            newCheckInLog.setCheckInLocation(currentPosition);
+            checkInLogRepository.save(newCheckInLog);
+        }
     }
 }

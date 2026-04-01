@@ -1,10 +1,12 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.dto.eventapplication.RejectApplicationRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
-import com.sep490.g28.hvh.be.validation.EventStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -98,5 +100,18 @@ public class EventApplicationController {
             String status) {
 
         return ResponseEntity.ok(eventApplicationService.getEventApplicationsStatus(pageNumber, pageSize, status));
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @PostMapping("/vol/events/check-event-check-in-code")
+    public ResponseEntity<CheckEventCheckInCodeResponse> checkEventCheckInCode(@Valid @RequestBody CheckEventCheckInCodeRequest request) {
+        return ResponseEntity.ok(eventApplicationService.checkEventCheckInCode(request));
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @PostMapping("/vol/events/quick-check-in")
+    public ResponseEntity<Void> quickCheckIn(@Valid @RequestBody QuickCheckInEventRequest request) {
+        eventApplicationService.quickCheckInEvent(request);
+        return ResponseEntity.ok().build();
     }
 }

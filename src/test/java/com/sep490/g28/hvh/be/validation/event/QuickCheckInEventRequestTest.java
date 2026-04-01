@@ -1,8 +1,6 @@
 package com.sep490.g28.hvh.be.validation.event;
 
-import com.sep490.g28.hvh.be.dto.event.request.CheckEventCheckInCodeRequest;
-import com.sep490.g28.hvh.be.dto.event.request.QuickCheckInEventRequest;
-import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.ValidationErrorCode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;

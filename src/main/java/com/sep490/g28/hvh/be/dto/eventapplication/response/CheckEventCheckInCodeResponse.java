@@ -1,4 +1,4 @@
-package com.sep490.g28.hvh.be.dto.event.response;
+package com.sep490.g28.hvh.be.dto.eventapplication.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

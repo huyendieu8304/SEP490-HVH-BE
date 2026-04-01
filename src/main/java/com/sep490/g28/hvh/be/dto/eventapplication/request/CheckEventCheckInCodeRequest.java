@@ -1,4 +1,4 @@
-package com.sep490.g28.hvh.be.dto.event.request;
+package com.sep490.g28.hvh.be.dto.eventapplication.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
