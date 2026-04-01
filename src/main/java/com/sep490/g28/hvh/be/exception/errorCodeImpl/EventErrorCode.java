@@ -52,7 +52,7 @@ public enum EventErrorCode implements ErrorCode {
 
     NO_CHANGES_IN_UPDATE_REQUEST(7032, "Yêu cầu cập nhật không chứa thay đổi nào", HttpStatus.BAD_REQUEST),
     EVENT_APPROVE_TIME_PASS_RECRUITMENT_END_DATE(7033, "Không thể phê duyệt sự kiện do sự kiện đã quá hạn tuyển người", HttpStatus.CONFLICT),
-    EVENT_APPLICATION_CANNOT_PROCESS(7021, "Sự kiện đang ở trong trạng thái không thể phê duyệt đơn đăng kí.", HttpStatus.CONFLICT),
+    EVENT_APPLICATION_CANNOT_PROCESS(7034, "Sự kiện đang ở trong trạng thái không thể phê duyệt đơn đăng kí.", HttpStatus.CONFLICT),
 
     ;
 

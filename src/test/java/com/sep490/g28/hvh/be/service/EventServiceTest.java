@@ -52,8 +52,6 @@ public class EventServiceTest {
     @Mock
     StorageService storageService;
 
-    @Mock
-    EventSessionRepository eventSessionRepository;
 
     @Mock
     CurrentUserProvider currentUserProvider;

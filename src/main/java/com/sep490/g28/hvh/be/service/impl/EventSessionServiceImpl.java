@@ -90,11 +90,11 @@ public class EventSessionServiceImpl implements EventSessionService {
         // VALIDATE + RESOLVE START DATE END DATE
         Set<LocalDate> sessionDates = getSessionDates(event.getSessions());
 
-        if (findConflictSessionDateOfHost(
+        if (!findConflictSessionDateOfHost(
                 event.getHost().getId(),
                 event.getId(),
                 event.getSessions()
-        ) != null) {
+        ).isEmpty()) {
             throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
         }
         //resolve event's startDate
@@ -103,7 +103,7 @@ public class EventSessionServiceImpl implements EventSessionService {
                 .orElseThrow();
         //resolve event's endDate
         LocalDate endDate = sessionDates.stream()
-                .min(LocalDate::compareTo)
+                .max(LocalDate::compareTo)
                 .orElseThrow();
         //check event's dates constraints
         checkEventDatesConstraint(startDate, event.getRecruitmentEndDate());
@@ -125,11 +125,11 @@ public class EventSessionServiceImpl implements EventSessionService {
         // VALIDATE + RESOLVE START DATE END DATE
         Set<LocalDate> sessionDates = getSessionDates(event.getSessions());
 
-        if (findConflictSessionDateOfHost(
+        if (!findConflictSessionDateOfHost(
                 event.getHost().getId(),
                 event.getId(),
                 event.getSessions()
-        ) != null) {
+        ).isEmpty()) {
             throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
         }
 
@@ -139,7 +139,7 @@ public class EventSessionServiceImpl implements EventSessionService {
                 .orElseThrow();
         //resolve event's endDate
         LocalDate endDate = sessionDates.stream()
-                .min(LocalDate::compareTo)
+                .max(LocalDate::compareTo)
                 .orElseThrow();
         //check event's dates constraints
         checkEventDatesConstraint(startDate, event.getRecruitmentEndDate());
