@@ -1,6 +1,8 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
+import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.*;
@@ -20,6 +23,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +32,7 @@ public class EventSessionServiceTest {
     @Mock
     private EventSessionRepository eventSessionRepository;
 
+    @Spy
     @InjectMocks
     private EventSessionServiceImpl service;
 
@@ -67,6 +72,7 @@ public class EventSessionServiceTest {
 
         ActivitySubDomain sub = new ActivitySubDomain();
         sub.setActivityDomain(domain);
+        event.setStartDate(LocalDate.now().plusDays(15));
 
         event.setActivitySubDomain(sub);
         event.setRecruitmentEndDate(LocalDate.now().plusDays(10));
@@ -393,4 +399,131 @@ public class EventSessionServiceTest {
                 () -> service.updateEventSessions(event, List.of(r)));
     }
 
+    // ====== checkAndResolveUpdateEventDateTime ======
+    @Test
+    void checkAndResolveUpdateEventDateTime_noUpdate_shouldReturnFalse() {
+                event = mockEventForUpdate();
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateRecruitmentDate_shouldSetPayload() {
+                event = mockEventForUpdate();
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        LocalDate newDate = event.getStartDate().minusDays(3);
+        req.setRecruitmentEndDate(newDate);
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertTrue(result);
+        assertEquals(newDate, payload.getRecruitmentEndDate());
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_recruitmentDateInvalid_shouldThrow() {
+                event = mockEventForUpdate();
+
+        UpdateEventRequest req = new UpdateEventRequest();
+
+        // violate: recruitmentEndDate > startDate - 3
+        LocalDate invalid = event.getStartDate().minusDays(1);
+        req.setRecruitmentEndDate(invalid);
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        assertThrows(AppException.class,
+                () -> service.checkAndResolveUpdateEventDateTime(event, req, payload));
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateSessions_shouldResolvePayload() {
+                event = mockEventForUpdate();
+
+        OffsetDateTime d = OffsetDateTime.now().plusDays(25);
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(2));
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertTrue(result);
+        assertEquals(2, payload.getEventSessions().size());
+
+        assertEquals(existing.getStartDateTime().toLocalDate(), payload.getStartDate());
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateSessions_conflict_shouldThrow() {
+                event = mockEventForUpdate();
+
+        OffsetDateTime d = existing.getStartDateTime();
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(2));
+
+        doReturn(List.of(new EventSession()))
+                .when(service)
+                .findConflictSessionDateOfHost(any(), any(), any());
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        assertThrows(AppException.class,
+                () -> service.checkAndResolveUpdateEventDateTime(event, req, payload));
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateSessions_recruitmentInvalid_shouldThrow() {
+                event = mockEventForUpdate();
+
+        OffsetDateTime d = OffsetDateTime.now().plusDays(2);
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(2));
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+
+        // recruitmentEndDate hiện tại sẽ vi phạm rule
+        event.setRecruitmentEndDate(d.toLocalDate().minusDays(1));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        assertThrows(AppException.class,
+                () -> service.checkAndResolveUpdateEventDateTime(event, req, payload));
+    }
+
+    @Test
+    void checkAndResolveUpdateEventDateTime_updateBoth_shouldWork() {
+        event = mockEventForUpdate();
+
+        OffsetDateTime d = OffsetDateTime.now().plusDays(10);
+
+        EditEventSessionRequest add = req(EUpdateAction.ADD, d, d.plusHours(3));
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setEventSessions(List.of(add));
+        req.setRecruitmentEndDate(d.toLocalDate().minusDays(5));
+
+        UpdateEventPayload payload = new UpdateEventPayload();
+
+        boolean result = service.checkAndResolveUpdateEventDateTime(event, req, payload);
+
+        assertTrue(result);
+        assertEquals(2, payload.getEventSessions().size());
+        assertEquals(d.toLocalDate().minusDays(5), payload.getRecruitmentEndDate());
+    }
 }
