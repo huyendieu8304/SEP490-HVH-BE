@@ -36,6 +36,7 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
             AuthenticationException authException
     ) throws IOException, ServletException {
         log.info("JWT Authentication Failed, go to JwtAutEntryPoint");
+        log.info("Request URI: {}", request.getRequestURI());
 
 //        String moreInfor = "Unauthenticated";
 //        if (authException.getCause() instanceof JwtException jwtEx) {
