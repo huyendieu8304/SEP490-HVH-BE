@@ -7,6 +7,7 @@ import com.sep490.g28.hvh.be.constant.EServingPlaceType;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventImagePayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
+import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
@@ -16,6 +17,7 @@ import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
+import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.repository.ActivitySubDomainRepository;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventRepository;
@@ -57,6 +59,11 @@ public class EventServiceEditEventTest {
     EventSessionService eventSessionService;
     @Mock
     NotificationService notificationService;
+    @Mock
+    OrganizationService organizationService;
+
+    @Mock
+    EmailService emailService;
 
     @Mock
     private EventApplicationRepository eventApplicationRepository;
@@ -160,7 +167,7 @@ public class EventServiceEditEventTest {
         return request;
     }
 
-    private Event baseEvent(UUID id) {
+    private Event eventForUpdate(UUID id) {
         Event e = new Event();
         e.setId(id);
         e.setStatus(EEventStatus.RECRUITING);
@@ -177,6 +184,31 @@ public class EventServiceEditEventTest {
         mng.setId(UUID.randomUUID());
         org.setOrganizationManager(mng);
         e.setOrganization(org);
+
+        e.setName("event");
+
+        return e;
+    }
+
+    private Event eventForCancel(UUID id) {
+        Event e = new Event();
+        e.setId(id);
+        e.setStatus(EEventStatus.RECRUITING);
+
+        Organization org = new Organization();
+        org.setName("org");
+
+        OrganizationManager mng = new OrganizationManager();
+        mng.setEmail("mng@mail.com");
+        mng.setFullName("manager");
+        org.setOrganizationManager(mng);
+
+        e.setOrganization(org);
+
+        Host host = new Host();
+        host.setEmail("host@mail.com");
+        host.setFullName("host");
+        e.setHost(host);
 
         e.setName("event");
 
@@ -845,7 +877,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_invalidStatus_shouldThrow() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
         e.setStatus(EEventStatus.COMPLETED);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
@@ -858,7 +890,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_noChanges_shouldThrow() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
@@ -874,7 +906,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_nonCriticalChange_success() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
@@ -898,7 +930,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_criticalChange_success() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
@@ -921,7 +953,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_updateDateTime_shouldMarkCritical() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
@@ -939,7 +971,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_updateImages_shouldReturnUploadUrls() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
@@ -960,7 +992,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_checkinLocationChange_shouldCritical() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
@@ -979,7 +1011,7 @@ public class EventServiceEditEventTest {
     @Test
     void updateEvent_accuracyChange_shouldCritical() {
         UUID id = UUID.randomUUID();
-        Event e = baseEvent(id);
+        Event e = eventForUpdate(id);
 
         when(eventRepository.findById(id)).thenReturn(Optional.of(e));
         when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
@@ -992,4 +1024,130 @@ public class EventServiceEditEventTest {
 
         assertTrue(e.getUpdateCritical());
     }
+
+
+    // ===== cancelEventByHost
+
+    // TC1: not found
+    @Test
+    void cancelEventByHost_notFound_shouldThrow() {
+        UUID id = UUID.randomUUID();
+        when(eventRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.cancelEventByHost(id, new CancelEventRequest()));
+    }
+
+    // TC2: status invalid
+    @Test
+    void cancelEventByHost_invalidStatus_shouldThrow() {
+        UUID id = UUID.randomUUID();
+        Event e = eventForCancel(id);
+        e.setStatus(EEventStatus.COMPLETED);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+
+        assertThrows(AppException.class,
+                () -> service.cancelEventByHost(id, new CancelEventRequest()));
+    }
+
+    // TC3: success
+    @Test
+    void cancelEventByHost_success() {
+        UUID id = UUID.randomUUID();
+        Event e = eventForCancel(id);
+
+        CancelEventRequest req = new CancelEventRequest();
+        req.setReason("reason");
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventApplicationService.cancelAllApplicationsOfEvent(e))
+                .thenReturn(Collections.emptyList());
+
+        service.cancelEventByHost(id, req);
+
+        // status
+        assertEquals(EEventStatus.CANCELLED, e.getStatus());
+
+        // verify flow
+        verify(eventRepository).save(e);
+        verify(organizationService).deductCreditHourOfOrganization(e.getOrganization(), 3);
+        verify(eventApplicationService).cancelAllApplicationsOfEvent(e);
+
+        verify(notificationService)
+                .sentEventCancelledByHostNotification(any(), eq(e.getName()), eq("reason"));
+
+        verify(emailService)
+                .sendEventCancelledByHostEmail(
+                        eq(e.getOrganization().getOrganizationManager().getEmail()),
+                        eq(e.getOrganization().getOrganizationManager().getFullName()),
+                        eq(e.getOrganization().getName()),
+                        eq(e.getName()),
+                        eq(e.getHost().getFullName()),
+                        eq(e.getHost().getEmail()),
+                        eq("reason")
+                );
+    }
+
+    // ===== cancelEventByAdmin
+
+    // TC4: not found
+    @Test
+    void cancelEventByAdmin_notFound_shouldThrow() {
+        UUID id = UUID.randomUUID();
+        when(eventRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.cancelEventByAdmin(id, new CancelEventRequest()));
+    }
+
+    // TC5: status invalid
+    @Test
+    void cancelEventByAdmin_invalidStatus_shouldThrow() {
+        UUID id = UUID.randomUUID();
+        Event e = eventForCancel(id);
+        e.setStatus(EEventStatus.COMPLETED);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+
+        assertThrows(AppException.class,
+                () -> service.cancelEventByAdmin(id, new CancelEventRequest()));
+    }
+
+    // TC6: success
+    @Test
+    void cancelEventByAdmin_success() {
+        UUID id = UUID.randomUUID();
+        Event e = eventForCancel(id);
+
+        CancelEventRequest req = new CancelEventRequest();
+        req.setReason("reason");
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventApplicationService.cancelAllApplicationsOfEvent(e))
+                .thenReturn(Collections.emptyList());
+
+        service.cancelEventByAdmin(id, req);
+
+        // status
+        assertEquals(EEventStatus.CANCELLED, e.getStatus());
+
+        // verify flow
+        verify(eventRepository).save(e);
+        verify(organizationService).deductCreditHourOfOrganization(e.getOrganization(), 3);
+        verify(eventApplicationService).cancelAllApplicationsOfEvent(e);
+
+        verify(notificationService)
+                .sentEventCancelledByAdminNotification(any(), eq(e.getName()), eq("reason"));
+
+        verify(emailService)
+                .sendEventCancelledByAdminEmail(
+                        eq(e.getOrganization().getOrganizationManager().getEmail()),
+                        eq(e.getOrganization().getOrganizationManager().getFullName()),
+                        eq(e.getOrganization().getName()),
+                        eq(e.getName()),
+                        eq("reason")
+                );
+    }
+
 }
