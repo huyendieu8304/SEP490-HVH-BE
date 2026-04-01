@@ -48,6 +48,16 @@ public class CheckInLog {
     @Column(name = "os_version", nullable = false)
     private String osVersion;
 
+    @Column(
+            name = "check_in_time",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
+    private OffsetDateTime checkInTime; // check-in time
+
+    @Column(name = "credit_hour")
+    private Short creditHour;
+
     //--------------------------------------------------------
     /**
      * geography(Point, 4326)
