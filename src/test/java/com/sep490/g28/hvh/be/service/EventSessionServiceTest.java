@@ -182,6 +182,11 @@ public class EventSessionServiceTest {
         event = mockEventForCreate(); // gọi factory method
         OffsetDateTime start = OffsetDateTime.now().plusDays(20);
 
+        start = start.withHour(10)
+                .withMinute(30)
+                .withSecond(0)
+                .withNano(0);
+
         EditEventSessionRequest r1 = req(EUpdateAction.ADD);
         r1.setStartDateTime(start);
         r1.setEndDateTime(start.plusHours(2));
