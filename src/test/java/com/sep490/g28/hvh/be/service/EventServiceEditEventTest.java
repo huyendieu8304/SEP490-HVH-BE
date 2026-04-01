@@ -9,7 +9,10 @@ import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
 import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
 import com.sep490.g28.hvh.be.dto.event.response.EditEventResponse;
+import com.sep490.g28.hvh.be.dto.event.response.UpdateEventResponse;
+import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
@@ -18,6 +21,7 @@ import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.HostRepository;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
+import com.sep490.g28.hvh.be.util.GeoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -155,6 +159,30 @@ public class EventServiceEditEventTest {
         request.setReason("reason");
         return request;
     }
+
+    private Event baseEvent(UUID id) {
+        Event e = new Event();
+        e.setId(id);
+        e.setStatus(EEventStatus.RECRUITING);
+        e.setDescription("old");
+        e.setAutoApprove(false);
+        e.setServingPlaceType(EServingPlaceType.HOSPITAL);
+        e.setAddress("old addr");
+        e.setDetailAddress("old detail");
+        e.setCheckInAccuracyMeters(10.0);
+        e.setCheckInLocation(GeoUtils.toPoint(10.0, 10.0));
+
+        Organization org = new Organization();
+        OrganizationManager mng = new OrganizationManager();
+        mng.setId(UUID.randomUUID());
+        org.setOrganizationManager(mng);
+        e.setOrganization(org);
+
+        e.setName("event");
+
+        return e;
+    }
+
 
     // ==== draftEvent ===================================
     // TC01
@@ -800,5 +828,168 @@ public class EventServiceEditEventTest {
 
         verify(notificationService)
                 .sendEventUpdateCriticalRejectedByAdminNotification(event);
+    }
+
+    // ===== updateEvent
+    // TC1: event not exist =====
+    @Test
+    void updateEvent_notFound_shouldThrow() {
+        UUID id = UUID.randomUUID();
+        when(eventRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.updateEvent(id, new UpdateEventRequest()));
+    }
+
+    // TC2: status invalid =====
+    @Test
+    void updateEvent_invalidStatus_shouldThrow() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+        e.setStatus(EEventStatus.COMPLETED);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+
+        assertThrows(AppException.class,
+                () -> service.updateEvent(id, new UpdateEventRequest()));
+    }
+
+    // TC3: no changes =====
+    @Test
+    void updateEvent_noChanges_shouldThrow() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
+                .thenReturn(false);
+
+        UpdateEventRequest req = new UpdateEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.updateEvent(id, req));
+    }
+
+    // TC4: only non-critical =====
+    @Test
+    void updateEvent_nonCriticalChange_success() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
+                .thenReturn(false);
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setDescription("new desc"); // non-critical
+
+        UpdateEventResponse res = service.updateEvent(id, req);
+
+        assertEquals(EEventStatus.SUBMITTED, e.getStatus());
+        assertFalse(e.getUpdateCritical());
+        assertNotNull(e.getUpdateEventPayload());
+
+        verify(notificationService).sentEventUpdatedByHostNotification(
+                any(), eq(id), eq(e.getName())
+        );
+    }
+
+    // TC5: critical change (address) =====
+    @Test
+    void updateEvent_criticalChange_success() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
+                .thenReturn(false);
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setDescription("new desc");
+        req.setAutoApprove(false);
+        req.setAddress("Phường Ba Đình");
+        req.setDetailAddress("new address");
+        req.setServingPlaceType(EServingPlaceType.HOSPITAL);
+
+        service.updateEvent(id, req);
+
+        assertTrue(e.getUpdateCritical());
+        assertEquals(EEventStatus.SUBMITTED, e.getStatus());
+    }
+
+    // TC6: update datetime =====
+    @Test
+    void updateEvent_updateDateTime_shouldMarkCritical() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
+                .thenReturn(true);
+
+        UpdateEventRequest req = new UpdateEventRequest();
+
+        service.updateEvent(id, req);
+
+        assertTrue(e.getUpdateCritical());
+        assertEquals(EEventStatus.SUBMITTED, e.getStatus());
+    }
+
+    // TC7: update images =====
+    @Test
+    void updateEvent_updateImages_shouldReturnUploadUrls() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
+                .thenReturn(false);
+
+        when(eventImageService.resolveUpdateEventImages(any(), any(), any()))
+                .thenReturn(List.of("url1", "url2"));
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setUpdateImages(List.of(new EditEventImageRequest()));
+
+        UpdateEventResponse res = service.updateEvent(id, req);
+
+        assertEquals(2, res.getUploadUrls().size());
+    }
+
+    // TC8: checkin location change =====
+    @Test
+    void updateEvent_checkinLocationChange_shouldCritical() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
+                .thenReturn(false);
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setCheckInLocationLat(20.0);
+        req.setCheckInLocationLng(20.0);
+
+        service.updateEvent(id, req);
+
+        assertTrue(e.getUpdateCritical());
+    }
+
+    // TC9: accuracy change =====
+    @Test
+    void updateEvent_accuracyChange_shouldCritical() {
+        UUID id = UUID.randomUUID();
+        Event e = baseEvent(id);
+
+        when(eventRepository.findById(id)).thenReturn(Optional.of(e));
+        when(eventSessionService.checkAndResolveUpdateEventDateTime(any(), any(), any()))
+                .thenReturn(false);
+
+        UpdateEventRequest req = new UpdateEventRequest();
+        req.setCheckInLocationAccuracyMeters(50);
+
+        service.updateEvent(id, req);
+
+        assertTrue(e.getUpdateCritical());
     }
 }
