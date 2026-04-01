@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.constant.EUpdateAction;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventImagePayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
 import com.sep490.g28.hvh.be.entity.Event;
@@ -50,6 +51,13 @@ public class EventImageServiceTest {
         event.setImages(new ArrayList<>());
     }
 
+
+    private Event event() {
+        Event e = new Event();
+        e.setId(UUID.randomUUID());
+        return e;
+    }
+
     private Event eventWithImages(int n) {
         Event e = new Event();
         e.setId(UUID.randomUUID());
@@ -92,6 +100,20 @@ public class EventImageServiceTest {
         img.setEvent(event);
         img.setImagePath("event/" + UUID.randomUUID() + "/image/" + id +".jpg");
         return img;
+    }
+
+    private EventImage oldImg(UUID id, String path) {
+        EventImage img = new EventImage();
+        img.setId(id);
+        img.setImagePath(path);
+        return img;
+    }
+
+    private UpdateEventImagePayload payload(UUID id, String path) {
+        UpdateEventImagePayload p = new UpdateEventImagePayload();
+        p.setId(id);
+        p.setImagePath(path);
+        return p;
     }
 
     // ==== addEventImages (3 params) ===================================
@@ -442,4 +464,146 @@ public class EventImageServiceTest {
         assertEquals(3, res.size());
     }
 
+    // ===== resolveUpdatedEventImages
+
+    // TC1: update existing
+    @Test
+    void resolveUpdatedEventImages_updateExisting_shouldModifyImage() {
+        Event e = event();
+
+        UUID id = UUID.randomUUID();
+        EventImage old = oldImg(id, "old-path");
+
+        List<EventImage> oldImages = new ArrayList<>(List.of(old));
+
+        List<UpdateEventImagePayload> payloads =
+                List.of(payload(id, "new-path"));
+
+        List<EventImage> res =
+                service.resolveUpdatedEventImages(e, oldImages, payloads);
+
+        assertEquals(1, res.size());
+        assertEquals("new-path", res.get(0).getImagePath());
+    }
+
+    // TC2: create new (id null)
+    @Test
+    void resolveUpdatedEventImages_createNew_idNull_shouldAddNew() {
+        Event e = event();
+
+        List<EventImage> oldImages = new ArrayList<>();
+
+        List<UpdateEventImagePayload> payloads =
+                List.of(payload(null, "path"));
+
+        List<EventImage> res =
+                service.resolveUpdatedEventImages(e, oldImages, payloads);
+
+        assertEquals(1, res.size());
+        assertEquals("path", res.get(0).getImagePath());
+        assertEquals(e, res.get(0).getEvent());
+    }
+
+    // TC3: create new (id not exist)
+    @Test
+    void resolveUpdatedEventImages_createNew_idNotExist_shouldAddNew() {
+        Event e = event();
+
+        List<EventImage> oldImages = new ArrayList<>();
+
+        UUID newId = UUID.randomUUID();
+
+        List<UpdateEventImagePayload> payloads =
+                List.of(payload(newId, "path"));
+
+        List<EventImage> res =
+                service.resolveUpdatedEventImages(e, oldImages, payloads);
+
+        assertEquals(1, res.size());
+        assertEquals(newId, res.get(0).getId());
+    }
+
+    // TC4: delete removed images
+    @Test
+    void resolveUpdatedEventImages_deleteRemoved_shouldCallStorage() {
+        Event e = event();
+
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+
+        EventImage img1 = oldImg(id1, "p1");
+        EventImage img2 = oldImg(id2, "p2");
+
+        List<EventImage> oldImages = new ArrayList<>(List.of(img1, img2));
+
+        // chỉ giữ id1 → id2 bị xóa
+        List<UpdateEventImagePayload> payloads =
+                List.of(payload(id1, "new-p1"));
+
+        when(storageService.deleteFileAsync("p2"))
+                .thenReturn(CompletableFuture.completedFuture(null));
+
+        List<EventImage> res =
+                service.resolveUpdatedEventImages(e, oldImages, payloads);
+
+        verify(storageService).deleteFileAsync("p2");
+        assertEquals(1, res.size());
+    }
+
+    // TC5: no delete
+    @Test
+    void resolveUpdatedEventImages_noDelete_shouldNotCallStorage() {
+        Event e = event();
+
+        UUID id = UUID.randomUUID();
+        EventImage img = oldImg(id, "p");
+
+        List<EventImage> oldImages = new ArrayList<>(List.of(img));
+
+        List<UpdateEventImagePayload> payloads =
+                List.of(payload(id, "new-p"));
+
+        service.resolveUpdatedEventImages(e, oldImages, payloads);
+
+        verify(storageService, never()).deleteFileAsync(any());
+    }
+
+    // TC6: multiple deletes (async)
+    @Test
+    void resolveUpdatedEventImages_multipleDeletes_shouldJoinAll() {
+        Event e = event();
+
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+
+        EventImage img1 = oldImg(id1, "p1");
+        EventImage img2 = oldImg(id2, "p2");
+
+        List<EventImage> oldImages = new ArrayList<>(List.of(img1, img2));
+
+        // payload empty → remove all
+        List<UpdateEventImagePayload> payloads = List.of();
+
+        when(storageService.deleteFileAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture(null));
+
+        List<EventImage> res =
+                service.resolveUpdatedEventImages(e, oldImages, payloads);
+
+        verify(storageService, times(2)).deleteFileAsync(any());
+        assertTrue(res.isEmpty());
+    }
+
+    @Test
+    void resolveUpdatedEventImages_oldImage_idNull_shouldNotDelete() {
+        Event e = event();
+
+        EventImage img = oldImg(null, "p");
+
+        List<EventImage> oldImages = new ArrayList<>(List.of(img));
+
+        service.resolveUpdatedEventImages(e, oldImages, List.of());
+
+        verify(storageService, never()).deleteFileAsync(any());
+    }
 }
