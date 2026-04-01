@@ -57,7 +57,7 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_EVENT_SESSION_START_END_TIME(2035, "Thời gian kết thúc phải sau thời gian bắt đầu.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_START_TIME(2036, "Thời gian bắt đầu không được sớm hơn 5 giờ sáng.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_END_TIME(2037, "Thời gian kết thúc không được muộn hơn 23 giờ.", HttpStatus.BAD_REQUEST),
-    INVALID_EVENT_CHECKIN_ACCURACY_RANGE(2038, "Phạm vi check in phải lớn hơn 300m, và nhỏ hơn 3000m", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_CHECKIN_ACCURACY_RANGE(2038, "Phạm vi check in cần tối thiểu là 300m, và tối đa là 3000m", HttpStatus.BAD_REQUEST),
     INVALID_NOTIFICATION_TOKEN(2039, "Token để nhận thông báo không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_DEVICE_ID(2040, "ID thiết bị không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_STATUS(2041, "Trạng thái sự kiện không tồn tại", HttpStatus.BAD_REQUEST ),
