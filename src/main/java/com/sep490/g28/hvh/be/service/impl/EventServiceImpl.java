@@ -1510,6 +1510,10 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
         );
+        UUID oldHostId = event.getHost().getId();
+        if (oldHostId.equals(request.getHostId())){
+            throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGNED_TO_CURRENT_HOST);
+        }
         //check event status
         if(EEventStatus.canEventBeAssignedHost(event.getStatus())) {
             throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGNED_HOST);
@@ -1539,7 +1543,6 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
         }
 
-        UUID oldHostId = event.getHost().getId();
         //set host to this event
         event.setHost(newHost);
         eventRepository.save(event);

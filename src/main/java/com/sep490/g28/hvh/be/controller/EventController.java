@@ -294,7 +294,7 @@ public class EventController {
     @PutMapping("/org-manager/events/{eventId}/assign-host")
     public ResponseEntity<Void> assignHostToEvent(
             @PathVariable java.util.UUID eventId,
-            @Valid AssignHostToEventRequest request
+            @Valid @RequestBody AssignHostToEventRequest request
     ){
         eventService.assignHostToEvent(eventId, request);
         return ResponseEntity.ok().build();

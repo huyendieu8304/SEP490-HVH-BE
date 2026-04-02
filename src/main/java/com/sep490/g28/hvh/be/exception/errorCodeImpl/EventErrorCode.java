@@ -58,7 +58,8 @@ public enum EventErrorCode implements ErrorCode {
 
     EVENT_CANNOT_ASSIGNED_HOST(7037, "Sự kiện đang ở trong trạng thái không cho phép phân công host.", HttpStatus.CONFLICT),
     EVENT_CANNOT_ASSIGNED_TO_INACTIVE_HOST(7038, "Không thể phân công sự kiện cho tài khoản host đang bị khóa.", HttpStatus.CONFLICT),
-    EVENT_CANNOT_ASSIGN_TO_HOST_NOT_IN_ORGANIZATION(7039, "Không thể phân công sự kiện cho tài khoản host không thuộc tổ chức.", HttpStatus.CONFLICT),
+    EVENT_CANNOT_ASSIGN_TO_HOST_NOT_IN_ORGANIZATION(7039, "Không thể phân công sự kiện cho host không thuộc tổ chức.", HttpStatus.CONFLICT),
+    EVENT_CANNOT_ASSIGNED_TO_CURRENT_HOST(7037, "Không thể phân công sự kiện cho tài khoản host hiện đang phụ trách.", HttpStatus.CONFLICT),
     ;
 
     private final int code;

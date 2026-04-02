@@ -1205,6 +1205,20 @@ public class EventServiceEditEventTest {
     }
 
     @Test
+    void assignHost_toCurrentHost_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+        UUID hostId = UUID.randomUUID();
+        Event event = mockEvent(eventId, hostId, UUID.randomUUID(), EEventStatus.CANCELLED);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        AssignHostToEventRequest req = new AssignHostToEventRequest();
+        req.setHostId(hostId);
+
+        assertThrows(AppException.class,
+                () -> service.assignHostToEvent(eventId, req));
+    }
+
+    @Test
     void assignHost_invalidEventStatus_shouldThrow() {
         UUID eventId = UUID.randomUUID();
 
