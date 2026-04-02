@@ -275,6 +275,10 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             String nickName = null;
                             String name = null;
                             String avatarUrl = null;
+                            String address = null;
+                            Short creditScore = 0;
+                            Short honorScore = 0;
+                            OffsetDateTime createdAt = null;
 
                             //check if the event application linked with a volunteer
                             if (e.getVolunteer() != null) {
@@ -286,6 +290,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                                 phone = volunteer.getPhone();
                                 nickName = volunteer.getNickname();
                                 name = volunteer.getFullName();
+                                address = volunteer.getAddress();
+                                creditScore = volunteer.getCreditScore();
+                                honorScore = volunteer.getHonorScore();
+                                createdAt = volunteer.getCreatedAt();
+
 
                                 //get signed URL of file
                                 if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
@@ -313,7 +322,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                                     phone,
                                     nickName,
                                     name,
-                                    avatarUrl
+                                    avatarUrl,
+                                    address,
+                                    creditScore,
+                                    honorScore,
+                                    createdAt
                             );
                         }).toList()).orElse(Collections.emptyList());
 
