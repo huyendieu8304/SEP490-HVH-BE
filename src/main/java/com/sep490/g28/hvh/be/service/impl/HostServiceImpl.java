@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
+import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import com.sep490.g28.hvh.be.entity.Host;
 import com.sep490.g28.hvh.be.entity.OrganizationManager;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -18,6 +19,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,5 +79,15 @@ public class HostServiceImpl implements HostService {
                 request.getEmail(),
                 defaultPassword
         );
+    }
+
+    @Override
+    public Page<HostSimpleResponseForManager> getHostsByManager(int pageNumber, int pageSize, String email) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+        return hostRepository.getHostsByManager(currentUserProvider.getId(), pageable, email);
     }
 }
