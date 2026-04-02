@@ -48,9 +48,6 @@ public class CheckInLog {
     )
     private OffsetDateTime checkInTime; // check-in time
 
-    @Column(name = "credit_hour")
-    private Short creditHour;
-
     //--------------------------------------------------------
     /**
      * geography(Point, 4326)
