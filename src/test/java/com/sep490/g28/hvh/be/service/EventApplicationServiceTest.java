@@ -136,7 +136,10 @@ public class EventApplicationServiceTest {
 
         Volunteer vol = new Volunteer();
         vol.setId(UUID.randomUUID());
+        vol.setAddress("Hanoi");
         vol.setHonorScore((short) 10);
+        vol.setCreditScore((short) 10);
+        vol.setCreatedAt(OffsetDateTime.now());
 
         EventApplication app = new EventApplication();
         app.setId(UUID.randomUUID());
