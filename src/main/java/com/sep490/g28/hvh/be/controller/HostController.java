@@ -34,7 +34,7 @@ public class HostController {
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER')")
-    @PostMapping("/org-manager/hosts")
+    @GetMapping("/org-manager/hosts")
     public ResponseEntity<Page<HostSimpleResponseForManager>> getHostsByManager(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")

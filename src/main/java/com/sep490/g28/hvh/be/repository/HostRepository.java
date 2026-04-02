@@ -27,10 +27,10 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                 LEFT JOIN Event e
                     ON e.host.id = h.id
                     AND e.status = 'COMPLETED'
-                    AND (:email IS NULL OR h.email ILIKE CONCAT('%', CAST(:email AS string), '%'))
                 LEFT JOIN User u ON u.id = h.id
                 WHERE h.createdBy.id = :orgManagerId
-                GROUP BY h.id, h.fullName, h.address, h.email, h.phone
+                    AND (:email IS NULL OR h.email ILIKE CONCAT('%', CAST(:email AS string), '%'))
+                GROUP BY h.id, h.fullName, h.address, h.email, h.phone, u.status
             """)
     Page<HostSimpleResponseForManager> getHostsByManager(UUID orgManagerId, Pageable pageable, String email);
 
