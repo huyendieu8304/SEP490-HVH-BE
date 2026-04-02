@@ -404,8 +404,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     public CheckEventCheckInCodeResponse checkEventCheckInCode(CheckEventCheckInCodeRequest request) {
         UUID volunteerId = currentUserProvider.getId();
 
+        OffsetDateTime checkInTime = OffsetDateTime.now();
+
         //find today's vol event application
-        EventApplication eventApplication = eventApplicationRepository.findEventApplicationByVolunteerIdAndSessionDate(volunteerId, LocalDate.now());
+        EventApplication eventApplication = eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(volunteerId, LocalDate.now(), request.getCheckInCode(), checkInTime);
 
         //check if event application exists
         if (eventApplication == null) {
@@ -426,16 +429,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         EventSession eventSession = eventSessionRepository.findById(eventSessionId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
         );
-
-        //Check if event session is started
-        if(!OffsetDateTime.now().isAfter(eventSession.getStartDateTime())) {
-            throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
-        }
-
-        //Check if event session is ended
-        if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
-            throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
-        }
 
         //find today's vol event
         UUID eventId = eventSession.getEvent().getId();
@@ -462,6 +455,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
     @Override
     public void quickCheckInEvent(QuickCheckInEventRequest request) {
+        OffsetDateTime checkInTime = OffsetDateTime.now();
+
         UUID volunteerId = currentUserProvider.getId();
 
         EventApplication eventApplication = eventApplicationRepository
@@ -486,12 +481,12 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         );
 
         //Check if event session is started
-        if(!OffsetDateTime.now().isAfter(eventSession.getStartDateTime())) {
+        if(!checkInTime.isAfter(eventSession.getStartDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
         }
 
         //Check if event session is ended
-        if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
+        if(!checkInTime.isBefore(eventSession.getEndDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
         }
 
@@ -541,14 +536,15 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             newCheckInLog.setApVersion(request.getApVersion());
             newCheckInLog.setOsVersion(request.getOsVersion());
             newCheckInLog.setCheckInLocation(currentPosition);
-            newCheckInLog.setCheckInTime(OffsetDateTime.now());
-            newCheckInLog.setCreditHour((short) 0);
+            newCheckInLog.setCheckInTime(checkInTime);
             checkInLogRepository.save(newCheckInLog);
         }
     }
 
     @Override
     public void checkOutEvent(CheckOutEventRequest request) {
+        OffsetDateTime checkInTime = OffsetDateTime.now();
+
         UUID volunteerId = currentUserProvider.getId();
 
         EventApplication eventApplication = eventApplicationRepository
@@ -574,12 +570,12 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         );
 
         //Check if event session is started
-        if(!OffsetDateTime.now().isAfter(eventSession.getStartDateTime())) {
+        if(!checkInTime.isAfter(eventSession.getStartDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
         }
 
         //Check if event session is ended
-        if(!OffsetDateTime.now().isBefore(eventSession.getEndDateTime())) {
+        if(!checkInTime.isBefore(eventSession.getEndDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
         }
 
@@ -615,9 +611,29 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         //Save credit hour
-        Duration duration = Duration.between(checkInLog.getCheckInTime(), OffsetDateTime.now());
+        Duration duration = Duration.between(checkInLog.getCheckInTime(), checkInTime);
         double creditHour = duration.toHours() + (duration.toMinutesPart() / 60.0);
-        checkInLog.setCreditHour((short) Math.round(creditHour));
-        checkInLogRepository.save(checkInLog);
+
+        //Calculate total credit hour today
+        List<EventApplication> allEventApplicationToday = eventApplicationRepository
+                .findAllByVolunteerIdAndSessionDate(volunteerId, LocalDate.now());
+
+        short totalCreditHourToday = 0;
+
+        for(EventApplication ea: allEventApplicationToday) {
+            totalCreditHourToday += ea.getCreditHour();
+        }
+
+        //Check if total credit hour today is less than 12
+        if(12 - totalCreditHourToday >= creditHour) {
+            eventApplication.setCreditHour((short) creditHour);
+        } else {
+            eventApplication.setCreditHour((short) (12 - totalCreditHourToday));
+        }
+
+        //Set status of event application to COMPLETED
+        eventApplication.setStatus(EEventApplicationStatus.COMPLETED);
+
+        eventApplicationRepository.save(eventApplication);
     }
 }
