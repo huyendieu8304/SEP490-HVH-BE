@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.repository;
 
+import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse;
 import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import com.sep490.g28.hvh.be.entity.Host;
 import org.springframework.data.domain.Page;
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public interface HostRepository extends JpaRepository<Host, UUID> {
@@ -34,4 +36,24 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
             """)
     Page<HostSimpleResponseForManager> getHostsByManager(UUID orgManagerId, Pageable pageable, String email);
 
+    boolean existsByIdAndCreatedBy_Id(UUID hostId, UUID orgManagerId);
+
+    @Query("""
+                SELECT new com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse(
+                    e.id,
+                    e.name,
+                    e.address,
+                    e.detailAddress,
+                    s.id,
+                    s.startDateTime,
+                    s.endDateTime
+                )
+                FROM Event e
+                LEFT JOIN EventSession s
+                    ON s.event.id = e.id
+                WHERE e.host.id = :hostId
+                    AND (:from IS NULL OR s.startDateTime >= :from)
+                    AND (:to IS NULL OR s.startDateTime <= :to)
+            """)
+    Page<HostActivitiesResponse> getHostActivitiesByManager(UUID hostId, Pageable pageable, OffsetDateTime from, OffsetDateTime to);
 }

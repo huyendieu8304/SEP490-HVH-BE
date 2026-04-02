@@ -1,6 +1,8 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
+import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse;
+import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import com.sep490.g28.hvh.be.service.HostService;
 import jakarta.validation.Valid;
@@ -14,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -49,6 +54,37 @@ public class HostController {
             String email
     ) {
         return ResponseEntity.ok(hostService.getHostsByManager(pageNumber, pageSize, email));
+    }
+
+    @PreAuthorize("hasRole('ORG_MANAGER') and @hostAuthorizer.isManagerOfHost(#id)")
+    @GetMapping("/org-manager/hosts/{id}/info")
+    public ResponseEntity<HostInfoResponseForManager> getHostInfoByManager(
+            @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(hostService.getHostInfoByManager(id));
+    }
+
+    @PreAuthorize("hasRole('ORG_MANAGER') and @hostAuthorizer.isManagerOfHost(#hostId)")
+    @GetMapping("/org-manager/hosts/{hostId}/activities")
+    public ResponseEntity<Page<HostActivitiesResponse>> getHostDetailsByManager(
+            @PathVariable UUID hostId,
+
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam
+            LocalDate fromDate,
+
+            @RequestParam
+            LocalDate toDate
+    ) {
+        return ResponseEntity.ok(hostService.getHostActivitiesByManager(hostId, pageNumber, pageSize, fromDate, toDate));
     }
 
 }

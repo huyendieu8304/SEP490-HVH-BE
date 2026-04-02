@@ -12,10 +12,10 @@ import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.repository.HostRepository;
 import com.sep490.g28.hvh.be.repository.OrganizationManagerRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
-import com.sep490.g28.hvh.be.service.impl.HostServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -44,6 +44,7 @@ public class HostServiceTest {
     @Mock
     CurrentUserProvider currentUserProvider;
 
+    @InjectMocks
     HostService hostService;
 
     UUID orgManagerId;
@@ -52,14 +53,6 @@ public class HostServiceTest {
 
     @BeforeEach
     void setUp() {
-        hostService = new HostServiceImpl(
-                hostRepository,
-                organizationManagerRepository,
-                userRepository,
-                authClient,
-                emailService,
-                currentUserProvider
-        );
 
         orgManagerId = UUID.randomUUID();
 
