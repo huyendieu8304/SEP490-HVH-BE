@@ -16,6 +16,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -46,5 +48,10 @@ public class AuthServiceImpl implements AuthService {
         //send email to the user
         emailService.sendNewPasswordEmail(request.getEmail(), newPassword);
         log.info("Reset password for account successful, id={}", user.getId());
+    }
+
+    @Override
+    public boolean checkAccountActive(UUID userId) {
+        return authClient.isAccountActive(userId);
     }
 }

@@ -49,4 +49,6 @@ public interface NotificationService {
     void sendEventUpdateCriticalApprovedByAdminNotification(List<EventApplication> eventApplications, String eventName);
 
     void sendEventUpdateCriticalRejectedByAdminNotification(Event event);
+
+    void sendEventAssignedHostNotification(UUID oldHostId, UUID newHostId, Event event);
 }

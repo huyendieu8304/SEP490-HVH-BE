@@ -7,10 +7,7 @@ import com.sep490.g28.hvh.be.constant.EServingPlaceType;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventImagePayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
-import com.sep490.g28.hvh.be.dto.event.request.CancelEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.EditEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.RejectEventRequest;
-import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
+import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.EditEventResponse;
 import com.sep490.g28.hvh.be.dto.event.response.UpdateEventResponse;
 import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
@@ -29,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
@@ -61,6 +59,8 @@ public class EventServiceEditEventTest {
     NotificationService notificationService;
     @Mock
     OrganizationService organizationService;
+    @Mock
+    AuthService authService;
 
     @Mock
     EmailService emailService;
@@ -1150,4 +1150,227 @@ public class EventServiceEditEventTest {
                 );
     }
 
+    // ===== assignHostToEvent
+    private Event mockEvent(UUID eventId, UUID hostId, UUID orgId, EEventStatus status) {
+        Organization organization = new Organization();
+        organization.setId(orgId);
+
+        OrganizationManager organizationManager = new OrganizationManager();
+        organizationManager.setId(UUID.randomUUID());
+        organizationManager.setOrganization(organization);
+
+        Host host = new Host();
+        host.setId(hostId);
+        host.setOrganization(organization);
+        host.setCreatedBy(organizationManager);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setOrganization(organization);
+        event.setHost(host);
+        event.setStatus(status);
+
+        EventSession s = new EventSession();
+        s.setId(UUID.randomUUID());
+        s.setEvent(event);
+        s.setStartDateTime(OffsetDateTime.now().plusDays(5));
+        s.setEndDateTime(OffsetDateTime.now().plusDays(5).plusHours(2));
+        s.setExpectedVolAmount(100);
+        s.setExpectedSerAmount(200);
+        s.setApprovedApplicationCount(0);
+
+        event.setSessions(List.of(s));
+
+        return event;
+    }
+
+    private Host mockHost(UUID hostId, UUID orgId) {
+        Host host = new Host();
+        host.setId(hostId);
+
+        OrganizationManager creator = new OrganizationManager();
+        creator.setId(orgId);
+
+        host.setCreatedBy(creator);
+        return host;
+    }
+
+    @Test
+    void assignHost_eventNotFound_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.assignHostToEvent(eventId, new AssignHostToEventRequest()));
+    }
+
+    @Test
+    void assignHost_toCurrentHost_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+        UUID hostId = UUID.randomUUID();
+        Event event = mockEvent(eventId, hostId, UUID.randomUUID(), EEventStatus.CANCELLED);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        AssignHostToEventRequest req = new AssignHostToEventRequest();
+        req.setHostId(hostId);
+
+        assertThrows(AppException.class,
+                () -> service.assignHostToEvent(eventId, req));
+    }
+
+    @Test
+    void assignHost_invalidEventStatus_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+
+        Event event = mockEvent(eventId, UUID.randomUUID(), UUID.randomUUID(), EEventStatus.CANCELLED);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
+            mocked.when(() -> EEventStatus.canEventBeAssignedHost(event.getStatus()))
+                    .thenReturn(true);
+
+            assertThrows(AppException.class,
+                    () -> service.assignHostToEvent(eventId, new AssignHostToEventRequest()));
+        }
+    }
+
+    @Test
+    void assignHost_hostInactive_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+        UUID hostId = UUID.randomUUID();
+
+        Event event = mockEvent(eventId, UUID.randomUUID(), UUID.randomUUID(), EEventStatus.UPCOMING);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
+            mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
+                    .thenReturn(false);
+
+            when(authService.checkAccountActive(hostId)).thenReturn(false);
+
+            AssignHostToEventRequest req = new AssignHostToEventRequest();
+            req.setHostId(hostId);
+
+            assertThrows(AppException.class,
+                    () -> service.assignHostToEvent(eventId, req));
+        }
+    }
+
+    @Test
+    void assignHost_hostNotFound_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+        UUID hostId = UUID.randomUUID();
+
+        Event event = mockEvent(eventId, UUID.randomUUID(), UUID.randomUUID(), EEventStatus.UPCOMING);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
+            mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
+                    .thenReturn(false);
+
+            when(authService.checkAccountActive(hostId)).thenReturn(true);
+            when(hostRepository.findById(hostId)).thenReturn(Optional.empty());
+
+            AssignHostToEventRequest req = new AssignHostToEventRequest();
+            req.setHostId(hostId);
+
+            assertThrows(AppException.class,
+                    () -> service.assignHostToEvent(eventId, req));
+        }
+    }
+
+    @Test
+    void assignHost_hostNotInOrganization_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+        UUID hostId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        Event event = mockEvent(eventId, UUID.randomUUID(), orgId, EEventStatus.UPCOMING);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
+            mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
+                    .thenReturn(false);
+
+            when(authService.checkAccountActive(hostId)).thenReturn(true);
+
+            // host thuộc org khác
+            Host newHost = mockHost(hostId, UUID.randomUUID());
+            when(hostRepository.findById(hostId)).thenReturn(Optional.of(newHost));
+
+            when(currentUserProvider.getId()).thenReturn(orgId);
+
+            AssignHostToEventRequest req = new AssignHostToEventRequest();
+            req.setHostId(hostId);
+
+            assertThrows(AppException.class,
+                    () -> service.assignHostToEvent(eventId, req));
+        }
+    }
+
+    @Test
+    void assignHost_conflictSession_shouldThrow() {
+        UUID eventId = UUID.randomUUID();
+        UUID hostId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        Event event = mockEvent(eventId, UUID.randomUUID(), orgId, EEventStatus.UPCOMING);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
+            mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
+                    .thenReturn(false);
+
+            when(authService.checkAccountActive(hostId)).thenReturn(true);
+
+            Host newHost = mockHost(hostId, orgId);
+            when(hostRepository.findById(hostId)).thenReturn(Optional.of(newHost));
+
+            when(currentUserProvider.getId()).thenReturn(orgId);
+
+            when(eventSessionService.findConflictSessionDateOfHost(any(), any(), any()))
+                    .thenReturn(List.of(new EventSession()));
+
+            AssignHostToEventRequest req = new AssignHostToEventRequest();
+            req.setHostId(hostId);
+
+            assertThrows(AppException.class,
+                    () -> service.assignHostToEvent(eventId, req));
+        }
+    }
+
+    @Test
+    void assignHost_success() {
+        UUID eventId = UUID.randomUUID();
+        UUID oldHostId = UUID.randomUUID();
+        UUID newHostId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        Event event = mockEvent(eventId, oldHostId, orgId, EEventStatus.UPCOMING);
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+
+        try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
+            mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
+                    .thenReturn(false);
+
+            when(authService.checkAccountActive(newHostId)).thenReturn(true);
+
+            Host newHost = mockHost(newHostId, orgId);
+            when(hostRepository.findById(newHostId)).thenReturn(Optional.of(newHost));
+
+            when(currentUserProvider.getId()).thenReturn(orgId);
+
+            when(eventSessionService.findConflictSessionDateOfHost(any(), any(), any()))
+                    .thenReturn(Collections.emptyList());
+
+            AssignHostToEventRequest req = new AssignHostToEventRequest();
+            req.setHostId(newHostId);
+
+            service.assignHostToEvent(eventId, req);
+
+            verify(eventRepository).save(event);
+            verify(notificationService)
+                    .sendEventAssignedHostNotification(oldHostId, newHostId, event);
+        }
+    }
 }

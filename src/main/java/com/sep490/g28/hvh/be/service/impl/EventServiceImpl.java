@@ -13,6 +13,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.ActivityDomainErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.HostErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
@@ -58,6 +59,7 @@ public class EventServiceImpl implements EventService {
     OrganizationService organizationService;
     NotificationService notificationService;
     EmailService emailService;
+    AuthService authService;
 
     CurrentUserProvider currentUserProvider;
 
@@ -1323,7 +1325,7 @@ public class EventServiceImpl implements EventService {
 
         //check the event status cancelable?
         if (!EEventStatus.canEventBeCancelled(event.getStatus())) {
-            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
+            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCELLED);
         }
 
         //update event status to cancelled
@@ -1365,7 +1367,7 @@ public class EventServiceImpl implements EventService {
 
         //check the event status cancelable?
         if (!EEventStatus.canEventBeCancelled(event.getStatus())) {
-            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCEL);
+            throw new AppException(EventErrorCode.EVENT_CANNOT_CANCELLED);
         }
 
         //update event status to cancelled
@@ -1402,7 +1404,7 @@ public class EventServiceImpl implements EventService {
 
         //check event status
         if (!EEventStatus.canEventBeUpdated(event.getStatus())) {
-            throw new AppException(EventErrorCode.EVENT_CANNOT_UPDATE);
+            throw new AppException(EventErrorCode.EVENT_CANNOT_UPDATED);
         }
 
         //handle update information, map request to payload
@@ -1499,9 +1501,56 @@ public class EventServiceImpl implements EventService {
                 event.getName()
         );
         log.info("Event update request is submitted to Org Manager, eventId={}", eventId);
-        // todo: should i notify all the volunteer that has been applied to this event
 
         return response;
+    }
+
+    @Override
+    public void assignHostToEvent(UUID eventId, AssignHostToEventRequest request) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+        UUID oldHostId = event.getHost().getId();
+        if (oldHostId.equals(request.getHostId())){
+            throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGNED_TO_CURRENT_HOST);
+        }
+        //check event status
+        if(EEventStatus.canEventBeAssignedHost(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGNED_HOST);
+        }
+
+        //check account of host active
+        if (!authService.checkAccountActive(request.getHostId())){
+            throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGNED_TO_INACTIVE_HOST);
+        }
+
+        Host newHost = hostRepository.findById(request.getHostId()).orElseThrow(
+                () -> new AppException(HostErrorCode.HOST_NOT_EXISTED)
+        );
+
+        //check host belong to the org
+        if (newHost.getCreatedBy().getId() != currentUserProvider.getId()){
+            throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGN_TO_HOST_NOT_IN_ORGANIZATION);
+        }
+
+        //check whether the host is hosting multiple event session in a day or not?
+        List<EventSession> conflictSession =  eventSessionService.findConflictSessionDateOfHost(
+                request.getHostId(),
+                eventId,
+                event.getSessions()
+        );
+        if (!conflictSession.isEmpty()) {
+            throw new AppException(EventErrorCode.DUPLICATE_HOSTED_DATE);
+        }
+
+        //set host to this event
+        event.setHost(newHost);
+        eventRepository.save(event);
+
+        //send notification to new and old host
+        notificationService.sendEventAssignedHostNotification(oldHostId, newHost.getId(), event);
+
+        log.info("Event assigned to host, eventId={} hostId={}", eventId, request.getHostId());
     }
 }
 

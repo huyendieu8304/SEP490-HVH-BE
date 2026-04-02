@@ -203,19 +203,19 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         //whether the event status allow volunteer to cancel application
         if (!EEventStatus.canEventApplicationBeCancelledByVolunteer(event.getStatus())){
-            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCELLED);
         }
 
         //check application status, only PENDING and APPROVED can cancel
         if (eventApplication.getStatus().equals(EEventApplicationStatus.CANCELLED)
                 || eventApplication.getStatus().equals(EEventApplicationStatus.REJECTED)) {
-            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCELLED);
         }
         LocalDate today = LocalDate.now();
 
         // not allow to cancel on the date or after the session date
         if (!today.isBefore(eventApplication.getSessionDate())) {
-            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCEL);
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_CANNOT_CANCELLED);
         }
 
         boolean isMinusScore = false;
