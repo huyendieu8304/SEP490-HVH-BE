@@ -416,7 +416,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         UUID eventSessionId = eventApplication.getSession().getId();
 
         CheckInLog checkInLog = checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(eventSessionId, volunteerId);
+                .findByEventApplicationId(eventApplication.getId());
 
         //check if vol check-in log exists
         if (checkInLog != null) {
@@ -464,8 +464,16 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     public void quickCheckInEvent(QuickCheckInEventRequest request) {
         UUID volunteerId = currentUserProvider.getId();
 
+        EventApplication eventApplication = eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, UUID.fromString(request.getEventSessionId()));
+
+        //check if event application exists
+        if (eventApplication == null) {
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED);
+        }
+
         CheckInLog checkInLog = checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(UUID.fromString(request.getEventSessionId()), volunteerId);
+                .findByEventApplicationId(eventApplication.getId());
 
         //check if vol check-in log exists
         if (checkInLog != null) {
@@ -528,8 +536,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
             //save new check-in log into db
             CheckInLog newCheckInLog = new CheckInLog();
-            newCheckInLog.setVolunteer(volunteer);
-            newCheckInLog.setSession(eventSession);
+            newCheckInLog.setEventApplication(eventApplication);
             newCheckInLog.setDeviceId(request.getDeviceId());
             newCheckInLog.setApVersion(request.getApVersion());
             newCheckInLog.setOsVersion(request.getOsVersion());
@@ -544,9 +551,17 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     public void checkOutEvent(CheckOutEventRequest request) {
         UUID volunteerId = currentUserProvider.getId();
 
+        EventApplication eventApplication = eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, UUID.fromString(request.getEventSessionId()));
+
+        //check if event application exists
+        if (eventApplication == null) {
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED);
+        }
+
         //get current vol check-in log
         CheckInLog checkInLog = checkInLogRepository
-                .findByEventSessionIdAndVolunteerId(volunteerId, UUID.fromString(request.getEventSessionId()));
+                .findByEventApplicationId(eventApplication.getId());
 
         //check if vol check-in log exists
         if (checkInLog == null) {
@@ -592,7 +607,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         //check if current user's device is match with checked-in user's device
         boolean existsByDeviceAndVolunteerId = checkInLogRepository
-                .existsByDeviceAndVolunteerId(request.getDeviceId(), request.getApVersion(), request.getOsVersion(), volunteerId);
+                .existsByDeviceAndEventApplication(request.getDeviceId(),
+                        request.getApVersion(), request.getOsVersion(), eventApplication.getId());
 
         if(!existsByDeviceAndVolunteerId) {
             throw new AppException(EventErrorCode.DEVICE_NOT_CHECKED_IN);

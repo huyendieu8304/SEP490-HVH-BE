@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public interface EventRepository extends JpaRepository<Event, UUID> {
+public interface  EventRepository extends JpaRepository<Event, UUID> {
 
     @Query("""
             SELECT e

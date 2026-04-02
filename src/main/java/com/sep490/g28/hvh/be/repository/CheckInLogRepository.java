@@ -11,10 +11,9 @@ public interface CheckInLogRepository extends JpaRepository<CheckInLog, UUID> {
     @Query("""
             SELECT c
             FROM CheckInLog c
-            WHERE c.session.id = :eventSessionId
-            AND c.volunteer.id = :volunteerId
+            WHERE c.eventApplication.id= :eventApplicationId
             """)
-    CheckInLog findByEventSessionIdAndVolunteerId(UUID eventSessionId, UUID volunteerId);
+    CheckInLog findByEventApplicationId(UUID eventApplicationId);
 
     @Query("""
             SELECT COUNT(c) > 0
@@ -28,10 +27,10 @@ public interface CheckInLogRepository extends JpaRepository<CheckInLog, UUID> {
     @Query("""
             SELECT COUNT(c) > 0
             FROM CheckInLog c
-            WHERE c.volunteer.id = :volunteerId
+            WHERE c.eventApplication.id = :eventApplicationId
             AND c.deviceId = :deviceId
             AND c.apVersion = :apVersion
             AND c.osVersion = :osVersion
             """)
-    boolean existsByDeviceAndVolunteerId(String deviceId, String apVersion, String osVersion, UUID volunteerId);
+    boolean existsByDeviceAndEventApplication(String deviceId, String apVersion, String osVersion, UUID eventApplicationId);
 }

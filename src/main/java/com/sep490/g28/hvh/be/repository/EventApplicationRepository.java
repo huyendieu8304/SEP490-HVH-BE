@@ -100,4 +100,13 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             UUID volunteerId,
             @Param("status") EEventApplicationStatus status,
             Pageable pageable);
+
+    @Query("""
+            SELECT e
+            FROM EventApplication e
+            WHERE e.volunteer.id = :volunteerId
+            AND e.session.id = :sessionId
+            AND e.status = 'APPROVED'
+            """)
+    EventApplication findByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
 }
