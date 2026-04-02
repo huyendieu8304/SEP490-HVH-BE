@@ -40,4 +40,8 @@ public enum EEventStatus {
     public static boolean canEventApplicationBeProcessedByHost(EEventStatus status) {
         return  (status.equals(RECRUITING) || status.equals(UPCOMING));
     }
+
+    public static boolean canEventBeAssignedHost(EEventStatus status) {
+        return  (status.equals(RECRUITING) || status.equals(UPCOMING) || status.equals(ONGOING));
+    }
 }
