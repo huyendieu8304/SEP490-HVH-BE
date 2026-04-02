@@ -13,7 +13,9 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum HostErrorCode implements ErrorCode {
 
-    EMAIL_USED(5001, "Email đã được sử dụng bởi một host khác.", HttpStatus.BAD_REQUEST),
+    HOST_NOT_EXISTED(5001, "Host not found", HttpStatus.NOT_FOUND),
+    EMAIL_USED(5002, "Email đã được sử dụng bởi một host khác.", HttpStatus.BAD_REQUEST),
+
 
     ;
     private final int code;
