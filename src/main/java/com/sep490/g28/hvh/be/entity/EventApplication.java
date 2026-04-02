@@ -48,6 +48,9 @@ public class EventApplication {
     @Column(length = 30, nullable = false)
     private EEventApplicationStatus status;
 
+    @Column(name = "credit_hour")
+    private Short creditHour;
+
     @CreationTimestamp
     @Column(
             name = "created_at",

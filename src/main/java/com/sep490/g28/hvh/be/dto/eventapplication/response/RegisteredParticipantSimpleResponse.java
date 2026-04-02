@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -16,5 +17,8 @@ public class  RegisteredParticipantSimpleResponse {
     private String nickName;
     private String name;
     private String avatarUrl;
-    //todo add totalPoints, totalHonorHours
+    private String address;
+    private Short creditScore;
+    private Short honorScore;
+    private OffsetDateTime createdAt;
 }

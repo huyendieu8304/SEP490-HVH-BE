@@ -5,4 +5,5 @@ public enum EEventApplicationStatus {
     APPROVED,
     REJECTED,
     CANCELLED,
+    COMPLETED
 }
