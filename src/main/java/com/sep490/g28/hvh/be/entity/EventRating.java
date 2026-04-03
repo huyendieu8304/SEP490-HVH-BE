@@ -52,6 +52,16 @@ public class EventRating {
     private Short avgRating;
 
     //--------------------------------------------------------
+    @CreationTimestamp
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
+    private OffsetDateTime createdAt;
+
+    //--------------------------------------------------------
     @PrePersist
     @PreUpdate
     private void calculateAvgRating() {
@@ -65,15 +75,6 @@ public class EventRating {
 
         this.avgRating = (short) Math.round(avg);
     }
-
-    @CreationTimestamp
-    @Column(
-            name = "created_at",
-            nullable = false,
-            updatable = false,
-            columnDefinition = "TIMESTAMP WITH TIME ZONE"
-    )
-    private OffsetDateTime createdAt;
 
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "event_id", referencedColumnName = "id")

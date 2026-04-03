@@ -76,7 +76,7 @@ public class EventRatingServiceImpl implements EventRatingService {
         event.setAvgRating(newAvg);
         event.setRatingCount(newCount);
         eventRepository.save(event);
-        log.info("Event is rate, eventId={}, applicationId={}, avgRating={}",
+        log.info("Event is rated, eventId={}, applicationId={}, avgRating={}",
                 event.getId(),
                 application.getId(),
                 rating.getAvgRating()
