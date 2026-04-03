@@ -150,4 +150,12 @@ public class Event {
     @JoinColumn(name = "created_by", referencedColumnName = "id")
     private Host createBy;
 
+    //--------------------------------------------------------
+
+    @Column(name = "avg_rating", nullable = false)
+    private Short avgRating = 0;
+
+    @Column(name = "rating_count", nullable = false)
+    private Long ratingCount = 0L;
+
 }

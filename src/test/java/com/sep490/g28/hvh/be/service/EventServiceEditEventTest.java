@@ -1227,7 +1227,7 @@ public class EventServiceEditEventTest {
 
         try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
             mocked.when(() -> EEventStatus.canEventBeAssignedHost(event.getStatus()))
-                    .thenReturn(true);
+                    .thenReturn(false);
 
             assertThrows(AppException.class,
                     () -> service.assignHostToEvent(eventId, new AssignHostToEventRequest()));
@@ -1244,7 +1244,7 @@ public class EventServiceEditEventTest {
 
         try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
             mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
-                    .thenReturn(false);
+                    .thenReturn(true);
 
             when(authService.checkAccountActive(hostId)).thenReturn(false);
 
@@ -1266,7 +1266,7 @@ public class EventServiceEditEventTest {
 
         try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
             mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
-                    .thenReturn(false);
+                    .thenReturn(true);
 
             when(authService.checkAccountActive(hostId)).thenReturn(true);
             when(hostRepository.findById(hostId)).thenReturn(Optional.empty());
@@ -1290,7 +1290,7 @@ public class EventServiceEditEventTest {
 
         try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
             mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
-                    .thenReturn(false);
+                    .thenReturn(true);
 
             when(authService.checkAccountActive(hostId)).thenReturn(true);
 
@@ -1319,7 +1319,7 @@ public class EventServiceEditEventTest {
 
         try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
             mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
-                    .thenReturn(false);
+                    .thenReturn(true);
 
             when(authService.checkAccountActive(hostId)).thenReturn(true);
 
@@ -1351,7 +1351,7 @@ public class EventServiceEditEventTest {
 
         try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
             mocked.when(() -> EEventStatus.canEventBeAssignedHost(any()))
-                    .thenReturn(false);
+                    .thenReturn(true);
 
             when(authService.checkAccountActive(newHostId)).thenReturn(true);
 

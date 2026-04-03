@@ -78,6 +78,8 @@ public enum ValidationErrorCode implements ErrorCode {
     AT_LEAST_ONE_FIELD_REQUIRED(2052, "Cần ít nhất 1 trường thông tin trong request body", HttpStatus.BAD_REQUEST),
 
     INVALID_CHECK_IN_CODE(2053, "Mã check-in không hợp lệ", HttpStatus.BAD_REQUEST),
+
+    INVALID_RATING_VALUE(2054, "Giá trị rating phải là số nguyên từ 1 đến 5.", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

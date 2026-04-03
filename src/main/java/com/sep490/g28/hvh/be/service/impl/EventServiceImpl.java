@@ -11,10 +11,7 @@ import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.exception.AppException;
-import com.sep490.g28.hvh.be.exception.errorCodeImpl.ActivityDomainErrorCode;
-import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
-import com.sep490.g28.hvh.be.exception.errorCodeImpl.HostErrorCode;
-import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.*;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.mapper.EventMapper;
@@ -1515,7 +1512,7 @@ public class EventServiceImpl implements EventService {
             throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGNED_TO_CURRENT_HOST);
         }
         //check event status
-        if(EEventStatus.canEventBeAssignedHost(event.getStatus())) {
+        if(!EEventStatus.canEventBeAssignedHost(event.getStatus())) {
             throw new AppException(EventErrorCode.EVENT_CANNOT_ASSIGNED_HOST);
         }
 
