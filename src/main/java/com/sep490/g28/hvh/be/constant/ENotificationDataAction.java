@@ -8,4 +8,6 @@ public enum ENotificationDataAction {
 
     VOL_APPLICATION_DETAILS,
 
+    VOL_REVIEW_DETAILS,
+
 }

@@ -51,4 +51,6 @@ public interface NotificationService {
     void sendEventUpdateCriticalRejectedByAdminNotification(Event event);
 
     void sendEventAssignedHostNotification(UUID oldHostId, UUID newHostId, Event event);
+
+    void sendVolunteerReviewedByHostNotification(UUID volunteerId, Event event, EventApplication application, UUID reviewId);
 }

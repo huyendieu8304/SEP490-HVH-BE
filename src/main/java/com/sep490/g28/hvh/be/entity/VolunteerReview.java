@@ -12,13 +12,14 @@ import java.util.UUID;
 
 @Entity
 @Table(
-        name = "event_ratings"
-        )
+        name = "volunteer_reviews"
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventRating {
+public class VolunteerReview {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -33,23 +34,26 @@ public class EventRating {
     private EventApplication eventApplication;
 
     //--------------------------------------------------------
-    @Column(name = "organization_quality_rating", nullable = false)
-    private Short organizationQualityRating;
+    @Column(name = "professional_attitude_rating", nullable = false)
+    private Short professionalAttitudeRating;
 
-    @Column(name = "professionalism_rating", nullable = false)
-    private Short professionalismRating;
+    @Column(name = "responsibility_punctuality_rating", nullable = false)
+    private Short responsibilityPunctualityRating;
 
-    @Column(name = "work_environment_rating", nullable = false)
-    private Short workEnvironmentRating;
+    @Column(name = "work_effectiveness_rating", nullable = false)
+    private Short workEffectivenessRating;
 
-    @Column(name = "value_impact_rating", nullable = false)
-    private Short valueImpactRating;
+    @Column(name = "teamwork_communication_rating", nullable = false)
+    private Short teamworkCommunicationRating;
 
-    @Column(name = "support_connection_rating", nullable = false)
-    private Short supportConnectionRating;
+    @Column(name = "adaptability_problem_solving_rating", nullable = false)
+    private Short adaptabilityProblemSolvingRating;
 
     @Column(name = "avg_rating", nullable = false)
     private Short avgRating;
+
+    @Column(name = "comment", length = 250)
+    private String comment;
 
     //--------------------------------------------------------
     @CreationTimestamp
@@ -64,24 +68,15 @@ public class EventRating {
     //--------------------------------------------------------
     @PrePersist
     @PreUpdate
-    private void calculateAvgRating() {
+    private void validateAndCalculate() {
         double avg = (
-                organizationQualityRating +
-                        professionalismRating +
-                        workEnvironmentRating +
-                        valueImpactRating +
-                        supportConnectionRating
+                professionalAttitudeRating +
+                        responsibilityPunctualityRating +
+                        workEffectivenessRating +
+                        teamworkCommunicationRating +
+                        adaptabilityProblemSolvingRating
         ) / 5.0;
 
         this.avgRating = (short) Math.round(avg);
     }
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "event_id", referencedColumnName = "id")
-//    private Event event;
-
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "event_session_id", referencedColumnName = "id")
-//    private EventSession eventSession;
 }

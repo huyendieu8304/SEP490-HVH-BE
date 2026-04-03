@@ -760,5 +760,26 @@ public class NotificationServiceImpl implements NotificationService {
 
     }
 
+    @Override
+    public void sendVolunteerReviewedByHostNotification(UUID volunteerId, Event event, EventApplication application, UUID reviewId) {
+        Notification notification = new Notification();
+
+        notification.setTitle("Đánh giá quá trình tham gia sự kiện");
+        notification.setBody(String.format(
+                "Bạn đã được đánh giá quá trình tham gia sự kiện %s ngày %s bởi người tổ chức.",
+                event.getName(),
+                application.getSessionDate().toString()
+        ));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_REVIEWED_BY_HOST.name(),
+                DATA_REF_ID_KEY, reviewId.toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_REVIEW_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_REVIEWED_BY_HOST);
+
+        notification = saveNotificationForUser(notification, volunteerId);
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
 
 }

@@ -11,6 +11,8 @@ public enum RateAndReviewErrorCode implements ErrorCode {
     RATE_EVENT_NOT_IN_ALLOWED_TIME(8001, "Chưa đến hoặc đã qua thời gian cho phép đánh giá sự kiện.", HttpStatus.CONFLICT),
     NOT_RECORDED_AS_PARTICIPANT(8002, "Hệ thống chưa ghi nhận người dùng đã tham gia sự kiện, không thể đánh giá.", HttpStatus.CONFLICT),
     ALREADY_RATED_EVENT(8003, "Hệ thống ghi nhận đã tồn tại đánh giá của tình nguyện viên đối với sự kiện này.", HttpStatus.CONFLICT),
+    ALREADY_REVIEWED_VOL(8004, "Hệ thống ghi nhận đã tồn tại đánh giá dành cho tình nguyện viên này.", HttpStatus.CONFLICT),
+    REVIEW_VOL_NOT_IN_ALLOWED_TIME(8005, "Chưa đến hoặc đã qua thời gian cho phép đánh giá tình nguyện viên.", HttpStatus.CONFLICT),
 
     ;
 
