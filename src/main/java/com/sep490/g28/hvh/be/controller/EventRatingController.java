@@ -20,14 +20,12 @@ public class EventRatingController {
 
     EventRatingService eventRatingService;
 
-    @PreAuthorize("hasRole('VOL' and @eventApplicationAuthorizer.isVolunteerOfEventApplication(#request.eventApplicationId))")
-    @PostMapping("/events/{eventId}/rate")
+    @PreAuthorize("hasRole('VOL') and @eventApplicationAuthorizer.isVolunteerOfEventApplication(#request.eventApplicationId)")
+    @PostMapping("/event-ratings")
     public ResponseEntity<Void> rateEvent(
-            @PathVariable java.util.UUID eventId,
             @RequestBody @Valid RateEventRequest request
-
     ){
-        eventRatingService.rateEvent(eventId, request);
+        eventRatingService.rateEvent(request);
         return ResponseEntity.ok().build();
     }
 }

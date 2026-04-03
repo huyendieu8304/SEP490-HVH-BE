@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -34,18 +33,7 @@ public class EventRatingServiceImpl implements EventRatingService {
 
     @Override
     @Transactional
-    public void rateEvent(UUID eventId, RateEventRequest request) {
-        //get event
-        Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
-        );
-
-        LocalDate now = LocalDate.now();
-        //check rating time, in 7 days after the event ENDED (after 7 day from the eventEndDate)
-        if (now.isAfter(event.getEndDate().plusDays(7))){
-            throw new AppException(RateAndReviewErrorCode.RATE_EVENT_TIME_EXPIRED);
-        }
-
+    public void rateEvent(RateEventRequest request) {
         //check vol participate
         EventApplication application = eventApplicationRepository.findById(request.getEventApplicationId()).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED)
@@ -58,6 +46,16 @@ public class EventRatingServiceImpl implements EventRatingService {
         //make sure only one rating for a session
         if (eventRatingRepository.findByEventApplication_Id(request.getEventApplicationId()).isPresent()){
             throw new AppException(RateAndReviewErrorCode.ALREADY_RATED_EVENT);
+        }
+
+        //get event
+        Event event = application.getSession().getEvent();
+
+        LocalDate now = LocalDate.now();
+        //check rating time, in 7 days after the event ENDED (after 7 day from the eventEndDate)
+        if ( !now.isAfter(event.getEndDate())
+                || now.isAfter(event.getEndDate().plusDays(7))){
+            throw new AppException(RateAndReviewErrorCode.RATE_EVENT_NOT_IN_ALLOWED_TIME);
         }
 
         //create rating record
@@ -78,6 +76,10 @@ public class EventRatingServiceImpl implements EventRatingService {
         event.setAvgRating(newAvg);
         event.setRatingCount(newCount);
         eventRepository.save(event);
-        log.info("Event is rate, eventId={}, applicationId={}, avgRating={}", eventId, application.getId(), rating.getAvgRating());
+        log.info("Event is rate, eventId={}, applicationId={}, avgRating={}",
+                event.getId(),
+                application.getId(),
+                rating.getAvgRating()
+        );
     }
 }
