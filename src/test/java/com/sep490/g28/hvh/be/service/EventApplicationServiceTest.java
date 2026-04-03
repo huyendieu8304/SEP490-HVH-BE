@@ -1961,4 +1961,100 @@ public class EventApplicationServiceTest {
         assertThrows(AppException.class,
                 () -> service.checkOutEvent(request));
     }
+
+    // ===== TC9 =====
+    @Test
+    void checkOutEvent_out_of_range() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+
+            geoMock.when(() -> GeoUtils.toPoint(any(), any()))
+                    .thenReturn(mock(Point.class));
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
+                    .thenReturn(200.0);
+
+            assertThrows(AppException.class,
+                    () -> service.checkOutEvent(request));
+        }
+    }
+
+    // ===== TC10 =====
+    @Test
+    void checkOutEvent_device_not_match() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository.existsByDeviceAndEventApplication(
+                any(), any(), any(), eq(applicationId)))
+                .thenReturn(false);
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+
+            geoMock.when(() -> GeoUtils.toPoint(any(), any()))
+                    .thenReturn(mock(Point.class));
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
+                    .thenReturn(50.0);
+
+            assertThrows(AppException.class,
+                    () -> service.checkOutEvent(request));
+        }
+    }
 }
