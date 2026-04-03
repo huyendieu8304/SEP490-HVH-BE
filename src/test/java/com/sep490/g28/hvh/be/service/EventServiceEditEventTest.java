@@ -1227,7 +1227,7 @@ public class EventServiceEditEventTest {
 
         try (MockedStatic<EEventStatus> mocked = mockStatic(EEventStatus.class)) {
             mocked.when(() -> EEventStatus.canEventBeAssignedHost(event.getStatus()))
-                    .thenReturn(true);
+                    .thenReturn(false);
 
             assertThrows(AppException.class,
                     () -> service.assignHostToEvent(eventId, new AssignHostToEventRequest()));
