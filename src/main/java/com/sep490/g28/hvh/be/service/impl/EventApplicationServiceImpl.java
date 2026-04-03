@@ -317,6 +317,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             }
 
                             return new RegisteredParticipantSimpleResponse(
+                                    e.getId(),
                                     volunteerId,
                                     email,
                                     phone,

@@ -11,6 +11,7 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 public class  RegisteredParticipantSimpleResponse {
+    private UUID applicationId;
     private UUID volunteerId;
     private String email;
     private String phone;
