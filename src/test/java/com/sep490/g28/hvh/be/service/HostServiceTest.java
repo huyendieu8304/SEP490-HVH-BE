@@ -12,6 +12,7 @@ import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.repository.HostRepository;
 import com.sep490.g28.hvh.be.repository.OrganizationManagerRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
+import com.sep490.g28.hvh.be.service.impl.HostServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +46,7 @@ public class HostServiceTest {
     CurrentUserProvider currentUserProvider;
 
     @InjectMocks
-    HostService hostService;
+    HostServiceImpl hostService;
 
     UUID orgManagerId;
     OrganizationManager orgManager;

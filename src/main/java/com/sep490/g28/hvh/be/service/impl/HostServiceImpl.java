@@ -86,6 +86,7 @@ public class HostServiceImpl implements HostService {
         );
     }
 
+    //todo unit test
     @Override
     public Page<HostSimpleResponseForManager> getHostsByManager(int pageNumber, int pageSize, String email) {
         Pageable pageable = PageRequest.of(
@@ -96,6 +97,7 @@ public class HostServiceImpl implements HostService {
         return hostRepository.getHostsByManager(currentUserProvider.getId(), pageable, email);
     }
 
+    //todo unit test
     @Override
     public HostInfoResponseForManager getHostInfoByManager(UUID hostId) {
 
@@ -126,6 +128,7 @@ public class HostServiceImpl implements HostService {
         return response;
     }
 
+    //todo unit test
     @Override
     public Page<HostActivitiesResponse> getHostActivitiesByManager(
             UUID hostId,
