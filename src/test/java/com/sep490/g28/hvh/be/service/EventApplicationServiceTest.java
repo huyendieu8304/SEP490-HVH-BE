@@ -933,623 +933,1032 @@ public class EventApplicationServiceTest {
         assertNull(response.getContent().getFirst().getImageUrl());
     }
 
-//    // ==== checkEventCheckInCode ===================================
-//    // ===== TC1 =====
-//    @Test
-//    void checkEventCheckInCode_success() {
-//
-//        UUID sessionId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = mockEvent();
-//        event.setStatus(EEventStatus.ONGOING);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setEvent(event);
-//        session.setCheckInCode("123456");
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(app);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        when(eventRepository.findById(eventId))
-//                .thenReturn(Optional.of(event));
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        CheckEventCheckInCodeResponse response =
-//                service.checkEventCheckInCode(request);
-//
-//        assertEquals(eventId, response.getEventId());
-//        assertEquals(sessionId, response.getEventSessionId());
-//    }
-//
-//    // ===== TC2 =====
-//    @Test
-//    void checkEventCheckInCode_application_not_exist() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(null);
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ===== TC3 =====
-//    @Test
-//    void checkEventCheckInCode_session_not_exist() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        EventApplication app = new EventApplication();
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        app.setSession(session);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(app);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.empty());
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ===== TC4 =====
-//    @Test
-//    void checkEventCheckInCode_session_not_started() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2)); // future
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(app);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ===== TC5 =====
-//    @Test
-//    void checkEventCheckInCode_session_ended() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
-//        session.setEndDateTime(OffsetDateTime.now().minusHours(1)); // future
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(app);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ===== TC6 =====
-//    @Test
-//    void checkEventCheckInCode_event_not_exist() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//        UUID eventId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = new Event();
-//        event.setId(eventId);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
-//        session.setEvent(event);
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(app);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        when(eventRepository.findById(eventId))
-//                .thenReturn(Optional.empty());
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ===== TC7 =====
-//    @Test
-//    void checkEventCheckInCode_event_not_ongoing() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//        UUID eventId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = new Event();
-//        event.setId(eventId);
-//        event.setStatus(EEventStatus.UPCOMING); // not ONGOING
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setEvent(event);
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(app);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ===== TC8 =====
-//    @Test
-//    void checkEventCheckInCode_code_not_match() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//        UUID eventId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = new Event();
-//        event.setId(eventId);
-//        event.setStatus(EEventStatus.ONGOING);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
-//        session.setEvent(event);
-//        session.setCheckInCode("234567");
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        when(eventApplicationRepository
-//                .findEventApplicationByVolunteerIdAndSessionDate(eq(volunteerId), any()))
-//                .thenReturn(app);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        when(eventRepository.findById(eventId))
-//                .thenReturn(Optional.of(event));
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ===== TC9 =====
-//    @Test
-//    void checkEventCheckInCode_already_checked_in() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.checkEventCheckInCode(request)
-//        );
-//    }
-//
-//    // ==== quickCheckInEvent ===================================
-//    // ===== TC1 =====
-//    @Test
-//    void quickCheckInEvent_success() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = mockEvent();
-//        event.setCheckInAccuracyMeters(100.0);
-//        event.setStatus(EEventStatus.ONGOING);
-//
-//        EventSession session = new EventSession();
-//        session.setStartDateTime(OffsetDateTime.now());
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setId(sessionId);
-//        session.setEvent(event);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        when(checkInLogRepository
-//                .existsByDevice(any(), any(), any()))
-//                .thenReturn(false);
-//
-//        Volunteer volunteer = new Volunteer();
-//        volunteer.setId(volunteerId);
-//        volunteer.setDeviceId("device-1");
-//
-//        when(volunteerRepository.findById(volunteerId))
-//                .thenReturn(Optional.of(volunteer));
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
-//            Point mockPoint = mock(Point.class);
-//
-//            geoMock.when(() -> GeoUtils.toPoint(any(Double.class), any(Double.class)))
-//                    .thenReturn(mockPoint);
-//
-//            geoMock.when(() -> GeoUtils.distanceMeters(any(Point.class), any(Point.class)))
-//                    .thenReturn(50.0);
-//
-//            service.quickCheckInEvent(request);
-//        }
-//
-//        verify(checkInLogRepository).save(any(CheckInLog.class));
-//    }
-//
-//    // ===== TC2 =====
-//    @Test
-//    void quickCheckInEvent_already_checked_in() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.quickCheckInEvent(request)
-//        );
-//    }
-//
-//    // ===== TC3 =====
-//    @Test
-//    void quickCheckInEvent_session_not_exist() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.empty());
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.quickCheckInEvent(request)
-//        );
-//    }
-//
-//    // ===== TC4 =====
-//    @Test
-//    void quickCheckInEvent_out_of_range() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = mockEvent();
-//        event.setCheckInAccuracyMeters(100.0);
-//
-//        EventSession session = new EventSession();
-//        session.setStartDateTime(OffsetDateTime.now());
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setId(sessionId);
-//        session.setEvent(event);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//        request.setCurrentPlaceLat(10.0);
-//        request.setCurrentPlaceLng(10.0);
-//
-//        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
-//            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
-//                    .thenReturn(mock(Point.class));
-//            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
-//                    .thenReturn(200.0); // > accuracy
-//
-//            assertThrows(
-//                    AppException.class,
-//                    () -> service.quickCheckInEvent(request)
-//            );
-//        }
-//    }
-//
-//    // ===== TC5 =====
-//    @Test
-//    void quickCheckInEvent_device_already_used() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = mockEvent();
-//        event.setCheckInAccuracyMeters(100.0);
-//
-//        EventSession session = new EventSession();
-//        session.setStartDateTime(OffsetDateTime.now());
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setId(sessionId);
-//        session.setEvent(event);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
-//            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
-//                    .thenReturn(mock(Point.class));
-//            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
-//                    .thenReturn(50.0);
-//
-//            assertThrows(
-//                    AppException.class,
-//                    () -> service.quickCheckInEvent(request)
-//            );
-//        }
-//    }
-//
-//    // ===== TC6 =====
-//    @Test
-//    void quickCheckInEvent_volunteer_not_exist() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = mockEvent();
-//        event.setCheckInAccuracyMeters(100.0);
-//
-//        EventSession session = new EventSession();
-//        session.setStartDateTime(OffsetDateTime.now());
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setId(sessionId);
-//        session.setEvent(event);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
-//            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
-//                    .thenReturn(mock(Point.class));
-//            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
-//                    .thenReturn(50.0);
-//
-//            assertThrows(
-//                    AppException.class,
-//                    () -> service.quickCheckInEvent(request)
-//            );
-//        }
-//    }
-//
-//    // ===== TC7 =====
-//    @Test
-//    void quickCheckInEvent_device_not_match() {
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = mockEvent();
-//        event.setCheckInAccuracyMeters(100.0);
-//        event.setStatus(EEventStatus.ONGOING);
-//
-//        EventSession session = new EventSession();
-//        session.setStartDateTime(OffsetDateTime.now());
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setId(sessionId);
-//        session.setEvent(event);
-//
-//        when(eventSessionRepository.findById(sessionId))
-//                .thenReturn(Optional.of(session));
-//
-//        Volunteer volunteer = new Volunteer();
-//        volunteer.setId(volunteerId);
-//        volunteer.setDeviceId("device-1");
-//
-//        when(volunteerRepository.findById(volunteerId))
-//                .thenReturn(Optional.of(volunteer));
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//        request.setDeviceId("device-2");
-//
-//        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
-//            geoMock.when(() -> GeoUtils.toPoint(anyDouble(), anyDouble()))
-//                    .thenReturn(mock(Point.class));
-//            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
-//                    .thenReturn(50.0);
-//
-//            service.quickCheckInEvent(request);
-//        }
-//
-//        verify(checkInLogRepository, never()).save(any());
-//    }
-//
-//    // ===== TC8 =====
-//    @Test
-//    void quickCheckInEvent_session_not_started() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2)); // future
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.quickCheckInEvent(request)
-//        );
-//    }
-//
-//    // ===== TC9 =====
-//    @Test
-//    void quickCheckInEvent_session_ended() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
-//        session.setEndDateTime(OffsetDateTime.now().minusHours(1)); // future
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.quickCheckInEvent(request)
-//        );
-//    }
-//
-//    // ===== TC10 =====
-//    @Test
-//    void quickCheckInEvent_event_not_exist() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//        UUID eventId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = new Event();
-//        event.setId(eventId);
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
-//        session.setEvent(event);
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.quickCheckInEvent(request)
-//        );
-//    }
-//
-//    // ===== TC11 =====
-//    @Test
-//    void quickCheckInEvent_event_not_ongoing() {
-//
-//        UUID volunteerId = UUID.randomUUID();
-//        UUID sessionId = UUID.randomUUID();
-//        UUID eventId = UUID.randomUUID();
-//
-//        when(currentUserProvider.getId()).thenReturn(volunteerId);
-//
-//        Event event = new Event();
-//        event.setId(eventId);
-//        event.setStatus(EEventStatus.UPCOMING); // not ONGOING
-//
-//        EventSession session = new EventSession();
-//        session.setId(sessionId);
-//        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
-//        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
-//        session.setEvent(event);
-//
-//        EventApplication app = new EventApplication();
-//        app.setSession(session);
-//
-//        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
-//
-//        assertThrows(
-//                AppException.class,
-//                () -> service.quickCheckInEvent(request)
-//        );
-//    }
+    // ==== checkEventCheckInCode ===================================
+    // ===== TC1 =====
+    @Test
+    void checkEventCheckInCode_success() {
+
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setStatus(EEventStatus.ONGOING);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setCheckInCode("123456");
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(
+                        eq(volunteerId),
+                        any(),
+                        eq("123456"),
+                        any()
+                ))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        CheckEventCheckInCodeResponse response =
+                service.checkEventCheckInCode(request);
+
+        assertEquals(eventId, response.getEventId());
+        assertEquals(sessionId, response.getEventSessionId());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void checkEventCheckInCode_application_not_exist() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(
+                        eq(volunteerId),
+                        any(),
+                        any(),
+                        any()
+                ))
+                .thenReturn(null);
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC3 =====
+    @Test
+    void checkEventCheckInCode_already_checked_in() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+        app.setSession(new EventSession());
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(
+                        eq(volunteerId),
+                        any(),
+                        any(),
+                        any()
+                ))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC4 =====
+    @Test
+    void checkEventCheckInCode_session_not_exist() {
+
+        UUID sessionId = UUID.randomUUID();
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(
+                        eq(volunteerId),
+                        any(),
+                        any(),
+                        any()
+                ))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.empty());
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC5 =====
+    @Test
+    void checkEventCheckInCode_event_not_exist() {
+
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(
+                        eq(volunteerId),
+                        any(),
+                        any(),
+                        any()
+                ))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.empty());
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC6 =====
+    @Test
+    void checkEventCheckInCode_event_not_ongoing() {
+
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setStatus(EEventStatus.UPCOMING);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setCheckInCode("123456");
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(
+                        eq(volunteerId),
+                        any(),
+                        eq("123456"),
+                        any()
+                ))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.checkEventCheckInCode(request)
+        );
+    }
+
+    // ===== TC7 =====
+    @Test
+    void checkEventCheckInCode_code_not_match() {
+
+        UUID sessionId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setStatus(EEventStatus.ONGOING);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setCheckInCode("999999"); // khác
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+        app.setSession(session);
+
+        when(eventApplicationRepository
+                .findEventApplicationByVolunteerIdAndSessionDate(
+                        eq(volunteerId),
+                        any(),
+                        eq("123456"),
+                        any()
+                ))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(eventRepository.findById(eventId))
+                .thenReturn(Optional.of(event));
+
+        CheckEventCheckInCodeRequest request = validCheckEventCheckInCodeRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.checkEventCheckInCode(request)
+        );
+    }
+
+    // ==== quickCheckInEvent ===================================
+    // ===== TC1 =====
+    @Test
+    void quickCheckInEvent_success() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository.existsByDevice(any(), any(), any()))
+                .thenReturn(false);
+
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setDeviceId("device-1");
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.of(volunteer));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            Point mockPoint = mock(Point.class);
+
+            geoMock.when(() -> GeoUtils.toPoint(any(Double.class), any(Double.class)))
+                    .thenReturn(mockPoint);
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(Point.class), any(Point.class)))
+                    .thenReturn(50.0);
+
+            service.quickCheckInEvent(request);
+        }
+
+        verify(checkInLogRepository).save(any(CheckInLog.class));
+    }
+
+    // ===== TC2 =====
+    @Test
+    void quickCheckInEvent_application_not_exist() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC3 =====
+    @Test
+    void quickCheckInEvent_already_checked_in() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC4 =====
+    @Test
+    void quickCheckInEvent_session_not_exist() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.empty());
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC5 =====
+    @Test
+    void quickCheckInEvent_session_not_started() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC6 =====
+    @Test
+    void quickCheckInEvent_session_ended() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
+        session.setEndDateTime(OffsetDateTime.now().minusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC7 =====
+    @Test
+    void quickCheckInEvent_event_null() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(null);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC8 =====
+    @Test
+    void quickCheckInEvent_event_not_ongoing() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setStatus(EEventStatus.UPCOMING);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        assertThrows(
+                AppException.class,
+                () -> service.quickCheckInEvent(request)
+        );
+    }
+
+    // ===== TC9 =====
+    @Test
+    void quickCheckInEvent_out_of_range() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(any(Double.class), any(Double.class)))
+                    .thenReturn(mock(Point.class));
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(Point.class), any(Point.class)))
+                    .thenReturn(200.0);
+
+            assertThrows(
+                    AppException.class,
+                    () -> service.quickCheckInEvent(request)
+            );
+        }
+    }
+
+    // ===== TC10 =====
+    @Test
+    void quickCheckInEvent_device_already_used() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository.existsByDevice(any(), any(), any()))
+                .thenReturn(true);
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(any(Double.class), any(Double.class)))
+                    .thenReturn(mock(Point.class));
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(Point.class), any(Point.class)))
+                    .thenReturn(50.0);
+
+            assertThrows(
+                    AppException.class,
+                    () -> service.quickCheckInEvent(request)
+            );
+        }
+    }
+
+    // ===== TC11 =====
+    @Test
+    void quickCheckInEvent_volunteer_not_exist() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository.existsByDevice(any(), any(), any()))
+                .thenReturn(false);
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.empty());
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(any(Double.class), any(Double.class)))
+                    .thenReturn(mock(Point.class));
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(Point.class), any(Point.class)))
+                    .thenReturn(50.0);
+
+            assertThrows(
+                    AppException.class,
+                    () -> service.quickCheckInEvent(request)
+            );
+        }
+    }
+
+    // ===== TC12 =====
+    @Test
+    void quickCheckInEvent_device_not_match() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository.existsByDevice(any(), any(), any()))
+                .thenReturn(false);
+
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setDeviceId("device-1");
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.of(volunteer));
+
+        QuickCheckInEventRequest request = validQuickCheckInEventRequest();
+        request.setDeviceId("device-2");
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+            geoMock.when(() -> GeoUtils.toPoint(any(Double.class), any(Double.class)))
+                    .thenReturn(mock(Point.class));
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(Point.class), any(Point.class)))
+                    .thenReturn(50.0);
+
+            service.quickCheckInEvent(request);
+        }
+
+        verify(checkInLogRepository, never()).save(any());
+    }
+
+    // ==== checkOutEvent ===================================
+    // ===== TC1 =====
+    @Test
+    void checkOutEvent_success() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = mockEvent();
+        event.setStatus(EEventStatus.ONGOING);
+        event.setCheckInAccuracyMeters(100.0);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(2));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        CheckInLog log = new CheckInLog();
+        log.setCheckInTime(OffsetDateTime.now().minusHours(2));
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(log);
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        when(checkInLogRepository.existsByDeviceAndEventApplication(
+                any(), any(), any(), eq(applicationId)))
+                .thenReturn(true);
+
+        when(eventApplicationRepository
+                .findAllByVolunteerIdAndSessionDate(eq(volunteerId), any()))
+                .thenReturn(List.of());
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+
+            geoMock.when(() -> GeoUtils.toPoint(any(), any()))
+                    .thenReturn(mock(Point.class));
+
+            geoMock.when(() -> GeoUtils.distanceMeters(any(), any()))
+                    .thenReturn(50.0);
+
+            service.checkOutEvent(request);
+        }
+
+        verify(eventApplicationRepository).save(any(EventApplication.class));
+    }
+
+    // ===== TC2 =====
+    @Test
+    void checkOutEvent_application_not_exist() {
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(null);
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.checkOutEvent(request));
+    }
+
+    // ===== TC3 =====
+    @Test
+    void checkOutEvent_not_checked_in() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(null);
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.checkOutEvent(request));
+    }
+
+    // ===== TC4 =====
+    @Test
+    void checkOutEvent_session_not_exist() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.empty());
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.checkOutEvent(request));
+    }
+
+    // ===== TC5 =====
+    @Test
+    void checkOutEvent_session_not_started() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(2));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.checkOutEvent(request));
+    }
+
+    // ===== TC6 =====
+    @Test
+    void checkOutEvent_session_ended() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(3));
+        session.setEndDateTime(OffsetDateTime.now().minusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.checkOutEvent(request));
+    }
+
+    // ===== TC7 =====
+    @Test
+    void checkOutEvent_event_null() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(null);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.checkOutEvent(request));
+    }
+
+    // ===== TC8 =====
+    @Test
+    void checkOutEvent_event_not_ongoing() {
+
+        UUID applicationId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Event event = new Event();
+        event.setStatus(EEventStatus.UPCOMING);
+
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+        session.setEvent(event);
+        session.setStartDateTime(OffsetDateTime.now().minusHours(1));
+        session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+
+        EventApplication app = new EventApplication();
+        app.setId(applicationId);
+
+        when(eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .thenReturn(app);
+
+        when(checkInLogRepository.findByEventApplicationId(applicationId))
+                .thenReturn(new CheckInLog());
+
+        when(eventSessionRepository.findById(sessionId))
+                .thenReturn(Optional.of(session));
+
+        CheckOutEventRequest request = validCheckOutEventRequest();
+
+        assertThrows(AppException.class,
+                () -> service.checkOutEvent(request));
+    }
 }
