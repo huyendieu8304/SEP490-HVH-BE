@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.dto.host.response;
 
+import com.sep490.g28.hvh.be.constant.EEventStatus;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +17,7 @@ public class HostActivitiesResponse {
     String eventName;
     String eventAddress;
     String eventDetailAddress;
+    EEventStatus eventStatus;
 
     UUID sessionId;
     OffsetDateTime sessionStartTime;
@@ -26,6 +28,7 @@ public class HostActivitiesResponse {
             String eventName,
             String eventAddress,
             String eventDetailAddress,
+            EEventStatus eventStatus,
             UUID sessionId,
             OffsetDateTime sessionStartTime,
             OffsetDateTime sessionEndTime) {
@@ -33,6 +36,7 @@ public class HostActivitiesResponse {
         this.eventName = eventName;
         this.eventAddress = eventAddress;
         this.eventDetailAddress = eventDetailAddress;
+        this.eventStatus = eventStatus;
         this.sessionId = sessionId;
         this.sessionStartTime = sessionStartTime;
         this.sessionEndTime = sessionEndTime;

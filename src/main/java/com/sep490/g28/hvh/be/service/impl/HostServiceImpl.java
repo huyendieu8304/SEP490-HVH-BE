@@ -112,8 +112,12 @@ public class HostServiceImpl implements HostService {
         response.setGender(host.getGender());
         response.setDob(host.getDob());
 
-        String avatarUrl = storageService.getSignedUrl(host.getAvatarUrl());
-        response.setAvatarUrl(avatarUrl);
+        try {
+            String avatarUrl = storageService.getSignedUrl(host.getAvatarUrl());
+            response.setAvatarUrl(avatarUrl);
+        } catch (AppException e) {
+            response.setAvatarUrl(null);
+        }
 
         response.setAddress(host.getAddress());
         response.setDetailAddress(host.getDetailAddress());
@@ -123,33 +127,29 @@ public class HostServiceImpl implements HostService {
     }
 
     @Override
-    public Page<HostActivitiesResponse> getHostActivitiesByManager(UUID hostId, int pageNumber, int pageSize, LocalDate fromDate, LocalDate toDate) {
+    public Page<HostActivitiesResponse> getHostActivitiesByManager(
+            UUID hostId,
+            int pageNumber,
+            int pageSize,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
 
         Pageable pageable = PageRequest.of(
                 pageNumber,
-                pageSize,
-                Sort.by(Sort.Direction.DESC, "startDateTime")
+                pageSize
         );
 
         ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
 
-        OffsetDateTime from = null;
-        OffsetDateTime to = null;
-
-        if (fromDate != null) {
-            //the query has from date
-            from = fromDate.atStartOfDay(vnZone)
+        OffsetDateTime from = fromDate.atStartOfDay(vnZone)
                     .toOffsetDateTime()
                     .withOffsetSameInstant(ZoneOffset.UTC);
-        }
 
-        if (toDate != null) {
-            //the query has end date
-            to = toDate.atTime(LocalTime.MAX)
+        OffsetDateTime to = toDate.atTime(LocalTime.MAX)
                     .atZone(vnZone)
                     .toOffsetDateTime()
                     .withOffsetSameInstant(ZoneOffset.UTC);
-        }
 
         return hostRepository.getHostActivitiesByManager(hostId, pageable, from, to);
     }

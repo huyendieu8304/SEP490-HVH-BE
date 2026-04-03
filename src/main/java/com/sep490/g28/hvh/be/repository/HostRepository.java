@@ -44,6 +44,7 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                     e.name,
                     e.address,
                     e.detailAddress,
+                    e.status,
                     s.id,
                     s.startDateTime,
                     s.endDateTime
@@ -52,8 +53,7 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                 LEFT JOIN EventSession s
                     ON s.event.id = e.id
                 WHERE e.host.id = :hostId
-                    AND (:from IS NULL OR s.startDateTime >= :from)
-                    AND (:to IS NULL OR s.startDateTime <= :to)
+                    AND s.startDateTime BETWEEN :from AND :to
             """)
     Page<HostActivitiesResponse> getHostActivitiesByManager(UUID hostId, Pageable pageable, OffsetDateTime from, OffsetDateTime to);
 }
