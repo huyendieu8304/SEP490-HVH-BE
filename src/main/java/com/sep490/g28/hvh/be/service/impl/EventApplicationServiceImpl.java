@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.event.response.EventSessionDetailsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckOutEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
@@ -375,7 +376,9 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         return eventApplication.map(e -> {
 
-            Event event = e.getSession().getEvent();
+            EventSession eventSession = e.getSession();
+
+            Event event = eventSession.getEvent();
 
             String firstEventImageUrl = null;
 
@@ -402,13 +405,23 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 }
             }
 
+            EventSessionDetailsResponse sessionDetails = new EventSessionDetailsResponse(
+                    eventSession.getId(),
+                    eventSession.getStartDateTime(),
+                    eventSession.getEndDateTime(),
+                    eventSession.getExpectedVolAmount(),
+                    eventSession.getExpectedSerAmount(),
+                    eventSession.getApprovedApplicationCount()
+            );
+
             return new EventApplicationsStatusResponse(
                     e.getId(),
                     event.getId(),
                     event.getName(),
                     firstEventImageUrl,
                     event.getStartDate(),
-                    e.getStatus()
+                    e.getStatus(),
+                    sessionDetails
             );
 
         });
