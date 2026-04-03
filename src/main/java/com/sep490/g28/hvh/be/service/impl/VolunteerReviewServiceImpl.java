@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class VolunteerReviewImpl implements VolunteerReviewService {
+public class VolunteerReviewServiceImpl implements VolunteerReviewService {
 
     EventApplicationRepository eventApplicationRepository;
     VolunteerReviewRepository volunteerReviewRepository;
