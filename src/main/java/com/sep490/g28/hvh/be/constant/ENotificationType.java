@@ -42,4 +42,5 @@ public enum ENotificationType {
     HOST_EVENT_UNASSIGNED,
     HOST_EVENT_ASSIGNED,
 
+    VOL_REVIEWED_BY_HOST,
 }
