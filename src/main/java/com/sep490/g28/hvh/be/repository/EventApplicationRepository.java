@@ -87,8 +87,22 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
                 FROM EventApplication e
                 WHERE e.volunteer.id = :volunteerId
                 AND e.sessionDate = :sessionDate
+                AND e.session.checkInCode = :checkInCode
+                And e.session.startDateTime <= :checkInTime
+                And e.session.endDateTime >= :checkInTime
             """)
-    EventApplication findEventApplicationByVolunteerIdAndSessionDate(UUID volunteerId, LocalDate sessionDate);
+    EventApplication findEventApplicationByVolunteerIdAndSessionDate(UUID volunteerId,
+                                                                     LocalDate sessionDate,
+                                                                     String checkInCode,
+                                                                     OffsetDateTime checkInTime);
+
+    @Query("""
+                SELECT e
+                FROM EventApplication e
+                WHERE e.volunteer.id = :volunteerId
+                AND e.sessionDate = :sessionDate
+            """)
+    List<EventApplication> findAllByVolunteerIdAndSessionDate(UUID volunteerId, LocalDate sessionDate);
 
     @Query("""
             SELECT e
@@ -100,4 +114,13 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             UUID volunteerId,
             @Param("status") EEventApplicationStatus status,
             Pageable pageable);
+
+    @Query("""
+            SELECT e
+            FROM EventApplication e
+            WHERE e.volunteer.id = :volunteerId
+            AND e.session.id = :sessionId
+            AND e.status = 'APPROVED'
+            """)
+    EventApplication findByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
 }

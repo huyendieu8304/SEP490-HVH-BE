@@ -15,11 +15,8 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "check_in_logs",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"session_id", "volunteer_id"})
-        },
         indexes = {
-                @Index(name = "idx_check_in_logs_volunterid_sessionid", columnList = "volunteer_id, session_id")
+                @Index(name = "idx_check_in_logs_applicationid", columnList = "application_id")
         }
 )
 @Getter
@@ -32,12 +29,8 @@ public class CheckInLog {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "volunteer_id", referencedColumnName = "id")
-    private Volunteer volunteer;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", referencedColumnName = "id")
-    private EventSession session;
+    @JoinColumn(name = "application_id", referencedColumnName = "id")
+    private EventApplication eventApplication;
 
     @Column(name = "device_id", nullable = false)
     private String deviceId;
@@ -54,9 +47,6 @@ public class CheckInLog {
             columnDefinition = "TIMESTAMP WITH TIME ZONE"
     )
     private OffsetDateTime checkInTime; // check-in time
-
-    @Column(name = "credit_hour")
-    private Short creditHour;
 
     //--------------------------------------------------------
     /**

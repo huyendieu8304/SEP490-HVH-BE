@@ -1,8 +1,6 @@
 package com.sep490.g28.hvh.be.repository;
 
-import com.sep490.g28.hvh.be.constant.EOrgType;
 import com.sep490.g28.hvh.be.entity.Organization;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
