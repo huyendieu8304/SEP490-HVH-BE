@@ -105,6 +105,13 @@ public class Volunteer {
     @Column(name = "device_id", nullable = true)
     private String deviceId;
 
+    //--------------------------------------------------------
+    @Column(name = "avg_rating", nullable = false)
+    private Short avgRating = 0;
+
+    @Column(name = "rating_count", nullable = false)
+    private Long ratingCount = 0L;
+
     @PrePersist
     void prePersist() {
         if (creditScore == null) creditScore = 0;
