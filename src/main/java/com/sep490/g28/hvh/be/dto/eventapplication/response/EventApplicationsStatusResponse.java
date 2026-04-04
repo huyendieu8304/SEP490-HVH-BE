@@ -17,6 +17,8 @@ public class EventApplicationsStatusResponse {
     private UUID eventId;
     private String name;
     private String imageUrl;
+    private String address;
+    private String detailAddress;
     private LocalDate startDate;
     private EEventApplicationStatus status;
     private EventSessionDetailsResponse session;

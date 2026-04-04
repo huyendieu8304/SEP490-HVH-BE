@@ -419,6 +419,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                     event.getId(),
                     event.getName(),
                     firstEventImageUrl,
+                    event.getAddress(),
+                    event.getDetailAddress(),
                     event.getStartDate(),
                     e.getStatus(),
                     sessionDetails

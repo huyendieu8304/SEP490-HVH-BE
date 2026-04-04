@@ -97,7 +97,7 @@ public class EventApplicationController {
             @Max(value = 100, message = "INVALID_PAGE_SIZE")
             int pageSize,
 
-            @RequestParam(defaultValue = "PENDING")
+            @RequestParam()
             String status) {
 
         return ResponseEntity.ok(eventApplicationService.getEventApplicationsStatus(pageNumber, pageSize, status));
