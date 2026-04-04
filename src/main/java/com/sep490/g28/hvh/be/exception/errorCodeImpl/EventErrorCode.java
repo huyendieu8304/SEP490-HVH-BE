@@ -61,6 +61,9 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_CLAIM_NOT_FOUND(7043, "Không tìm thấy khiếu nại. ", HttpStatus.NOT_FOUND),
     EVENT_CLAIM_ALREADY_RESOLVED(7044, "Khiếu nại đã được xử lý. ", HttpStatus.CONFLICT),
     EVENT_CLAIM_OUT_OF_VERIFY_TIME(7045, "Đã hết thời gian xử lý khiếu nại này. ", HttpStatus.CONFLICT),
+
+    EVENT_MOMENT_ALREADY_SHARED(7046, "Đã chia sẻ khoảnh khắc trong phiên sự kiện này.", HttpStatus.CONFLICT),
+    EVENT_MOMENT_NOT_FOUND(7047, "Không tìm thấy khoảnh khắc.", HttpStatus.NOT_FOUND)
     ;
 
     private final int code;

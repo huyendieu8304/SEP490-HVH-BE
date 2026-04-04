@@ -95,7 +95,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         for (String evidence : evidences) {
             String evidencePath = storagePathGenerator.eventClaimImages(eventApplication.getId(), legal_order++, evidence);
             evidencesPathsList.add(evidencePath);
-            if (legal_order == 5) {
+            if (legal_order == 6) {
                 break;
             }
         }
@@ -350,9 +350,11 @@ public class EventClaimServiceImpl implements EventClaimService {
                 eventClaim.setStatus(EEventClaimStatus.APPROVED);
                 eventClaimRepository.save(eventClaim);
             }
+        } else {
+            eventClaim.setStatus(EEventClaimStatus.REJECTED);
+            eventClaimRepository.save(eventClaim);
         }
-
-        eventClaim.setStatus(EEventClaimStatus.REJECTED);
-        eventClaimRepository.save(eventClaim);
     }
+
+
 }
