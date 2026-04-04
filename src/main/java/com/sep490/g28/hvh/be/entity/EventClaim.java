@@ -1,11 +1,14 @@
 package com.sep490.g28.hvh.be.entity;
 
+import com.sep490.g28.hvh.be.constant.EEventClaimStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -41,4 +44,18 @@ public class EventClaim {
 
     @Column(name = "evidences", length = 500)
     private String evidences;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private EEventClaimStatus status;
+
+    //--------------------------------------------------------
+    @CreationTimestamp
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
+    private OffsetDateTime createdAt;
 }
