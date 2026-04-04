@@ -156,6 +156,6 @@ public class Event {
     private Short avgRating = 0;
 
     @Column(name = "rating_count", nullable = false)
-    private Long ratingCount = 0L;
+    private long ratingCount = 0L;
 
 }

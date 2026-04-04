@@ -97,10 +97,10 @@ public class Volunteer {
     private SystemAdmin createdBy;
 
     @Column(name = "credit_score", nullable = false)
-    private Short creditScore = 0;
+    private int creditScore = 0;
 
     @Column(name = "honor_score", nullable = false)
-    private Short honorScore = 0;
+    private int honorScore = 0;
 
     @Column(name = "device_id", nullable = true)
     private String deviceId;
@@ -110,7 +110,7 @@ public class Volunteer {
     private Short avgRating = 0;
 
     @Column(name = "rating_count", nullable = false)
-    private Long ratingCount = 0L;
+    private int ratingCount = 0;
 
     @PrePersist
     void prePersist() {

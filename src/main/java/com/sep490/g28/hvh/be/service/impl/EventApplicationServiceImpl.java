@@ -231,7 +231,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
              */
             if (today.isAfter(event.getRecruitmentEndDate())) {
                 // volunteer's honor score will be minus for 3 scores
-                volunteer.setHonorScore((short) (volunteer.getHonorScore() - 3));
+                volunteer.setHonorScore(volunteer.getHonorScore() - 3);
                 volunteerRepository.save(volunteer);
                 log.info("Volunteer will be deduct 3 points of honor score after cancel application successfully");
                 isMinusScore = true;
@@ -276,8 +276,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             String name = null;
                             String avatarUrl = null;
                             String address = null;
-                            Short creditScore = 0;
-                            Short honorScore = 0;
+                            int creditScore = 0;
+                            int honorScore = 0;
                             OffsetDateTime createdAt = null;
 
                             //check if the event application linked with a volunteer
