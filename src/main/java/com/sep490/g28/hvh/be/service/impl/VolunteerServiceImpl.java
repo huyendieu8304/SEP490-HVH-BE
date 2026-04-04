@@ -8,6 +8,7 @@ import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRe
 import com.sep490.g28.hvh.be.dto.volunteer.response.RegisterVolunteerAccountResponse;
 import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationDetailsResponse;
 import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationSimpleResponse;
+import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerSimpleResponseForAdmin;
 import com.sep490.g28.hvh.be.entity.IdentityVerification;
 import com.sep490.g28.hvh.be.entity.SystemAdmin;
 import com.sep490.g28.hvh.be.entity.Volunteer;
@@ -294,6 +295,15 @@ public class VolunteerServiceImpl implements VolunteerService {
 
         //update identity verification request
         identityVerificationRepository.save(identityVerification);
+    }
+
+    @Override
+    public Page<VolunteerSimpleResponseForAdmin> getVolunteersByAdmin(int pageNumber, int pageSize, String email) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+        return volunteerRepository.findVolunteersByAdmin(pageable, email);
     }
 
 }

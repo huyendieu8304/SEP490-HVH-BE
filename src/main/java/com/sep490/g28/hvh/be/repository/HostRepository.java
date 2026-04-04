@@ -54,6 +54,7 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                     ON s.event.id = e.id
                 WHERE e.host.id = :hostId
                     AND s.startDateTime BETWEEN :from AND :to
+                ORDER BY e.createdAt DESC
             """)
     Page<HostActivitiesResponse> getHostActivitiesByManager(UUID hostId, Pageable pageable, OffsetDateTime from, OffsetDateTime to);
 }
