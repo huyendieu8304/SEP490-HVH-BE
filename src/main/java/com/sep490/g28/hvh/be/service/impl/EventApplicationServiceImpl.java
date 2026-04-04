@@ -279,7 +279,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             String address = null;
                             int creditScore = 0;
                             int honorScore = 0;
-                            OffsetDateTime createdAt = null;
 
                             //check if the event application linked with a volunteer
                             if (e.getVolunteer() != null) {
@@ -294,7 +293,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                                 address = volunteer.getAddress();
                                 creditScore = volunteer.getCreditScore();
                                 honorScore = volunteer.getHonorScore();
-                                createdAt = volunteer.getCreatedAt();
 
 
                                 //get signed URL of file
@@ -328,7 +326,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                                     address,
                                     creditScore,
                                     honorScore,
-                                    createdAt
+                                    e.getCreatedAt()
                             );
                         }).toList()).orElse(Collections.emptyList());
 

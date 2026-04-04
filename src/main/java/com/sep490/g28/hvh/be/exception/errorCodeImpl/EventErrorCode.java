@@ -55,6 +55,12 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_APPLICATION_CANNOT_PROCESS(7034, "Sự kiện đang ở trong trạng thái không thể phê duyệt đơn đăng kí.", HttpStatus.CONFLICT),
     EVENT_SESSION_NOT_CHECKED_IN(7035, "Chưa điểm danh trong sự kiện hiện tại.", HttpStatus.CONFLICT),
     DEVICE_NOT_CHECKED_IN(7036, "Thiết bị chưa được sử dụng để điểm danh.", HttpStatus.CONFLICT),
+
+    EVENT_CLAIM_OUT_OF_CLAIM_TIME(7041, "Đã hết thời gian khiếu nại. ", HttpStatus.CONFLICT),
+    EVENT_SESSION_ALREADY_CLAIMED(7042, "Đã khiếu nại cho phiên sự kiện này. ", HttpStatus.CONFLICT),
+    EVENT_CLAIM_NOT_FOUND(7043, "Không tìm thấy khiếu nại. ", HttpStatus.NOT_FOUND),
+    EVENT_CLAIM_ALREADY_RESOLVED(7044, "Khiếu nại đã được xử lý. ", HttpStatus.CONFLICT),
+    EVENT_CLAIM_OUT_OF_VERIFY_TIME(7045, "Đã hết thời gian xử lý khiếu nại này. ", HttpStatus.CONFLICT),
     ;
 
     private final int code;
