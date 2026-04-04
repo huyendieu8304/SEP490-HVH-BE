@@ -19,6 +19,7 @@ public class HostSimpleResponseForManager {
     String phone;
     EAccountStatus status;
     int hostedEventCount;
+    String avatarUrl;
 
     public HostSimpleResponseForManager(
             UUID id,
@@ -27,7 +28,8 @@ public class HostSimpleResponseForManager {
             String email,
             String phone,
             EAccountStatus status,
-            long hostedEventCount
+            long hostedEventCount,
+            String avatarUrl
     ) {
         this.id = id;
         this.fullName = fullName;
@@ -36,5 +38,6 @@ public class HostSimpleResponseForManager {
         this.phone = phone;
         this.status = status;
         this.hostedEventCount = (int) hostedEventCount;
+        this.avatarUrl = avatarUrl;
     }
 }

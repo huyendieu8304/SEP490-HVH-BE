@@ -65,7 +65,7 @@ public class VolunteerReviewServiceTest {
         Volunteer volunteer = new Volunteer();
         volunteer.setId(UUID.randomUUID());
         volunteer.setAvgRating((short) 4);
-        volunteer.setRatingCount(2L);
+        volunteer.setRatingCount(2);
 
         app.setSession(session);
         app.setVolunteer(volunteer);
@@ -180,7 +180,7 @@ public class VolunteerReviewServiceTest {
         EventApplication app = mockApplication(request);
 
         app.getVolunteer().setAvgRating((short) 5);
-        app.getVolunteer().setRatingCount(1L);
+        app.getVolunteer().setRatingCount(1);
 
         when(eventApplicationRepository.findById(any()))
                 .thenReturn(Optional.of(app));

@@ -11,6 +11,7 @@ import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCode
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
+import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
@@ -231,7 +232,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
              */
             if (today.isAfter(event.getRecruitmentEndDate())) {
                 // volunteer's honor score will be minus for 3 scores
-                volunteer.setHonorScore((short) (volunteer.getHonorScore() - 3));
+                volunteer.setHonorScore(volunteer.getHonorScore() - 3);
                 volunteerRepository.save(volunteer);
                 log.info("Volunteer will be deduct 3 points of honor score after cancel application successfully");
                 isMinusScore = true;
@@ -276,8 +277,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             String name = null;
                             String avatarUrl = null;
                             String address = null;
-                            Short creditScore = 0;
-                            Short honorScore = 0;
+                            int creditScore = 0;
+                            int honorScore = 0;
                             OffsetDateTime createdAt = null;
 
                             //check if the event application linked with a volunteer
@@ -648,5 +649,35 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         eventApplication.setStatus(EEventApplicationStatus.COMPLETED);
 
         eventApplicationRepository.save(eventApplication);
+    }
+
+    @Override
+    public Page<ActualParticipantResponse> getActualParticipants(UUID sessionId, int pageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        Page<ActualParticipantResponse> page = eventApplicationRepository.findCheckedInVolunteer(sessionId, pageable);
+
+        //get avatar signed urls
+        List<CompletableFuture<ActualParticipantResponse>> futures =
+                page.getContent().stream()
+                .map(response -> {
+                    if (response.getAvatarUrl() == null) {
+                        return CompletableFuture.completedFuture(response);
+                    }
+                    return storageService.getSignedUrlAsync(response.getAvatarUrl())
+                            .thenApply(url -> {
+                                response.setAvatarUrl(url);
+                                return response;
+                            })
+                            .exceptionally(ex -> {
+                                log.warn("Failed to get signed url for path: {}", response.getAvatarUrl(), ex);
+                                response.setAvatarUrl(null);
+                                return response;
+                            });
+                })
+                .toList();
+        List<ActualParticipantResponse> content =
+                futures.stream().map(CompletableFuture::join).toList();
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 }

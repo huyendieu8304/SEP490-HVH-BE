@@ -1,7 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse;
+import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import com.sep490.g28.hvh.be.service.HostService;
@@ -66,7 +66,7 @@ public class HostController {
 
     @PreAuthorize("hasRole('ORG_MANAGER') and @hostAuthorizer.isManagerOfHost(#hostId)")
     @GetMapping("/org-manager/hosts/{hostId}/activities")
-    public ResponseEntity<Page<HostActivitiesResponse>> getHostDetailsByManager(
+    public ResponseEntity<Page<HostActivitiesResponseForManager>> getHostActivitiesByManager(
             @PathVariable UUID hostId,
 
             @RequestParam(defaultValue = "0")

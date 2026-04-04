@@ -3,7 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse;
+import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import com.sep490.g28.hvh.be.entity.Host;
@@ -22,15 +22,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.sep490.g28.hvh.be.util.StringNormalizeUtil.normalizeVietnameseName;
 
@@ -94,7 +93,32 @@ public class HostServiceImpl implements HostService {
                 pageSize,
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
-        return hostRepository.getHostsByManager(currentUserProvider.getId(), pageable, email);
+
+        Page<HostSimpleResponseForManager> page =
+                hostRepository.getHostsByManager(currentUserProvider.getId(), pageable, email);
+        //get avatar signed urls
+        List<CompletableFuture<HostSimpleResponseForManager>> futures =
+                page.getContent().stream()
+                        .map(h -> {
+                            if (h.getAvatarUrl() == null) {
+                                return CompletableFuture.completedFuture(h);
+                            }
+                            return storageService.getSignedUrlAsync(h.getAvatarUrl())
+                                    .thenApply(url -> {
+                                        h.setAvatarUrl(url);
+                                        return h;
+                                    })
+                                    //todo this might be put into some todos
+                                    .exceptionally(ex -> {
+                                        log.warn("Failed to get signed url for path: {}", h.getAvatarUrl(), ex);
+                                        h.setAvatarUrl(null);
+                                        return h;
+                                    });
+                        })
+                        .toList();
+        List<HostSimpleResponseForManager> content =
+                futures.stream().map(CompletableFuture::join).toList();
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
     //todo unit test
@@ -130,7 +154,7 @@ public class HostServiceImpl implements HostService {
 
     //todo unit test
     @Override
-    public Page<HostActivitiesResponse> getHostActivitiesByManager(
+    public Page<HostActivitiesResponseForManager> getHostActivitiesByManager(
             UUID hostId,
             int pageNumber,
             int pageSize,

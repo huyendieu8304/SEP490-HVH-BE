@@ -48,6 +48,13 @@ public class CheckInLog {
     )
     private OffsetDateTime checkInTime; // check-in time
 
+    @Column(
+            name = "check_out_time",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
+    private OffsetDateTime checkOutTime; // check-out time
+
     //--------------------------------------------------------
     /**
      * geography(Point, 4326)

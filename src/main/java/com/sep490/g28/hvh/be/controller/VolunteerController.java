@@ -2,9 +2,7 @@ package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.response.RegisterVolunteerAccountResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationDetailsResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationSimpleResponse;
+import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.service.VolunteerService;
 import com.sep490.g28.hvh.be.validation.VolunteerVerificationStatus;
 import jakarta.validation.Valid;
@@ -13,16 +11,17 @@ import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 
 @RestController
-@RequestMapping("/api/v1/volunteer")
+@RequestMapping("/api/v1")
 @Validated
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
@@ -30,7 +29,7 @@ public class VolunteerController {
 
     VolunteerService volunteerService;
 
-    @PostMapping("/register-vol-acc")
+    @PostMapping("/volunteer/register-vol-acc")
     public ResponseEntity<RegisterVolunteerAccountResponse> registerVolAccount(
             @Valid @RequestBody RegisterVolunteerAccountRequest request
     ) {
@@ -38,7 +37,7 @@ public class VolunteerController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/registrations")
+    @GetMapping("/volunteer/registrations")
     public ResponseEntity<Page<VolunteerRegistrationSimpleResponse>> getRegistrations(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
@@ -63,20 +62,55 @@ public class VolunteerController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/registrations/{id}")
-    public ResponseEntity<VolunteerRegistrationDetailsResponse> getRegistrationsDetails(@PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId) {
-        java.util.UUID id = java.util.UUID.fromString(inputId);
+    @GetMapping("/volunteer/registrations/{id}")
+    public ResponseEntity<VolunteerRegistrationDetailsResponse> getRegistrationsDetails(
+            @PathVariable(name = "id") UUID id) {
         return ResponseEntity.ok(volunteerService.getVolRegistrationDetails(id));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PostMapping("/registrations/{id}/verify")
+    @PostMapping("/volunteer/registrations/{id}/verify")
     public ResponseEntity<String> verifyRegistration(
-            @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId,
+            @PathVariable(name = "id") UUID id,
             @RequestBody @Valid VolunteerRegistrationVerifyRequest request
     ) {
-        java.util.UUID id = java.util.UUID.fromString(inputId);
         volunteerService.verifyVolRegistration(id, request);
         return ResponseEntity.ok().build();
     }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/volunteers")
+    public ResponseEntity<Page<VolunteerSimpleResponseForAdmin>> getVolunteersByAdmin(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam(required = false)
+            String email
+    ) {
+        return ResponseEntity.ok(volunteerService.getVolunteersByAdmin(pageNumber, pageSize, email));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/volunteers/{id}/activities")
+    public ResponseEntity<Page<VolunteerActivitiesResponseForAdmin>> getVolunteerActivitiesByAdmin (
+            @PathVariable UUID id,
+
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize
+    ){
+        return ResponseEntity.ok(volunteerService.getVolunteerActivitiesByAdmin(id, pageNumber, pageSize));
+    }
+
 }

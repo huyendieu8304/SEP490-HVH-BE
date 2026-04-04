@@ -1,5 +1,6 @@
-package com.sep490.g28.hvh.be.dto.host.response;
+package com.sep490.g28.hvh.be.dto.volunteer.response;
 
+import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class HostActivitiesResponse {
+public class VolunteerActivitiesResponseForAdmin {
     UUID eventId;
     String eventName;
     String eventAddress;
@@ -23,7 +24,11 @@ public class HostActivitiesResponse {
     OffsetDateTime sessionStartTime;
     OffsetDateTime sessionEndTime;
 
-    public HostActivitiesResponse(
+    Short sessionRating;
+    EEventApplicationStatus applicationStatus;
+    Short sessionCreditHour;
+
+    public VolunteerActivitiesResponseForAdmin(
             UUID eventId,
             String eventName,
             String eventAddress,
@@ -31,7 +36,11 @@ public class HostActivitiesResponse {
             EEventStatus eventStatus,
             UUID sessionId,
             OffsetDateTime sessionStartTime,
-            OffsetDateTime sessionEndTime) {
+            OffsetDateTime sessionEndTime,
+            Short sessionRating,
+            EEventApplicationStatus applicationStatus,
+            Short sessionCreditHour
+    ) {
         this.eventId = eventId;
         this.eventName = eventName;
         this.eventAddress = eventAddress;
@@ -40,5 +49,8 @@ public class HostActivitiesResponse {
         this.sessionId = sessionId;
         this.sessionStartTime = sessionStartTime;
         this.sessionEndTime = sessionEndTime;
+        this.sessionRating = sessionRating;
+        this.applicationStatus = applicationStatus;
+        this.sessionCreditHour = sessionCreditHour;
     }
 }
