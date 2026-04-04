@@ -7,6 +7,7 @@ import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationReque
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
+import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import org.springframework.data.domain.Page;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventApplication;
@@ -34,4 +35,7 @@ public interface EventApplicationService {
     void quickCheckInEvent(QuickCheckInEventRequest request);
 
     void checkOutEvent(CheckOutEventRequest request);
+
+    Page<ActualParticipantResponse> getActualParticipants(UUID sessionId, int pageNumber, int pageSize);
+
 }
