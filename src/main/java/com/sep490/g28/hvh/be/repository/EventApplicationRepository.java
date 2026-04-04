@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
+import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import org.springframework.data.domain.Page;
@@ -123,4 +124,24 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             AND e.status = 'APPROVED'
             """)
     EventApplication findByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
+
+    @Query("""
+            SELECT new com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse (
+            v.id,
+            v.fullName,
+            v.bio,
+            v.avatarUrl,
+            v.address,
+            v.creditScore,
+            v.honorScore,
+            v.avgRating,
+            a.id,
+            c.checkInTime,
+            c.checkOutTime
+            ) FROM EventApplication a
+            LEFT JOIN CheckInLog c ON a.id = c.eventApplication.id
+            LEFT JOIN Volunteer v ON a.volunteer.id = v.id
+            WHERE a.session.id = :sessionId
+            """)
+    Page<ActualParticipantResponse> findCheckedInVolunteer(UUID sessionId, Pageable pageable);
 }

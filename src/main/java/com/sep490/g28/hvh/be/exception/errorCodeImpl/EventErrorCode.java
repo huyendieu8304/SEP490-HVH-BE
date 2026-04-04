@@ -24,7 +24,7 @@ public enum EventErrorCode implements ErrorCode {
     INVALID_EVENT_END_DATE(7009, "Ngày cuối cùng của sự kiện phải sau ngày đầu tiên của sự kiện.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_TIME_RANGE(7010, "Khoảng cách giữa thời gian bắt đầu và kết thúc sự kiện trong 1 ngày phải nằm trong khoảng cho phép của lĩnh vực hoạt động.", HttpStatus.BAD_REQUEST),
     ACTION_NOT_EXECUTABLE(7011, "Trạng thái của sự kiện không cho phép bạn thực hiện hành động này.", HttpStatus.BAD_REQUEST),
-    DUPLICATE_HOSTED_DATE(7012, "Trùng ngày tổ chức sự kiện của host với một sự kiện khác.", HttpStatus.BAD_REQUEST),
+    DUPLICATE_HOSTED_DATE(7012, "Ngày tổ chức sự kiện này trùng với ngày host tổ chức một sự kiện khác.", HttpStatus.BAD_REQUEST),
 
     EVENT_SESSION_NOT_EXISTED(7013, "Event session not found", HttpStatus.NOT_FOUND),
     ALREADY_APPLIED(7014, "Tình nguyện viên đã đăng kí tham gia buổi tình nguyện này của sự kiện.", HttpStatus.CONFLICT),
@@ -35,12 +35,12 @@ public enum EventErrorCode implements ErrorCode {
 
     EVENT_APPLICATION_NOT_EXISTED(7019, "Event application not found", HttpStatus.NOT_FOUND),
     EVENT_APPLICATION_NOT_PENDING(7020, "Đơn đăng kí không ở trong trạng thái chờ phê duyệt", HttpStatus.CONFLICT),
-    EVENT_APPLICATION_CANNOT_CANCEL(7021, "Đơn đăng kí đang ở trong trạng thái không được hủy", HttpStatus.CONFLICT),
+    EVENT_APPLICATION_CANNOT_CANCELLED(7021, "Đơn đăng kí đang ở trong trạng thái không cho phép hủy", HttpStatus.CONFLICT),
 
     EVENT_ANNOUNCEMENT_CANNOT_SENT(7022, "Trạng thái của sự kiện không cho phép host gửi thông báo", HttpStatus.CONFLICT),
 
-    EVENT_CANNOT_CANCEL(7023, "Sự kiện đang ở trong trạng thái không được hủy", HttpStatus.CONFLICT),
-    EVENT_CANNOT_UPDATE(7024, "Sự kiện đang ở trong trạng thái không được cập nhật thông tin", HttpStatus.CONFLICT),
+    EVENT_CANNOT_CANCELLED(7023, "Sự kiện đang ở trong trạng thái không cho phép hủy", HttpStatus.CONFLICT),
+    EVENT_CANNOT_UPDATED(7024, "Sự kiện đang ở trong trạng thái không cho phép cập nhật thông tin", HttpStatus.CONFLICT),
 
     EVENT_SESSION_NOT_STARTED(7025, "Phiên sự kiện chưa diễn ra.", HttpStatus.CONFLICT),
     EVENT_NOT_ONGOING(7026, "Sự kiện đang không trong trạng thái diễn ra.", HttpStatus.CONFLICT),
@@ -55,6 +55,11 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_APPLICATION_CANNOT_PROCESS(7034, "Sự kiện đang ở trong trạng thái không thể phê duyệt đơn đăng kí.", HttpStatus.CONFLICT),
     EVENT_SESSION_NOT_CHECKED_IN(7035, "Chưa điểm danh trong sự kiện hiện tại.", HttpStatus.CONFLICT),
     DEVICE_NOT_CHECKED_IN(7036, "Thiết bị chưa được sử dụng để điểm danh.", HttpStatus.CONFLICT),
+
+    EVENT_CANNOT_ASSIGNED_HOST(7037, "Sự kiện đang ở trong trạng thái không cho phép phân công host.", HttpStatus.CONFLICT),
+    EVENT_CANNOT_ASSIGNED_TO_INACTIVE_HOST(7038, "Không thể phân công sự kiện cho tài khoản host đang bị khóa.", HttpStatus.CONFLICT),
+    EVENT_CANNOT_ASSIGN_TO_HOST_NOT_IN_ORGANIZATION(7039, "Không thể phân công sự kiện cho host không thuộc tổ chức.", HttpStatus.CONFLICT),
+    EVENT_CANNOT_ASSIGNED_TO_CURRENT_HOST(7040, "Không thể phân công sự kiện cho tài khoản host hiện đang phụ trách.", HttpStatus.CONFLICT),
 
     EVENT_CLAIM_OUT_OF_CLAIM_TIME(7041, "Đã hết thời gian khiếu nại. ", HttpStatus.CONFLICT),
     EVENT_SESSION_ALREADY_CLAIMED(7042, "Đã khiếu nại cho phiên sự kiện này. ", HttpStatus.CONFLICT),

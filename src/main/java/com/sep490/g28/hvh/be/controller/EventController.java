@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.controller;
 import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.validation.EventStatus;
 import jakarta.validation.constraints.Max;
@@ -11,7 +12,6 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -78,9 +79,8 @@ public class EventController {
 
     @GetMapping("/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponse> getEventDetails(
-            @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
+            @PathVariable(name = "id") UUID id
     ) {
-        java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventService.getEventDetails(id));
     }
 
@@ -93,7 +93,7 @@ public class EventController {
 
     @PreAuthorize("hasRole('ORG_MANAGER') and @eventAuthorizer.isOrgManagerOfEvent(#eventId)")
     @PutMapping("/org-manager/event/{eventId}/approve")
-    public ResponseEntity<String> approveEventByManager(@PathVariable java.util.UUID eventId) {
+    public ResponseEntity<String> approveEventByManager(@PathVariable UUID eventId) {
         eventService.approveEventByManager(eventId);
         return ResponseEntity.ok().build();
     }
@@ -101,7 +101,7 @@ public class EventController {
     @PreAuthorize("hasRole('ORG_MANAGER') and @eventAuthorizer.isOrgManagerOfEvent(#eventId)")
     @PutMapping("/org-manager/event/{eventId}/reject")
     public ResponseEntity<String> rejectEventByManager(
-            @PathVariable java.util.UUID eventId,
+            @PathVariable UUID eventId,
             @Valid @RequestBody RejectEventRequest request
     ) {
         eventService.rejectEventByManager(eventId, request);
@@ -148,7 +148,7 @@ public class EventController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @PutMapping("/sys-admin/event/{eventId}/approve")
-    public ResponseEntity<String> approveEventByAdmin(@PathVariable java.util.UUID eventId) {
+    public ResponseEntity<String> approveEventByAdmin(@PathVariable UUID eventId) {
         eventService.approveEventByAdmin(eventId);
         return ResponseEntity.ok().build();
     }
@@ -156,7 +156,7 @@ public class EventController {
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @PutMapping("/sys-admin/event/{eventId}/reject")
     public ResponseEntity<String> rejectEventByAdmin(
-            @PathVariable java.util.UUID eventId,
+            @PathVariable UUID eventId,
             @Valid @RequestBody RejectEventRequest request
     ) {
         eventService.rejectEventByAdmin(eventId, request);
@@ -204,18 +204,16 @@ public class EventController {
     @PreAuthorize("hasRole('ORG_MANAGER')")
     @GetMapping("/org-manager/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForManager> getEventDetailsByManager(
-            @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
+            @PathVariable(name = "id") UUID id
     ) {
-        java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventService.getEventDetailsByManager(id));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForSystemAdmin> getEventDetailsBySystemAdmin(
-            @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
+            @PathVariable(name = "id") UUID id
     ) {
-        java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventService.getEventDetailsBySystemAdmin(id));
     }
 
@@ -245,16 +243,15 @@ public class EventController {
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#inputId)")
     @GetMapping("/host/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
-            @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
+            @PathVariable(name = "id") UUID id
     ) {
-        java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(eventService.getEventDetailsByHost(id));
     }
 
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
     @PostMapping("/host/events/{eventId}/announce-volunteers")
     public ResponseEntity<Void> announceVolunteer(
-            @PathVariable java.util.UUID eventId,
+            @PathVariable UUID eventId,
             @RequestBody @Valid AnnounceVolunteerRequest request
     ) {
         eventService.announceVolunteersOfEvent(eventId, request);
@@ -264,7 +261,7 @@ public class EventController {
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
     @PutMapping("/host/events/{eventId}/cancel")
     public ResponseEntity<Void> cancelEventByHost(
-            @PathVariable java.util.UUID eventId,
+            @PathVariable UUID eventId,
             @RequestBody @Valid CancelEventRequest request
     ) {
         eventService.cancelEventByHost(eventId, request);
@@ -274,7 +271,7 @@ public class EventController {
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @PutMapping("/sys-admin/events/{eventId}/cancel")
     public ResponseEntity<Void> cancelEventByAdmin(
-            @PathVariable java.util.UUID eventId,
+            @PathVariable UUID eventId,
             @RequestBody @Valid CancelEventRequest request
     ) {
         eventService.cancelEventByAdmin(eventId, request);
@@ -284,9 +281,19 @@ public class EventController {
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
     @PutMapping("/host/events/{eventId}/update")
     public ResponseEntity<UpdateEventResponse> updateEvent(
-            @PathVariable java.util.UUID eventId,
+            @PathVariable UUID eventId,
             @Valid @RequestBody UpdateEventRequest request
     ){
         return ResponseEntity.ok(eventService.updateEvent(eventId, request));
+    }
+
+    @PreAuthorize("hasRole('ORG_MANAGER') and @eventAuthorizer.isOrgManagerOfEvent(#eventId)")
+    @PutMapping("/org-manager/events/{eventId}/assign-host")
+    public ResponseEntity<Void> assignHostToEvent(
+            @PathVariable UUID eventId,
+            @Valid @RequestBody AssignHostToEventRequest request
+    ){
+        eventService.assignHostToEvent(eventId, request);
+        return ResponseEntity.ok().build();
     }
 }

@@ -80,6 +80,7 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_CHECK_IN_CODE(2053, "Mã check-in không hợp lệ", HttpStatus.BAD_REQUEST),
 
     INVALID_RATING_VALUE(2054, "Giá trị rating phải là số nguyên từ 1 đến 5.", HttpStatus.BAD_REQUEST),
+    INVALID_VOL_REVIEW_COMMENT(2055, "Bình luận đánh giá tình nguyện viên không được là chuỗi rỗng và không vượt quá 250 kí tự.", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

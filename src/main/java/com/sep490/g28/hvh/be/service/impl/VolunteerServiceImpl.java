@@ -5,9 +5,7 @@ import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.response.RegisterVolunteerAccountResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationDetailsResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationSimpleResponse;
+import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.entity.IdentityVerification;
 import com.sep490.g28.hvh.be.entity.SystemAdmin;
 import com.sep490.g28.hvh.be.entity.Volunteer;
@@ -29,12 +27,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -294,6 +290,59 @@ public class VolunteerServiceImpl implements VolunteerService {
 
         //update identity verification request
         identityVerificationRepository.save(identityVerification);
+    }
+
+    //todo unit test
+    @Override
+    public Page<VolunteerSimpleResponseForAdmin> getVolunteersByAdmin(int pageNumber, int pageSize, String email) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+
+        Page<VolunteerSimpleResponseForAdmin> page =
+                volunteerRepository.findVolunteersByAdmin(pageable, email);
+
+        //get avatar signed urls
+        List<CompletableFuture<VolunteerSimpleResponseForAdmin>> futures =
+                page.getContent().stream()
+                        .map(v -> {
+                            if (v.getAvatarUrl() == null) {
+                                return CompletableFuture.completedFuture(v);
+                            }
+                            return storageService.getSignedUrlAsync(v.getAvatarUrl())
+                                    .thenApply(url -> {
+                                        v.setAvatarUrl(url);
+                                        return v;
+                                    })
+                                    //todo this might be put into some todos
+                                    .exceptionally(ex -> {
+                                        log.warn("Failed to get signed url for path: {}", v.getAvatarUrl(), ex);
+                                        v.setAvatarUrl(null);
+                                        return v;
+                                    });
+                        })
+                        .toList();
+
+        List<VolunteerSimpleResponseForAdmin> content =
+                futures.stream().map(CompletableFuture::join).toList();
+
+        return new PageImpl<>(content, pageable, page.getTotalElements());
+
+    }
+
+    @Override
+    public Page<VolunteerActivitiesResponseForAdmin> getVolunteerActivitiesByAdmin(
+            UUID volunteerId,
+            int pageNumber,
+            int pageSize
+    ) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+
+        return volunteerRepository.getVolunteerActivitiesByAdmin(pageable, volunteerId);
     }
 
 }

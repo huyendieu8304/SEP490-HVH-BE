@@ -137,8 +137,8 @@ public class EventApplicationServiceTest {
         Volunteer vol = new Volunteer();
         vol.setId(UUID.randomUUID());
         vol.setAddress("Hanoi");
-        vol.setHonorScore((short) 10);
-        vol.setCreditScore((short) 10);
+        vol.setHonorScore(10);
+        vol.setCreditScore(10);
         vol.setCreatedAt(OffsetDateTime.now());
 
         EventApplication app = new EventApplication();
@@ -573,7 +573,7 @@ public class EventApplicationServiceTest {
 
         service.cancelApplication(app.getId());
 
-        assertEquals((short) 7, app.getVolunteer().getHonorScore());
+        assertEquals(7, app.getVolunteer().getHonorScore());
 
         verify(volunteerRepository).save(app.getVolunteer());
         verify(eventSessionRepository).save(app.getSession());
@@ -605,7 +605,7 @@ public class EventApplicationServiceTest {
 
         service.cancelApplication(app.getId());
 
-        assertEquals((short) 10, app.getVolunteer().getHonorScore());
+        assertEquals(10, app.getVolunteer().getHonorScore());
 
         verify(eventSessionRepository).save(app.getSession());
 
@@ -697,7 +697,7 @@ public class EventApplicationServiceTest {
 
         service.cancelApplication(app.getId());
 
-        assertEquals((short) 7, app.getVolunteer().getHonorScore());
+        assertEquals(7, app.getVolunteer().getHonorScore());
 
         verify(volunteerRepository).save(app.getVolunteer());
 
@@ -753,7 +753,7 @@ public class EventApplicationServiceTest {
 
         service.cancelApplication(app.getId());
 
-        assertEquals((short)10, app.getVolunteer().getHonorScore());
+        assertEquals(10, app.getVolunteer().getHonorScore());
 
         verify(volunteerRepository, never()).save(any());
     }

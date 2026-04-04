@@ -725,5 +725,61 @@ public class NotificationServiceImpl implements NotificationService {
         notificationPublisher.enqueueNotification(notiMng, managerId);
     }
 
+    @Override
+    public void sendEventAssignedHostNotification(UUID oldHostId, UUID newHostId, Event event) {
+        Notification notiOldHost = new Notification();
+        notiOldHost.setTitle("Phân công sự kiện");
+        notiOldHost.setBody(String.format(
+                "Sự kiện %s đã được quản lí tổ chức phân công cho host khác.",
+                event.getName()
+        ));
+        notiOldHost.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_UNASSIGNED.name()
+        ));
+        notiOldHost.setType(ENotificationType.HOST_EVENT_UNASSIGNED);
+
+        notiOldHost = saveNotificationForUser(notiOldHost, oldHostId);
+
+        Notification notiNewHost = new Notification();
+        notiNewHost.setTitle("Bạn được phân công sự kiện");
+        notiNewHost.setBody(String.format(
+                "Sự kiện %s đã được quản lí tổ chức phân công cho bạn.",
+                event.getName()
+        ));
+        notiNewHost.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_ASSIGNED.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notiNewHost.setType(ENotificationType.HOST_EVENT_ASSIGNED);
+
+        notiNewHost = saveNotificationForUser(notiNewHost, oldHostId);
+
+        notificationPublisher.enqueueNotification(notiOldHost, oldHostId);
+        notificationPublisher.enqueueNotification(notiNewHost, newHostId);
+
+    }
+
+    @Override
+    public void sendVolunteerReviewedByHostNotification(UUID volunteerId, Event event, EventApplication application, UUID reviewId) {
+        Notification notification = new Notification();
+
+        notification.setTitle("Đánh giá quá trình tham gia sự kiện");
+        notification.setBody(String.format(
+                "Bạn đã được đánh giá quá trình tham gia sự kiện %s ngày %s bởi người tổ chức.",
+                event.getName(),
+                application.getSessionDate().toString()
+        ));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_REVIEWED_BY_HOST.name(),
+                DATA_REF_ID_KEY, reviewId.toString(),
+                DATA_ACTION, ENotificationDataAction.VOL_REVIEW_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.VOL_REVIEWED_BY_HOST);
+
+        notification = saveNotificationForUser(notification, volunteerId);
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
 
 }

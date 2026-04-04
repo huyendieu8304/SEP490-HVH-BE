@@ -16,6 +16,7 @@ import com.sep490.g28.hvh.be.service.impl.HostServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -44,7 +45,8 @@ public class HostServiceTest {
     @Mock
     CurrentUserProvider currentUserProvider;
 
-    HostService hostService;
+    @InjectMocks
+    HostServiceImpl hostService;
 
     UUID orgManagerId;
     OrganizationManager orgManager;
@@ -52,14 +54,6 @@ public class HostServiceTest {
 
     @BeforeEach
     void setUp() {
-        hostService = new HostServiceImpl(
-                hostRepository,
-                organizationManagerRepository,
-                userRepository,
-                authClient,
-                emailService,
-                currentUserProvider
-        );
 
         orgManagerId = UUID.randomUUID();
 
