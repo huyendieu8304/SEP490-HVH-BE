@@ -205,6 +205,13 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new AppException(ActivityDomainErrorCode.SUBDOMAIN_NOT_EXISTED));
         event.setActivitySubDomain(activitySubDomain);
 
+        Host host = hostRepository.getReferenceById(currentUserProvider.getId());
+        Organization organization = host.getOrganization();
+
+        event.setHost(host);
+        event.setCreateBy(host);
+        event.setOrganization(organization);
+
         event.setRecruitmentEndDate(request.getRecruitmentEndDate());
         eventSessionService.addEventSessionsForCreateEvent(
                 event,
@@ -271,14 +278,7 @@ public class EventServiceImpl implements EventService {
     }
 
     private void mapEventSimpleField(EditEventRequest request, Event event) {
-        Host host = hostRepository.getReferenceById(currentUserProvider.getId());
-        Organization organization = host.getOrganization();
-
-        event.setHost(host);
-        event.setCreateBy(host);
-        event.setOrganization(organization);
-
-        //check in place
+         //check in place
         Point checkInLocation = GeoUtils.toPoint(request.getCheckInPlaceLat(), request.getCheckInPlaceLng());
         event.setCheckInLocation(checkInLocation);
         event.setCheckInAccuracyMeters((double) request.getCheckInPlaceAccuracyMeters());
