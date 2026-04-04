@@ -1,7 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse;
+import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import org.springframework.data.domain.Page;
@@ -15,7 +15,7 @@ public interface HostService {
 
     HostInfoResponseForManager getHostInfoByManager(UUID hostId);
 
-    Page<HostActivitiesResponse> getHostActivitiesByManager(
+    Page<HostActivitiesResponseForManager> getHostActivitiesByManager(
             UUID hostId,
             int pageNumber,
             int pageSize,

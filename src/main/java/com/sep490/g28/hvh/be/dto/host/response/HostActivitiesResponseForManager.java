@@ -12,7 +12,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class HostActivitiesResponse {
+public class HostActivitiesResponseForManager {
     UUID eventId;
     String eventName;
     String eventAddress;
@@ -23,7 +23,7 @@ public class HostActivitiesResponse {
     OffsetDateTime sessionStartTime;
     OffsetDateTime sessionEndTime;
 
-    public HostActivitiesResponse(
+    public HostActivitiesResponseForManager(
             UUID eventId,
             String eventName,
             String eventAddress,

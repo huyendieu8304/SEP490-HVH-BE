@@ -3,7 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse;
+import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import com.sep490.g28.hvh.be.entity.Host;
@@ -154,7 +154,7 @@ public class HostServiceImpl implements HostService {
 
     //todo unit test
     @Override
-    public Page<HostActivitiesResponse> getHostActivitiesByManager(
+    public Page<HostActivitiesResponseForManager> getHostActivitiesByManager(
             UUID hostId,
             int pageNumber,
             int pageSize,

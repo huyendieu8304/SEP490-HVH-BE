@@ -1,6 +1,6 @@
 package com.sep490.g28.hvh.be.repository;
 
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse;
+import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
 import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
 import com.sep490.g28.hvh.be.entity.Host;
 import org.springframework.data.domain.Page;
@@ -40,7 +40,7 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
     boolean existsByIdAndCreatedBy_Id(UUID hostId, UUID orgManagerId);
 
     @Query("""
-                SELECT new com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponse(
+                SELECT new com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager(
                     e.id,
                     e.name,
                     e.address,
@@ -57,5 +57,5 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                     AND s.startDateTime BETWEEN :from AND :to
                 ORDER BY e.createdAt DESC
             """)
-    Page<HostActivitiesResponse> getHostActivitiesByManager(UUID hostId, Pageable pageable, OffsetDateTime from, OffsetDateTime to);
+    Page<HostActivitiesResponseForManager> getHostActivitiesByManager(UUID hostId, Pageable pageable, OffsetDateTime from, OffsetDateTime to);
 }
