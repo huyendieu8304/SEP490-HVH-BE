@@ -5,10 +5,7 @@ import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.response.RegisterVolunteerAccountResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationDetailsResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationSimpleResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerSimpleResponseForAdmin;
+import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.entity.IdentityVerification;
 import com.sep490.g28.hvh.be.entity.SystemAdmin;
 import com.sep490.g28.hvh.be.entity.Volunteer;
@@ -332,6 +329,20 @@ public class VolunteerServiceImpl implements VolunteerService {
 
         return new PageImpl<>(content, pageable, page.getTotalElements());
 
+    }
+
+    @Override
+    public Page<VolunteerActivitiesResponseForAdmin> getVolunteerActivitiesByAdmin(
+            UUID volunteerId,
+            int pageNumber,
+            int pageSize
+    ) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+
+        return volunteerRepository.getVolunteerActivitiesByAdmin(pageable, volunteerId);
     }
 
 }
