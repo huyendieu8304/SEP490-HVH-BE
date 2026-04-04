@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,4 +29,5 @@ public class EventClaimDetailResponse {
     private String reason;
     private String detailReason;
     private List<String> evidencesUrls;
+    private OffsetDateTime createdAt;
 }

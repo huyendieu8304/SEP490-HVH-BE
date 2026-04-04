@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -19,4 +20,5 @@ public class EventClaimSimpleResponse {
     private int honorScore;
     private Short honorHours;
     private String reason;
+    private OffsetDateTime createdAt;
 }

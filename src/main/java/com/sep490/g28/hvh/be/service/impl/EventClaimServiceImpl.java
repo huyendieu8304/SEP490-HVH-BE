@@ -207,7 +207,8 @@ public class EventClaimServiceImpl implements EventClaimService {
                     creditScore,
                     honorScore,
                     e.getHonorHour(),
-                    e.getReason()
+                    e.getReason(),
+                    e.getCreatedAt()
             );
         });
 
@@ -306,6 +307,7 @@ public class EventClaimServiceImpl implements EventClaimService {
                 .reason(eventClaim.getReason())
                 .detailReason(eventClaim.getDetailReason())
                 .evidencesUrls(evidencesUrls)
+                .createdAt(eventClaim.getCreatedAt())
                 .build();
     }
 
