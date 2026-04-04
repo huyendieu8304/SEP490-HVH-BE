@@ -112,9 +112,7 @@ public class Volunteer {
     @Column(name = "rating_count", nullable = false)
     private int ratingCount = 0;
 
-    @PrePersist
-    void prePersist() {
-        if (creditScore == null) creditScore = 0;
-        if (honorScore == null) honorScore = 0;
-    }
+    @Column(name = "activity_count", nullable = false)
+    private int activityCount = 0;
+
 }

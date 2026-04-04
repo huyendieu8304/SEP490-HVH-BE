@@ -72,7 +72,7 @@ public class VolunteerReviewServiceImpl implements VolunteerReviewService {
         //re calculate the avg rating and increase rating count of volunteer
         Volunteer volunteer = application.getVolunteer();
         short newAvg = (short) ((volunteer.getAvgRating() * volunteer.getRatingCount() + review.getAvgRating()) / (volunteer.getRatingCount() + 1));
-        long newCount = volunteer.getRatingCount() + 1;
+        int newCount = volunteer.getRatingCount() + 1;
 
         volunteer.setAvgRating(newAvg);
         volunteer.setRatingCount(newCount);

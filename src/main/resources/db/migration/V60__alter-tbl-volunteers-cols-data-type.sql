@@ -8,10 +8,10 @@ ALTER TABLE volunteers
     DROP COLUMN rating_count;
 
 ALTER TABLE volunteers
-    ADD credit_score INTEGER NOT NULL;
+    ADD credit_score INTEGER DEFAULT 0 NOT NULL;
 
 ALTER TABLE volunteers
-    ADD honor_score INTEGER NOT NULL;
+    ADD honor_score INTEGER DEFAULT 0 NOT NULL;
 
 ALTER TABLE volunteers
-    ADD rating_count INTEGER NOT NULL;
+    ADD rating_count INTEGER DEFAULT 0 NOT NULL;
