@@ -32,7 +32,9 @@ public interface VolunteerRepository extends JpaRepository<Volunteer, UUID> {
             v.activityCount,
             v.avgRating,
             v.creditScore,
-            u.status
+            u.status,
+            v.address,
+            v.detailAddress
             )
             FROM Volunteer v
             LEFT JOIN User u ON u.id = v.id

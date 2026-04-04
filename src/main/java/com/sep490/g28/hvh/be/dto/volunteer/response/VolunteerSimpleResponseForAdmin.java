@@ -25,6 +25,8 @@ public class VolunteerSimpleResponseForAdmin {
     Short avgRating;
     Integer creditScore;
     EAccountStatus status;
+    String address;
+    String detailAddress;
 
     public VolunteerSimpleResponseForAdmin(
             UUID id,
@@ -38,7 +40,9 @@ public class VolunteerSimpleResponseForAdmin {
             Integer activityCount,
             Short avgRating,
             Integer creditScore,
-            EAccountStatus status
+            EAccountStatus status,
+            String address,
+            String detailAddress
     ) {
         this.id = id;
         this.vid = vid;
@@ -52,5 +56,7 @@ public class VolunteerSimpleResponseForAdmin {
         this.avgRating = avgRating;
         this.creditScore = creditScore;
         this.status = status;
+        this.address = address;
+        this.detailAddress = detailAddress;
     }
 }
