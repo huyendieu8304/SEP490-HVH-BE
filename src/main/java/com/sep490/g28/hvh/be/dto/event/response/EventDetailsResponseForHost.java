@@ -24,6 +24,7 @@ public class EventDetailsResponseForHost {
     private String description;
     private String address;
     private String detailAddress;
+    private boolean servingActivity;
     private String activitySubDomain;
     private EServedTarget servedTarget;
     private EServingPlaceType servingPlaceType;
