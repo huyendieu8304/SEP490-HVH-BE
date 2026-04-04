@@ -306,7 +306,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         Page<VolunteerSimpleResponseForAdmin> page =
                 volunteerRepository.findVolunteersByAdmin(pageable, email);
 
-        //todo get avatar signed urls
+        //get avatar signed urls
         List<CompletableFuture<VolunteerSimpleResponseForAdmin>> futures =
                 page.getContent().stream()
                         .map(v -> {

@@ -23,7 +23,8 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                     h.email,
                     h.phone,
                     u.status,
-                    COUNT(DISTINCT e.id)
+                    COUNT(DISTINCT e.id),
+                    h.avatarUrl
                 )
                 FROM Host h
                 LEFT JOIN Event e
