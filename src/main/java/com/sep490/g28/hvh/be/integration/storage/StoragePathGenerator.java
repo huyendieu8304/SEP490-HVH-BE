@@ -18,6 +18,8 @@ public class StoragePathGenerator {
     private static final String EVENT_FOLDER = "/event";
 
     private static final String EVENT_IMAGE_DIR = "/image";
+    private static final String EVENT_CLAIMS_FILE_NAME = "/claims_";
+    private static final String EVENT_MOMENTS_FILE_NAME = "/moments_";
 
     private static final String CID_FRONT_FILE_NAME = "/cid-front";
     private static final String CID_BACK_FILE_NAME = "/cid-back";
@@ -64,6 +66,14 @@ public class StoragePathGenerator {
     //================================================================================================
     public String eventImage (UUID eventId, UUID imageId,  String fileExtension) {
         return EVENT_FOLDER + "/" + eventId + EVENT_IMAGE_DIR + "/" + imageId + fileExtension;
+    }
+
+    public String eventClaimImages(UUID applicationId, int order, String fileExtension) {
+        return  ORG_REGISTRATION_FOLDER+ "/" + applicationId + EVENT_CLAIMS_FILE_NAME + order + fileExtension;
+    }
+
+    public String eventMomentImages(UUID applicationId, int order, String fileExtension) {
+        return  ORG_REGISTRATION_FOLDER+ "/" + applicationId + EVENT_MOMENTS_FILE_NAME + order + fileExtension;
     }
 
 }

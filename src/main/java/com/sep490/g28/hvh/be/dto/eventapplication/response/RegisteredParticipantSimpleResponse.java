@@ -19,7 +19,7 @@ public class  RegisteredParticipantSimpleResponse {
     private String name;
     private String avatarUrl;
     private String address;
-    private Short creditScore;
-    private Short honorScore;
+    private int creditScore;
+    private int honorScore;
     private OffsetDateTime createdAt;
 }

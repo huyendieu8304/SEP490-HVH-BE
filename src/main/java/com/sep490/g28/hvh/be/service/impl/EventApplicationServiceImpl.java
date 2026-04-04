@@ -277,8 +277,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             String name = null;
                             String avatarUrl = null;
                             String address = null;
-                            Short creditScore = 0;
-                            Short honorScore = 0;
+                            int creditScore = 0;
+                            int honorScore = 0;
                             OffsetDateTime createdAt = null;
 
                             //check if the event application linked with a volunteer
