@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.event.response.EventSessionDetailsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckOutEventRequest;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
@@ -279,7 +280,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             String address = null;
                             int creditScore = 0;
                             int honorScore = 0;
-                            OffsetDateTime createdAt = null;
 
                             //check if the event application linked with a volunteer
                             if (e.getVolunteer() != null) {
@@ -294,10 +294,9 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                                 address = volunteer.getAddress();
                                 creditScore = volunteer.getCreditScore();
                                 honorScore = volunteer.getHonorScore();
-                                createdAt = volunteer.getCreatedAt();
 
 
-                                //get signed URL of file
+                                //get signed URL of volunteer avatar
                                 if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
 
                                     CompletableFuture<String> avatarFuture =
@@ -318,6 +317,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                             }
 
                             return new RegisteredParticipantSimpleResponse(
+                                    e.getId(),
                                     volunteerId,
                                     email,
                                     phone,
@@ -327,7 +327,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                                     address,
                                     creditScore,
                                     honorScore,
-                                    createdAt
+                                    e.getCreatedAt()
                             );
                         }).toList()).orElse(Collections.emptyList());
 
@@ -375,7 +375,9 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         return eventApplication.map(e -> {
 
-            Event event = e.getSession().getEvent();
+            EventSession eventSession = e.getSession();
+
+            Event event = eventSession.getEvent();
 
             String firstEventImageUrl = null;
 
@@ -402,13 +404,25 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                 }
             }
 
+            EventSessionDetailsResponse sessionDetails = new EventSessionDetailsResponse(
+                    eventSession.getId(),
+                    eventSession.getStartDateTime(),
+                    eventSession.getEndDateTime(),
+                    eventSession.getExpectedVolAmount(),
+                    eventSession.getExpectedSerAmount(),
+                    eventSession.getApprovedApplicationCount()
+            );
+
             return new EventApplicationsStatusResponse(
                     e.getId(),
                     event.getId(),
                     event.getName(),
                     firstEventImageUrl,
+                    event.getAddress(),
+                    event.getDetailAddress(),
                     event.getStartDate(),
-                    e.getStatus()
+                    e.getStatus(),
+                    sessionDetails
             );
 
         });
@@ -557,7 +571,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
     @Override
     public void checkOutEvent(CheckOutEventRequest request) {
-        OffsetDateTime checkInTime = OffsetDateTime.now();
+        OffsetDateTime checkOutTime = OffsetDateTime.now();
 
         UUID volunteerId = currentUserProvider.getId();
 
@@ -584,12 +598,12 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         );
 
         //Check if event session is started
-        if(!checkInTime.isAfter(eventSession.getStartDateTime())) {
+        if(!checkOutTime.isAfter(eventSession.getStartDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
         }
 
         //Check if event session is ended
-        if(!checkInTime.isBefore(eventSession.getEndDateTime())) {
+        if(!checkOutTime.isBefore(eventSession.getEndDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
         }
 
@@ -625,7 +639,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         //Save credit hour
-        Duration duration = Duration.between(checkInLog.getCheckInTime(), checkInTime);
+        Duration duration = Duration.between(checkInLog.getCheckInTime(), checkOutTime);
         double creditHour = duration.toHours() + (duration.toMinutesPart() / 60.0);
 
         //Calculate total credit hour today
@@ -649,6 +663,10 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         eventApplication.setStatus(EEventApplicationStatus.COMPLETED);
 
         eventApplicationRepository.save(eventApplication);
+
+        //Save check-out time
+        checkInLog.setCheckOutTime(checkOutTime);
+        checkInLogRepository.save(checkInLog);
     }
 
     @Override

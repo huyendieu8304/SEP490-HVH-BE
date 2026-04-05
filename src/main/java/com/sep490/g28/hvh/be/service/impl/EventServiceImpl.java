@@ -385,6 +385,7 @@ public class EventServiceImpl implements EventService {
                 .build();
     }
 
+    //todo
     @Override
     public void saveEvent(SaveEventRequest request) {
 
@@ -1279,6 +1280,7 @@ public class EventServiceImpl implements EventService {
                 .description(event.getDescription())
                 .address(event.getAddress())
                 .detailAddress(event.getDetailAddress())
+                .servingActivity(event.isServingActivity())
                 .activitySubDomain(activitySubDomainName)
                 .servedTarget(event.getServedTarget())
                 .servingPlaceType(event.getServingPlaceType())

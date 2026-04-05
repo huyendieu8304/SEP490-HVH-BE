@@ -24,7 +24,7 @@ public class VolunteerReviewController {
     VolunteerReviewService volunteerReviewService;
 
     @PreAuthorize("hasRole('HOST') and @eventApplicationAuthorizer.isHostOfEventApplication(#request.eventApplicationId)")
-    @PostMapping("/volunteer-reviews")
+    @PostMapping("/host/volunteer-reviews")
     public ResponseEntity<Void> rateEvent(
             @RequestBody @Valid ReviewVolunteerRequest request
     ){

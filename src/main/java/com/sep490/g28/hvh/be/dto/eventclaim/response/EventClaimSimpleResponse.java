@@ -1,4 +1,4 @@
-package com.sep490.g28.hvh.be.dto.eventapplication.response;
+package com.sep490.g28.hvh.be.dto.eventclaim.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,16 +10,15 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-public class  RegisteredParticipantSimpleResponse {
-    private UUID applicationId;
+public class EventClaimSimpleResponse {
+    private UUID id;
     private UUID volunteerId;
-    private String email;
-    private String phone;
     private String nickName;
     private String name;
     private String avatarUrl;
-    private String address;
     private int creditScore;
     private int honorScore;
+    private Short honorHours;
+    private String reason;
     private OffsetDateTime createdAt;
 }

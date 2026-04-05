@@ -33,7 +33,7 @@ public class EventApplicationController {
     EventApplicationService eventApplicationService;
 
     @PreAuthorize("hasRole('VOL')")
-    @PostMapping("/event-session/{sessionId}/apply")
+    @PostMapping("/vol/event-sessions/{sessionId}/apply")
     ResponseEntity<Void> applyEvent(@PathVariable UUID sessionId) {
         eventApplicationService.applyEventSession(sessionId);
         return ResponseEntity.ok().build();
@@ -58,7 +58,7 @@ public class EventApplicationController {
     }
 
     @PreAuthorize("hasRole('HOST')")
-    @GetMapping("/host/event-session/{id}/registered-participants")
+    @GetMapping("/host/event-sessions/{id}/registered-participants")
     ResponseEntity<EventApplicationsResponse> getRegisteredParticipants(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
@@ -99,7 +99,7 @@ public class EventApplicationController {
             @Max(value = 100, message = "INVALID_PAGE_SIZE")
             int pageSize,
 
-            @RequestParam(defaultValue = "PENDING")
+            @RequestParam()
             String status) {
 
         return ResponseEntity.ok(eventApplicationService.getEventApplicationsStatus(pageNumber, pageSize, status));

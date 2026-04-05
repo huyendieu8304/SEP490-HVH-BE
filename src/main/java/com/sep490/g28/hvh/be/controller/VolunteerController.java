@@ -29,7 +29,7 @@ public class VolunteerController {
 
     VolunteerService volunteerService;
 
-    @PostMapping("/volunteer/register-vol-acc")
+    @PostMapping("/volunteers/register-vol-acc")
     public ResponseEntity<RegisterVolunteerAccountResponse> registerVolAccount(
             @Valid @RequestBody RegisterVolunteerAccountRequest request
     ) {
@@ -37,7 +37,7 @@ public class VolunteerController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/volunteer/registrations")
+    @GetMapping("/sys-admin/volunteers/registrations")
     public ResponseEntity<Page<VolunteerRegistrationSimpleResponse>> getRegistrations(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
@@ -62,14 +62,14 @@ public class VolunteerController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/volunteer/registrations/{id}")
+    @GetMapping("/sys-admin/volunteers/registrations/{id}")
     public ResponseEntity<VolunteerRegistrationDetailsResponse> getRegistrationsDetails(
             @PathVariable(name = "id") UUID id) {
         return ResponseEntity.ok(volunteerService.getVolRegistrationDetails(id));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PostMapping("/volunteer/registrations/{id}/verify")
+    @PostMapping("/sys-admin/volunteers/registrations/{id}/verify")
     public ResponseEntity<String> verifyRegistration(
             @PathVariable(name = "id") UUID id,
             @RequestBody @Valid VolunteerRegistrationVerifyRequest request

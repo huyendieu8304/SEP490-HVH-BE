@@ -22,6 +22,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:address IS NULL OR e.address ILIKE CONCAT('%', CAST(:address AS string), '%'))
             AND (CAST(:startDate AS DATE) IS NULL OR e.startDate >= :startDate)
             AND (CAST(:endDate AS DATE) IS NULL OR e.startDate <= :endDate)
+            AND e.status = 'RECRUITING'
             """)
     Page<Event> search(
             @Param("name") String name,
@@ -38,6 +39,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (CAST(:startDate AS DATE) IS NULL OR e.startDate >= :startDate)
             AND (CAST(:endDate AS DATE) IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
+            AND e.status = 'RECRUITING'
             """)
     Page<Event> searchWithActivitySubDomain(
             @Param("name") String name,
@@ -54,6 +56,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:address IS NULL OR e.address ILIKE CONCAT('%', :address, '%'))
             AND (:startDate IS NULL OR e.startDate >= :startDate)
             AND (:endDate IS NULL OR e.startDate <= :endDate)
+            AND e.status = 'RECRUITING'
             AND e.createdAt > :since
             """)
     Page<Event> refresh(
@@ -72,6 +75,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:startDate IS NULL OR e.startDate >= :startDate)
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
+            AND e.status = 'RECRUITING'
             AND e.createdAt > :since
             """)
     Page<Event> refreshWithActivitySubDomain(

@@ -59,7 +59,17 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_CANNOT_ASSIGNED_HOST(7037, "Sự kiện đang ở trong trạng thái không cho phép phân công host.", HttpStatus.CONFLICT),
     EVENT_CANNOT_ASSIGNED_TO_INACTIVE_HOST(7038, "Không thể phân công sự kiện cho tài khoản host đang bị khóa.", HttpStatus.CONFLICT),
     EVENT_CANNOT_ASSIGN_TO_HOST_NOT_IN_ORGANIZATION(7039, "Không thể phân công sự kiện cho host không thuộc tổ chức.", HttpStatus.CONFLICT),
-    EVENT_CANNOT_ASSIGNED_TO_CURRENT_HOST(7037, "Không thể phân công sự kiện cho tài khoản host hiện đang phụ trách.", HttpStatus.CONFLICT),
+    EVENT_CANNOT_ASSIGNED_TO_CURRENT_HOST(7040, "Không thể phân công sự kiện cho tài khoản host hiện đang phụ trách.", HttpStatus.CONFLICT),
+
+    EVENT_CLAIM_OUT_OF_CLAIM_TIME(7041, "Đã hết thời gian khiếu nại. ", HttpStatus.CONFLICT),
+    EVENT_SESSION_ALREADY_CLAIMED(7042, "Đã khiếu nại cho phiên sự kiện này. ", HttpStatus.CONFLICT),
+    EVENT_CLAIM_NOT_FOUND(7043, "Không tìm thấy khiếu nại. ", HttpStatus.NOT_FOUND),
+    EVENT_CLAIM_ALREADY_RESOLVED(7044, "Khiếu nại đã được xử lý. ", HttpStatus.CONFLICT),
+    EVENT_CLAIM_OUT_OF_VERIFY_TIME(7045, "Đã hết thời gian xử lý khiếu nại này. ", HttpStatus.CONFLICT),
+
+    EVENT_MOMENT_ALREADY_SHARED(7046, "Đã chia sẻ khoảnh khắc trong phiên sự kiện này.", HttpStatus.CONFLICT),
+    EVENT_MOMENT_NOT_FOUND(7047, "Không tìm thấy khoảnh khắc.", HttpStatus.NOT_FOUND),
+    EVENT_CLAIM_INVALID_HONOR_HOUR_REQUEST(7048, "Số giờ cần bổ sung không được vượt quá số giờ tín nhiệm thực tế", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;

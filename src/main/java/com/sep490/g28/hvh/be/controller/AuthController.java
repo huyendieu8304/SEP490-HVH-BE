@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1")
 @Validated
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
@@ -22,7 +22,7 @@ public class AuthController {
 
     AuthService authService;
 
-    @PutMapping("/forgot-password")
+    @PutMapping("/auth/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
         authService.forgotPassword(request);
         return ResponseEntity.ok().build();

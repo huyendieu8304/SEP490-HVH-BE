@@ -51,6 +51,9 @@ public class EventApplication {
     @Column(name = "credit_hour")
     private Short creditHour;
 
+    @Column(name = "honor_hour")
+    private Short honorHour;
+
     @CreationTimestamp
     @Column(
             name = "created_at",
