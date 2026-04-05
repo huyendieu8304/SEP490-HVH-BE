@@ -8,5 +8,5 @@ import java.util.List;
 @Getter
 @Builder
 public class ShareMomentResponse {
-    private List<String> momentPicturesUrls;
+    private List<String> momentPicturesUploadUrls;
 }
