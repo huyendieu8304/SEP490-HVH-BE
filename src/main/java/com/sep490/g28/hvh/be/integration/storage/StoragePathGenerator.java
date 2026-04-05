@@ -69,11 +69,11 @@ public class StoragePathGenerator {
     }
 
     public String eventClaimImages(UUID applicationId, int order, String fileExtension) {
-        return  ORG_REGISTRATION_FOLDER+ "/" + applicationId + EVENT_CLAIMS_FILE_NAME + order + fileExtension;
+        return  EVENT_FOLDER + "/" + applicationId + EVENT_CLAIMS_FILE_NAME + order + fileExtension;
     }
 
     public String eventMomentImages(UUID applicationId, int order, String fileExtension) {
-        return  ORG_REGISTRATION_FOLDER+ "/" + applicationId + EVENT_MOMENTS_FILE_NAME + order + fileExtension;
+        return  EVENT_FOLDER + "/" + applicationId + EVENT_MOMENTS_FILE_NAME + order + fileExtension;
     }
 
 }
