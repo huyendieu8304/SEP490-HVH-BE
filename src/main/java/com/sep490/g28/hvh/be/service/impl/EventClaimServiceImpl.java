@@ -68,7 +68,7 @@ public class EventClaimServiceImpl implements EventClaimService {
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
         );
 
-        //Check if duration between event end time and claim time <= 7 days
+        //Calculate duration between event end time
         Duration duration = Duration.between(eventSession.getEndDateTime(), claimTime);
         long days = duration.toDays();
         boolean hasTimeRemainder = !duration.minusDays(days).isZero();
@@ -78,6 +78,7 @@ public class EventClaimServiceImpl implements EventClaimService {
             days++;
         }
 
+        //verify time <= 7 days
         if (days > 7) {
             throw new AppException(EventErrorCode.EVENT_CLAIM_OUT_OF_CLAIM_TIME);
         }
@@ -135,7 +136,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         eventClaimRepository.save(newEventClaim);
 
         return ClaimEventHourResponse.builder()
-                .evidencesUrls(evidencesUploadUrl)
+                .evidencesUploadUrls(evidencesUploadUrl)
                 .build();
     }
 
@@ -219,10 +220,6 @@ public class EventClaimServiceImpl implements EventClaimService {
         EventClaim eventClaim = eventClaimRepository.findById(claimId)
                 .orElseThrow(() -> new AppException(EventErrorCode.EVENT_CLAIM_NOT_FOUND));
 
-        if (!eventClaim.getStatus().equals(EEventClaimStatus.PENDING)) {
-            throw new AppException(EventErrorCode.EVENT_CLAIM_ALREADY_RESOLVED);
-        }
-
         EventApplication eventApplication = eventClaim.getEventApplication();
 
         UUID volunteerId = null;
@@ -252,12 +249,12 @@ public class EventClaimServiceImpl implements EventClaimService {
             creditScore = volunteer.getCreditScore();
             honorScore = volunteer.getHonorScore();
 
-            //get signed URL of file
+            //check if volunteer has avatar
             if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
                 avatarFuture = storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
             }
         }
-        //get signed URL of file
+        //get signed URL of evidences files and avatar of volunteer (if exists)
         List<CompletableFuture<String>> evidencesFutures = new ArrayList<>();
         if (eventClaim.getEvidences() != null) {
             String[] evidences = eventClaim.getEvidences().split("\\s+");
@@ -324,7 +321,7 @@ public class EventClaimServiceImpl implements EventClaimService {
 
         EventApplication eventApplication = eventClaim.getEventApplication();
 
-        //Check if duration between event end time and verify time <= 9 days
+        //Calculate duration between event end time
         Duration duration = Duration.between(eventApplication.getSession().getEndDateTime(), verifyTime);
         long days = duration.toDays();
         boolean hasTimeRemainder = !duration.minusDays(days).isZero();
@@ -334,6 +331,7 @@ public class EventClaimServiceImpl implements EventClaimService {
             days++;
         }
 
+        //verify time <= 9 days
         if (days > 9) {
             throw new AppException(EventErrorCode.EVENT_CLAIM_OUT_OF_VERIFY_TIME);
         }
@@ -344,6 +342,7 @@ public class EventClaimServiceImpl implements EventClaimService {
                 volunteer.setHonorScore(volunteer.getHonorScore() + eventClaim.getHonorHour());
                 volunteerRepository.save(volunteer);
 
+                eventApplication.setHonorHour(eventClaim.getHonorHour());
                 eventApplication.setStatus(EEventApplicationStatus.COMPLETED);
                 eventApplicationRepository.save(eventApplication);
 

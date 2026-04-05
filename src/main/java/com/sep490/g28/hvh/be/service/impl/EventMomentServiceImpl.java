@@ -74,7 +74,7 @@ public class EventMomentServiceImpl implements EventMomentService {
             throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
         }
 
-        //check if event moment is shared in this session
+        //check if any event moment is shared in this session
         EventMoment eventMoment = eventMomentRepository.findByEventApplicationId(eventApplication.getId());
         if (eventMoment != null) {
             throw new AppException(EventErrorCode.EVENT_MOMENT_ALREADY_SHARED);
@@ -127,7 +127,7 @@ public class EventMomentServiceImpl implements EventMomentService {
         eventMomentRepository.save(newEventMoment);
 
         return ShareMomentResponse.builder()
-                .momentPicturesUrls(momentPicturesUploadUrl)
+                .momentPicturesUploadUrls(momentPicturesUploadUrl)
                 .build();
     }
 
@@ -166,13 +166,13 @@ public class EventMomentServiceImpl implements EventMomentService {
                                 name = volunteer.getFullName();
 
 
-                                //get signed URL of file
+                                //check if volunteer has avatar
                                 if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
                                     avatarFuture = storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
                                 }
                             }
 
-                            //get signed URL of file
+                            //get signed URL of moment pictures and volunteer avatar (if exist)
                             List<CompletableFuture<String>> momentPicturesFutures = new ArrayList<>();
                             if (e.getMomentPictures() != null) {
                                 String[] momentPictures = e.getMomentPictures().split("\\s+");
