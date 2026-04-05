@@ -112,7 +112,7 @@ public class EventMomentServiceTest {
         ShareMomentResponse response = service.shareMoment(request);
 
         assertNotNull(response);
-        assertEquals(3, response.getMomentPicturesUrls().size());
+        assertEquals(3, response.getMomentPicturesUploadUrls().size());
 
         verify(eventMomentRepository).save(any(EventMoment.class));
     }
@@ -280,7 +280,7 @@ public class EventMomentServiceTest {
 
         ShareMomentResponse response = service.shareMoment(request);
 
-        assertEquals(5, response.getMomentPicturesUrls().size());
+        assertEquals(5, response.getMomentPicturesUploadUrls().size());
     }
 
     // ===== TC8 =====
@@ -314,6 +314,6 @@ public class EventMomentServiceTest {
         ShareMomentResponse response = service.shareMoment(request);
 
         assertNotNull(response);
-        assertEquals(0, response.getMomentPicturesUrls().size());
+        assertEquals(0, response.getMomentPicturesUploadUrls().size());
     }
 }

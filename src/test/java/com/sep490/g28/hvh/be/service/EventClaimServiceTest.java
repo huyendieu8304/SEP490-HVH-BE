@@ -121,7 +121,7 @@ public class EventClaimServiceTest {
         ClaimEventHourResponse response = service.claimEventHour(request);
 
         assertNotNull(response);
-        assertEquals(3, response.getEvidencesUrls().size());
+        assertEquals(3, response.getEvidencesUploadUrls().size());
 
         verify(eventClaimRepository).save(any(EventClaim.class));
     }
@@ -260,7 +260,7 @@ public class EventClaimServiceTest {
 
         ClaimEventHourResponse response = service.claimEventHour(request);
 
-        assertEquals(5, response.getEvidencesUrls().size());
+        assertEquals(5, response.getEvidencesUploadUrls().size());
     }
 
     // ===== TC7 =====
