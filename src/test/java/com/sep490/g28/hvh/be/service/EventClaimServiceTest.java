@@ -77,7 +77,7 @@ public class EventClaimServiceTest {
     private ClaimEventHourRequest validClaimEventHourRequest(){
         ClaimEventHourRequest request = new ClaimEventHourRequest();
         request.setEventSessionId(sessionId.toString());
-        request.setHonorHours((short) 8);
+        request.setHonorHours((short) 3);
         request.setReason("Reason");
         request.setDetailReason("DetailReason");
         request.setEvidences("img1 img2 img3");
@@ -98,7 +98,8 @@ public class EventClaimServiceTest {
 
         EventSession session = new EventSession();
         session.setId(sessionId);
-        session.setEndDateTime(OffsetDateTime.now().minusDays(1));
+        session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
+        session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -207,7 +208,8 @@ public class EventClaimServiceTest {
 
         EventSession session = new EventSession();
         session.setId(sessionId);
-        session.setEndDateTime(OffsetDateTime.now().minusDays(1));
+        session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
+        session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -237,7 +239,8 @@ public class EventClaimServiceTest {
         app.setId(applicationId);
 
         EventSession session = new EventSession();
-        session.setEndDateTime(OffsetDateTime.now().minusDays(1));
+        session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
+        session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -275,7 +278,8 @@ public class EventClaimServiceTest {
         app.setId(applicationId);
 
         EventSession session = new EventSession();
-        session.setEndDateTime(OffsetDateTime.now().minusDays(1));
+        session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
+        session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
