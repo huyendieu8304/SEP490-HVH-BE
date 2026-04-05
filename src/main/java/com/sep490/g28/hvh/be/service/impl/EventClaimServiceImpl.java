@@ -87,6 +87,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         Duration sessionDuration = Duration.between(eventSession.getStartDateTime(), eventSession.getEndDateTime());
         double totalCreditHour = sessionDuration.toHours() + (sessionDuration.toMinutesPart() / 60.0);
 
+        //check if honor hour is not exceeds true credit hour of session
         if(request.getHonorHours() > (short) Math.round(totalCreditHour)) {
             throw new AppException(EventErrorCode.EVENT_CLAIM_INVALID_HONOR_HOUR_REQUEST);
         }
