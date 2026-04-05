@@ -5,10 +5,7 @@ import com.sep490.g28.hvh.be.constant.EEventClaimStatus;
 import com.sep490.g28.hvh.be.dto.eventclaim.request.ClaimEventHourRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.request.EventClaimVerifyRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.ClaimEventHourResponse;
-import com.sep490.g28.hvh.be.entity.EventApplication;
-import com.sep490.g28.hvh.be.entity.EventClaim;
-import com.sep490.g28.hvh.be.entity.EventSession;
-import com.sep490.g28.hvh.be.entity.Volunteer;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
@@ -93,6 +90,9 @@ public class EventClaimServiceTest {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
+        Event event = new Event();
+        event.setId(eventId);
+
         EventApplication app = new EventApplication();
         app.setId(applicationId);
 
@@ -100,6 +100,7 @@ public class EventClaimServiceTest {
         session.setId(sessionId);
         session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
         session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
+        session.setEvent(event);
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -111,7 +112,7 @@ public class EventClaimServiceTest {
         when(eventClaimRepository.findByEventApplicationId(applicationId))
                 .thenReturn(null);
 
-        when(storagePathGenerator.eventClaimImages(any(), anyInt(), any()))
+        when(storagePathGenerator.eventClaimImages(any(), any(), anyInt(), any()))
                 .thenAnswer(inv -> "path-" + inv.getArgument(1));
 
         when(storageService.getUploadUrlAsync(any()))
@@ -235,12 +236,16 @@ public class EventClaimServiceTest {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
+        Event event = new Event();
+        event.setId(eventId);
+
         EventApplication app = new EventApplication();
         app.setId(applicationId);
 
         EventSession session = new EventSession();
         session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
         session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
+        session.setEvent(event);
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -252,7 +257,7 @@ public class EventClaimServiceTest {
         when(eventClaimRepository.findByEventApplicationId(applicationId))
                 .thenReturn(null);
 
-        when(storagePathGenerator.eventClaimImages(any(), anyInt(), any()))
+        when(storagePathGenerator.eventClaimImages(any(), any(), anyInt(), any()))
                 .thenAnswer(inv -> "path-" + inv.getArgument(1));
 
         when(storageService.getUploadUrlAsync(any()))
@@ -274,12 +279,16 @@ public class EventClaimServiceTest {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
+        Event event = new Event();
+        event.setId(eventId);
+
         EventApplication app = new EventApplication();
         app.setId(applicationId);
 
         EventSession session = new EventSession();
         session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
         session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
+        session.setEvent(event);
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -291,7 +300,7 @@ public class EventClaimServiceTest {
         when(eventClaimRepository.findByEventApplicationId(applicationId))
                 .thenReturn(null);
 
-        when(storagePathGenerator.eventClaimImages(any(), anyInt(), any()))
+        when(storagePathGenerator.eventClaimImages(any(), any(), anyInt(), any()))
                 .thenReturn("path");
 
         CompletableFuture<String> failedFuture = new CompletableFuture<>();

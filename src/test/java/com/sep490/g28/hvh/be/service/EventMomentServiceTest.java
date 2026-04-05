@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.dto.eventmoment.request.ShareMomentRequest;
 import com.sep490.g28.hvh.be.dto.eventmoment.response.ShareMomentResponse;
+import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventMoment;
 import com.sep490.g28.hvh.be.entity.EventSession;
@@ -82,6 +83,9 @@ public class EventMomentServiceTest {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
+        Event event = new Event();
+        event.setId(eventId);
+
         EventApplication app = new EventApplication();
         app.setId(applicationId);
 
@@ -89,6 +93,7 @@ public class EventMomentServiceTest {
         session.setId(sessionId);
         session.setStartDateTime(OffsetDateTime.now().minusHours(1));
         session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEvent(event);
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -100,7 +105,7 @@ public class EventMomentServiceTest {
         when(eventMomentRepository.findByEventApplicationId(applicationId))
                 .thenReturn(null);
 
-        when(storagePathGenerator.eventMomentImages(any(), anyInt(), any()))
+        when(storagePathGenerator.eventMomentImages(any(), any(), anyInt(), any()))
                 .thenAnswer(inv -> "path-" + inv.getArgument(1));
 
         when(storageService.getUploadUrlAsync(any()))
@@ -252,12 +257,16 @@ public class EventMomentServiceTest {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
+        Event event = new Event();
+        event.setId(eventId);
+
         EventApplication app = new EventApplication();
         app.setId(applicationId);
 
         EventSession session = new EventSession();
         session.setStartDateTime(OffsetDateTime.now().minusHours(1));
         session.setEndDateTime(OffsetDateTime.now().plusHours(1));
+        session.setEvent(event);
 
         when(eventApplicationRepository
                 .findByVolunteerIdAndSessionId(volunteerId, sessionId))
@@ -269,7 +278,7 @@ public class EventMomentServiceTest {
         when(eventMomentRepository.findByEventApplicationId(applicationId))
                 .thenReturn(null);
 
-        when(storagePathGenerator.eventMomentImages(any(), anyInt(), any()))
+        when(storagePathGenerator.eventMomentImages(any(), any(), anyInt(), any()))
                 .thenAnswer(inv -> "path-" + inv.getArgument(1));
 
         when(storageService.getUploadUrlAsync(any()))
