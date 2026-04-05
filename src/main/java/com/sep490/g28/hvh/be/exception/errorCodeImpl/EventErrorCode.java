@@ -68,7 +68,8 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_CLAIM_OUT_OF_VERIFY_TIME(7045, "Đã hết thời gian xử lý khiếu nại này. ", HttpStatus.CONFLICT),
 
     EVENT_MOMENT_ALREADY_SHARED(7046, "Đã chia sẻ khoảnh khắc trong phiên sự kiện này.", HttpStatus.CONFLICT),
-    EVENT_MOMENT_NOT_FOUND(7047, "Không tìm thấy khoảnh khắc.", HttpStatus.NOT_FOUND)
+    EVENT_MOMENT_NOT_FOUND(7047, "Không tìm thấy khoảnh khắc.", HttpStatus.NOT_FOUND),
+    EVENT_CLAIM_INVALID_HONOR_HOUR_REQUEST(7048, "Số giờ cần bổ sung không được vượt quá số giờ tín nhiệm thực tế", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;

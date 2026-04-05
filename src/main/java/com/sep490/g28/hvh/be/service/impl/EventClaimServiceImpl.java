@@ -69,10 +69,10 @@ public class EventClaimServiceImpl implements EventClaimService {
         );
 
         //Calculate duration between event end time
-        Duration duration = Duration.between(eventSession.getEndDateTime(), claimTime);
-        long days = duration.toDays();
-        boolean hasTimeRemainder = !duration.minusDays(days).isZero();
-        if (hasTimeRemainder && duration.isNegative()) {
+        Duration claimDuration = Duration.between(eventSession.getEndDateTime(), claimTime);
+        long days = claimDuration.toDays();
+        boolean hasTimeRemainder = !claimDuration.minusDays(days).isZero();
+        if (hasTimeRemainder && claimDuration.isNegative()) {
             days--;
         } else if (hasTimeRemainder) {
             days++;
@@ -81,6 +81,14 @@ public class EventClaimServiceImpl implements EventClaimService {
         //verify time <= 7 days
         if (days > 7) {
             throw new AppException(EventErrorCode.EVENT_CLAIM_OUT_OF_CLAIM_TIME);
+        }
+
+        //Calculate duration between event end time
+        Duration sessionDuration = Duration.between(eventSession.getStartDateTime(), eventSession.getEndDateTime());
+        double totalCreditHour = sessionDuration.toHours() + (sessionDuration.toMinutesPart() / 60.0);
+
+        if(request.getHonorHours() > (short) Math.round(totalCreditHour)) {
+            throw new AppException(EventErrorCode.EVENT_CLAIM_INVALID_HONOR_HOUR_REQUEST);
         }
 
         //check if session has been claimed

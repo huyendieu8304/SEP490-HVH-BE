@@ -571,7 +571,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
     @Override
     public void checkOutEvent(CheckOutEventRequest request) {
-        OffsetDateTime checkInTime = OffsetDateTime.now();
+        OffsetDateTime checkOutTime = OffsetDateTime.now();
 
         UUID volunteerId = currentUserProvider.getId();
 
@@ -598,12 +598,12 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         );
 
         //Check if event session is started
-        if(!checkInTime.isAfter(eventSession.getStartDateTime())) {
+        if(!checkOutTime.isAfter(eventSession.getStartDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
         }
 
         //Check if event session is ended
-        if(!checkInTime.isBefore(eventSession.getEndDateTime())) {
+        if(!checkOutTime.isBefore(eventSession.getEndDateTime())) {
             throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
         }
 
@@ -639,7 +639,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         //Save credit hour
-        Duration duration = Duration.between(checkInLog.getCheckInTime(), checkInTime);
+        Duration duration = Duration.between(checkInLog.getCheckInTime(), checkOutTime);
         double creditHour = duration.toHours() + (duration.toMinutesPart() / 60.0);
 
         //Calculate total credit hour today
@@ -663,6 +663,10 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         eventApplication.setStatus(EEventApplicationStatus.COMPLETED);
 
         eventApplicationRepository.save(eventApplication);
+
+        //Save check-out time
+        checkInLog.setCheckOutTime(checkOutTime);
+        checkInLogRepository.save(checkInLog);
     }
 
     @Override
