@@ -76,7 +76,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.submitEvent(request));
     }
 
-    @GetMapping("/event/event-details/{id}")
+    @GetMapping("/events/event-details/{id}")
     public ResponseEntity<EventDetailsResponse> getEventDetails(
             @PathVariable(name = "id") UUID id
     ) {
@@ -84,21 +84,21 @@ public class EventController {
     }
 
     @PreAuthorize("hasRole('VOL')")
-    @PostMapping("/host/events/save-event")
+    @PostMapping("/vol/events/save-event")
     public ResponseEntity<String> saveEvent(@Valid @RequestBody SaveEventRequest request) {
         eventService.saveEvent(request);
         return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER') and @eventAuthorizer.isOrgManagerOfEvent(#eventId)")
-    @PutMapping("/org-manager/event/{eventId}/approve")
+    @PutMapping("/org-manager/events/{eventId}/approve")
     public ResponseEntity<String> approveEventByManager(@PathVariable UUID eventId) {
         eventService.approveEventByManager(eventId);
         return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER') and @eventAuthorizer.isOrgManagerOfEvent(#eventId)")
-    @PutMapping("/org-manager/event/{eventId}/reject")
+    @PutMapping("/org-manager/events/{eventId}/reject")
     public ResponseEntity<String> rejectEventByManager(
             @PathVariable UUID eventId,
             @Valid @RequestBody RejectEventRequest request
@@ -146,14 +146,14 @@ public class EventController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PutMapping("/sys-admin/event/{eventId}/approve")
+    @PutMapping("/sys-admin/events/{eventId}/approve")
     public ResponseEntity<String> approveEventByAdmin(@PathVariable UUID eventId) {
         eventService.approveEventByAdmin(eventId);
         return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PutMapping("/sys-admin/event/{eventId}/reject")
+    @PutMapping("/sys-admin/events/{eventId}/reject")
     public ResponseEntity<String> rejectEventByAdmin(
             @PathVariable UUID eventId,
             @Valid @RequestBody RejectEventRequest request

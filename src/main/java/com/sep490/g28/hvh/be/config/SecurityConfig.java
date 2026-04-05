@@ -70,13 +70,13 @@ public class SecurityConfig {
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
                                         "/api/v1/auth/forgot-password",
-                                        "/api/v1/volunteer/register-vol-acc",
-                                        "/api/v1/organization/register-org",
+                                        "/api/v1/volunteers/register-vol-acc",
+                                        "/api/v1/organizations/register-org",
                                         "/api/v1/email-otp/**",
-                                        "/api/v1/event/new-feeds",
-                                        "/api/v1/event/event-details/**",
-                                        "/api/v1/organization/organizations/**",
-                                        "/api/v1/activity-domain/activity-domains"
+                                        "/api/v1/events/feeds",
+                                        "/api/v1/events/event-details/**",
+                                        "/api/v1/organizations/**",
+                                        "/api/v1/activity-domains"
                                 ).permitAll() //public endpoint
                                 .anyRequest().authenticated() //all other request require authentication
                         )

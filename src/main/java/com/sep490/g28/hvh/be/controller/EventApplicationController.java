@@ -58,7 +58,7 @@ public class EventApplicationController {
     }
 
     @PreAuthorize("hasRole('HOST')")
-    @GetMapping("/host/event-session/{id}/registered-participants")
+    @GetMapping("/host/event-sessions/{id}/registered-participants")
     ResponseEntity<EventApplicationsResponse> getRegisteredParticipants(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
