@@ -23,13 +23,13 @@ public class NotificationController {
     private final NotificationPublisher notificationPublisher;
     private final UserRepository userRepository;
 
-    @PostMapping("/notification/register-token")
+    @PostMapping("/notifications/register-token")
     public ResponseEntity<Void> registerToken(@RequestBody RegisterNotificationTokenRequest request) {
         notificationService.registerNotificationToken(request);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/notification/unregister-token")
+    @PutMapping("/notifications/unregister-token")
     public ResponseEntity<Void> unregisterToken(@RequestParam String token) {
         notificationService.unregisterNotificationToken(token);
         return ResponseEntity.ok().build();

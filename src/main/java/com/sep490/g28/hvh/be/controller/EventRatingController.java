@@ -21,7 +21,7 @@ public class EventRatingController {
     EventRatingService eventRatingService;
 
     @PreAuthorize("hasRole('VOL') and @eventApplicationAuthorizer.isVolunteerOfEventApplication(#request.eventApplicationId)")
-    @PostMapping("/event-ratings")
+    @PostMapping("/vol/event-ratings")
     public ResponseEntity<Void> rateEvent(
             @RequestBody @Valid RateEventRequest request
     ){

@@ -30,7 +30,7 @@ public class HostController {
     HostService hostService;
 
     @PreAuthorize("hasRole('ORG_MANAGER')")
-    @PostMapping("/host/create-account")
+    @PostMapping("/org-manager/hosts")
     public ResponseEntity<Void> createAccount(
             @RequestBody @Valid CreateHostAccountRequest request
     ) {

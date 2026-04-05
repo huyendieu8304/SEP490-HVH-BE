@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.integration.authServer;
 
 import com.sep490.g28.hvh.be.config.SupabaseProperties;
+import com.sep490.g28.hvh.be.constant.EAccountStatus;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.integration.authServer.dto.CreateUserRequest;
 import com.sep490.g28.hvh.be.integration.authServer.dto.UserResponse;
@@ -89,6 +90,7 @@ public class SupabaseAuthClient implements AuthClient {
             User user = new User();
             user.setId(id);
             user.setEmail(email);
+            user.setStatus(EAccountStatus.ACTIVE);
             userRepository.save(user);
             return id;
         } catch (Exception e) {
