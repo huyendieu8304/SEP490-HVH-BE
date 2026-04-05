@@ -59,31 +59,23 @@ public class EventClaimController {
         return ResponseEntity.ok(eventClaimService.getEventClaims(pageNumber, pageSize, eventId, sessionId));
     }
 
-    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
-    @GetMapping("/host/event-claims/{eventId}/{claimId}")
+    @PreAuthorize("hasRole('HOST')")
+    @GetMapping("/host/event-claims/{claimId}")
     public ResponseEntity<EventClaimDetailResponse> getEventClaimDetail(
             @PathVariable(name = "claimId")
             @UUID(message = "INVALID_UUID")
-            String claimId,
-
-            @PathVariable(name = "eventId")
-            @UUID(message = "INVALID_UUID")
-            String eventId
+            String claimId
     ) {
         java.util.UUID id = java.util.UUID.fromString(claimId);
         return ResponseEntity.ok(eventClaimService.getEventClaimDetail(id));
     }
 
-    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
-    @PostMapping("/host/event-claims/{eventId}/{claimId}/verify")
+    @PreAuthorize("hasRole('HOST')")
+    @PostMapping("/host/event-claims/{claimId}/verify")
     public ResponseEntity<Void> verifyEventClaim(
             @PathVariable(name = "claimId")
             @UUID(message = "INVALID_UUID")
             String inputId,
-
-            @PathVariable(name = "eventId")
-            @UUID(message = "INVALID_UUID")
-            String eventId,
 
             @RequestBody
             @Valid

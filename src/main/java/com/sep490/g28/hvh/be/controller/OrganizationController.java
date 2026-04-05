@@ -29,7 +29,7 @@ public class OrganizationController {
 
     OrganizationService organizationService;
 
-    @PostMapping("/organization/register-org")
+    @PostMapping("/organizations/register-org")
     public ResponseEntity<RegisterOrganizationResponse> registerOrganization(
             @Valid @RequestBody RegisterOrganizationRequest request
     ) {
@@ -37,7 +37,7 @@ public class OrganizationController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/organization/registrations")
+    @GetMapping("/sys-admin/organizations/registrations")
     public ResponseEntity<Page<OrganizationRegistrationSimpleResponse>> getRegistrations(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER") int pageNumber,
@@ -51,7 +51,7 @@ public class OrganizationController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/organization/registrations/{id}")
+    @GetMapping("/sys-admin/organizations/registrations/{id}")
     public ResponseEntity<OrganizationRegistrationDetailsResponse> getRegistrationsDetails(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
@@ -60,7 +60,7 @@ public class OrganizationController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PostMapping("/organization/registrations/{id}/verify")
+    @PostMapping("/sys-admin/organizations/registrations/{id}/verify")
     public ResponseEntity<String> verifyOrgRegistration(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId,
             @RequestBody @Valid OrganizationRegistrationVerifyRequest request
@@ -70,7 +70,7 @@ public class OrganizationController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/organization/organizations")
+    @GetMapping("/organizations")
     public ResponseEntity<Page<OrganizationSimpleResponse>> getOrganizations(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER") int pageNumber,
@@ -84,7 +84,7 @@ public class OrganizationController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/sys-admin/organization/organizations/{id}")
+    @GetMapping("/sys-admin/organizations/{id}")
     public ResponseEntity<OrganizationDetailsResponseForSystemAdmin> getOrganizationDetailsBySystemAdmin(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
@@ -92,7 +92,7 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.getOrganizationDetailsBySystemAdmin(id));
     }
 
-    @GetMapping("/organization/organizations/{id}")
+    @GetMapping("/organizations/{id}")
     public ResponseEntity<OrganizationDetailsResponse> getOrganizationDetails(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {

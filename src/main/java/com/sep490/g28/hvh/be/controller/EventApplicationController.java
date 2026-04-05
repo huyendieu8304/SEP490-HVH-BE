@@ -33,7 +33,7 @@ public class EventApplicationController {
     EventApplicationService eventApplicationService;
 
     @PreAuthorize("hasRole('VOL')")
-    @PostMapping("/event-session/{sessionId}/apply")
+    @PostMapping("/vol/event-sessions/{sessionId}/apply")
     ResponseEntity<Void> applyEvent(@PathVariable UUID sessionId) {
         eventApplicationService.applyEventSession(sessionId);
         return ResponseEntity.ok().build();
