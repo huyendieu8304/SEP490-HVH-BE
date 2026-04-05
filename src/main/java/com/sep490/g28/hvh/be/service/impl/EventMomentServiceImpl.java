@@ -80,13 +80,14 @@ public class EventMomentServiceImpl implements EventMomentService {
             throw new AppException(EventErrorCode.EVENT_MOMENT_ALREADY_SHARED);
         }
 
-        //get the path in storage
+        //get the moment's picture path in storage
         List<String> momentPicturesPathsList = new ArrayList<>();
         if (request.getMomentPictures() != null) {
             String[] momentPictures = request.getMomentPictures().split("\\s+");
             int legal_order = 1;
             for (String momentPicture : momentPictures) {
-                String momentPicturePath = storagePathGenerator.eventMomentImages(eventApplication.getId(), legal_order++, momentPicture);
+                String momentPicturePath = storagePathGenerator
+                        .eventMomentImages(eventSession.getEvent().getId(), eventApplication.getId(), legal_order++, momentPicture);
                 momentPicturesPathsList.add(momentPicturePath);
                 if (legal_order == 6) {
                     break;
@@ -100,6 +101,7 @@ public class EventMomentServiceImpl implements EventMomentService {
         }
         String momentPicturesPaths = momentPicturesPathsSB.toString().trim();
 
+        //get upload urls for moment's pictures
         List<CompletableFuture<String>> momentPicturesFutures = new ArrayList<>();
         for (String momentPicturePath : momentPicturesPathsList) {
             CompletableFuture<String> momentPictureFuture =

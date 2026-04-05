@@ -68,7 +68,7 @@ public class EventClaimServiceImpl implements EventClaimService {
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
         );
 
-        //Calculate duration between event end time
+        //Calculate duration between session end time and claim time
         Duration claimDuration = Duration.between(eventSession.getEndDateTime(), claimTime);
         long days = claimDuration.toDays();
         boolean hasTimeRemainder = !claimDuration.minusDays(days).isZero();
@@ -78,12 +78,12 @@ public class EventClaimServiceImpl implements EventClaimService {
             days++;
         }
 
-        //verify time <= 7 days
+        //check if duration between session end time and claim time <= 7 days
         if (days > 7) {
             throw new AppException(EventErrorCode.EVENT_CLAIM_OUT_OF_CLAIM_TIME);
         }
 
-        //Calculate duration between event end time
+        //Calculate duration between session start time and session end time
         Duration sessionDuration = Duration.between(eventSession.getStartDateTime(), eventSession.getEndDateTime());
         double totalCreditHour = sessionDuration.toHours() + (sessionDuration.toMinutesPart() / 60.0);
 
@@ -98,12 +98,13 @@ public class EventClaimServiceImpl implements EventClaimService {
             throw new AppException(EventErrorCode.EVENT_SESSION_ALREADY_CLAIMED);
         }
 
-        //get the path in storage
+        //get the evidences image paths in storage
         String[] evidences = request.getEvidences().split("\\s+");
         List<String> evidencesPathsList = new ArrayList<>();
         int legal_order = 1;
         for (String evidence : evidences) {
-            String evidencePath = storagePathGenerator.eventClaimImages(eventApplication.getId(), legal_order++, evidence);
+            String evidencePath = storagePathGenerator
+                    .eventClaimImages(eventSession.getEvent().getId(), eventApplication.getId(), legal_order++, evidence);
             evidencesPathsList.add(evidencePath);
             if (legal_order == 6) {
                 break;
@@ -116,6 +117,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         }
         String evidencesPaths = evidencesPathsSB.toString().trim();
 
+        //get upload urls for claim's evidences
         List<CompletableFuture<String>> evidencesFutures = new ArrayList<>();
         for (String evidencePath : evidencesPathsList) {
             CompletableFuture<String> evidenceFuture =
@@ -188,7 +190,7 @@ public class EventClaimServiceImpl implements EventClaimService {
                 honorScore = volunteer.getHonorScore();
 
 
-                //get signed URL of file
+                //get signed URL of volunteer avatar
                 if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
 
                     CompletableFuture<String> avatarFuture =
@@ -330,7 +332,7 @@ public class EventClaimServiceImpl implements EventClaimService {
 
         EventApplication eventApplication = eventClaim.getEventApplication();
 
-        //Calculate duration between event end time
+        //Calculate duration between session end time and current verify time
         Duration duration = Duration.between(eventApplication.getSession().getEndDateTime(), verifyTime);
         long days = duration.toDays();
         boolean hasTimeRemainder = !duration.minusDays(days).isZero();
@@ -340,7 +342,7 @@ public class EventClaimServiceImpl implements EventClaimService {
             days++;
         }
 
-        //verify time <= 9 days
+        //check if duration between session end time and current verify time <= 9 days
         if (days > 9) {
             throw new AppException(EventErrorCode.EVENT_CLAIM_OUT_OF_VERIFY_TIME);
         }

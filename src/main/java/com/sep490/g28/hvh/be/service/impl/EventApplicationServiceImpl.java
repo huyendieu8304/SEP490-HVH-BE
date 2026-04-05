@@ -296,7 +296,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                                 honorScore = volunteer.getHonorScore();
 
 
-                                //get signed URL of file
+                                //get signed URL of volunteer avatar
                                 if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
 
                                     CompletableFuture<String> avatarFuture =
