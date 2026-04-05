@@ -28,14 +28,14 @@ public class EventClaimController {
     EventClaimService eventClaimService;
 
     @PreAuthorize("hasRole('VOL')")
-    @PostMapping("/vol/event-claim/claim-event-hours")
+    @PostMapping("/vol/event-claims")
     public ResponseEntity<ClaimEventHourResponse> claimEventHours(@RequestBody @Valid ClaimEventHourRequest request) {
 
         return ResponseEntity.ok(eventClaimService.claimEventHour(request));
     }
 
     @PreAuthorize("hasRole('HOST')")
-    @GetMapping("/host/event-claim/{eventId}/event-claims")
+    @GetMapping("/host/event-claims/{eventId}")
     public ResponseEntity<Page<EventClaimSimpleResponse>> getEventClaims(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
@@ -59,21 +59,31 @@ public class EventClaimController {
         return ResponseEntity.ok(eventClaimService.getEventClaims(pageNumber, pageSize, eventId, sessionId));
     }
 
-    @PreAuthorize("hasRole('HOST')")
-    @GetMapping("/host/event-claim/event-claim-detail/{claimId}")
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @GetMapping("/host/event-claims/{eventId}/{claimId}")
     public ResponseEntity<EventClaimDetailResponse> getEventClaimDetail(
-            @PathVariable(name = "claimId") @UUID(message = "INVALID_UUID") String inputId
+            @PathVariable(name = "claimId")
+            @UUID(message = "INVALID_UUID")
+            String claimId,
+
+            @PathVariable(name = "eventId")
+            @UUID(message = "INVALID_UUID")
+            String eventId
     ) {
-        java.util.UUID id = java.util.UUID.fromString(inputId);
+        java.util.UUID id = java.util.UUID.fromString(claimId);
         return ResponseEntity.ok(eventClaimService.getEventClaimDetail(id));
     }
 
-    @PreAuthorize("hasRole('HOST')")
-    @PostMapping("/host/event-claim/{claimId}/verify-event-claim")
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @PostMapping("/host/event-claims/{eventId}/{claimId}/verify")
     public ResponseEntity<Void> verifyEventClaim(
             @PathVariable(name = "claimId")
             @UUID(message = "INVALID_UUID")
             String inputId,
+
+            @PathVariable(name = "eventId")
+            @UUID(message = "INVALID_UUID")
+            String eventId,
 
             @RequestBody
             @Valid

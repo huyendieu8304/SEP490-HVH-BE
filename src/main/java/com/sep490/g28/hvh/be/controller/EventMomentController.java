@@ -26,13 +26,13 @@ public class EventMomentController {
     EventMomentService eventMomentService;
 
     @PreAuthorize("hasRole('VOL')")
-    @PostMapping("/vol/event-moment/share-moment")
+    @PostMapping("/vol/event-moments")
     public ResponseEntity<ShareMomentResponse> shareMoment(@RequestBody @Valid ShareMomentRequest request) {
 
         return ResponseEntity.ok(eventMomentService.shareMoment(request));
     }
 
-    @GetMapping("/event-moment/feed")
+    @GetMapping("/event-moments/feed")
     public ResponseEntity<EventMomentFeedResponse> getEventMomentsFeed(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
@@ -50,7 +50,7 @@ public class EventMomentController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @DeleteMapping("/sys-admin/event-moment/delete-moment/{momentId}")
+    @DeleteMapping("/sys-admin/event-moments/{momentId}/delete-moment")
     public ResponseEntity<Void> deleteEventMoment(
             @PathVariable(name = "momentId") @UUID(message = "INVALID_UUID") String inputId) {
         java.util.UUID id = java.util.UUID.fromString(inputId);

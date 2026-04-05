@@ -243,9 +243,9 @@ public class EventController {
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#inputId)")
     @GetMapping("/host/event/event-details/{id}")
     public ResponseEntity<EventDetailsResponseForHost> getEventDetailsByHost(
-            @PathVariable(name = "id") UUID id
+            @PathVariable(name = "id") UUID inputId
     ) {
-        return ResponseEntity.ok(eventService.getEventDetailsByHost(id));
+        return ResponseEntity.ok(eventService.getEventDetailsByHost(inputId));
     }
 
     @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
