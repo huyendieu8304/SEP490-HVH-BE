@@ -62,4 +62,6 @@ public interface EventService {
     UpdateEventResponse updateEvent(UUID eventId, UpdateEventRequest request);
 
     void assignHostToEvent(UUID eventId, AssignHostToEventRequest request);
+
+    Page<EventSimpleResponse> getSavedEventsByVolunteer(int pageNumber, int pageSize, String inputName);
 }

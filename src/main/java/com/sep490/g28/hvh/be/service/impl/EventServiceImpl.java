@@ -1551,5 +1551,59 @@ public class EventServiceImpl implements EventService {
 
         log.info("Event assigned to host, eventId={} hostId={}", eventId, request.getHostId());
     }
+
+    @Override
+    public Page<EventSimpleResponse> getSavedEventsByVolunteer(int pageNumber, int pageSize, String inputName) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<Event> events = volunteerSavedEventRepository.findAllSavedEventsByVolunteerId(volunteerId, inputName, pageable);
+
+        //check if there's no event with input status
+        if(events.getContent().isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, events.getTotalElements());
+        }
+
+        return events.map(e -> {
+
+            String firstEventImageUrl = null;
+
+            //get signed URL of file
+            if (e.getImages() != null && !e.getImages().isEmpty()) {
+
+                List<EventImage> eventImageList = e.getImages();
+
+                CompletableFuture<String> firstEventImageFuture =
+                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
+
+                try {
+                    CompletableFuture.allOf(firstEventImageFuture).join();
+                    firstEventImageUrl = firstEventImageFuture.join();
+                } catch (CompletionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof AppException ae) {
+                        //todo: handle app exception in viewEventFeeds
+                    } else {
+                        throw cause instanceof RuntimeException re ? re : ex;
+                    }
+                }
+            }
+
+            return new EventSimpleResponse(
+                    e.getId(),
+                    e.getOrganization().getName(),
+                    e.getName(),
+                    firstEventImageUrl,
+                    e.getAddress(),
+                    e.getStartDate(),
+                    e.getRecruitmentEndDate()
+            );
+        });
+    }
 }
 
