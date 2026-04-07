@@ -5,14 +5,18 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.LoadState;
+import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ECertificateStatus;
 import com.sep490.g28.hvh.be.dto.certificate.payload.CertificateContentPayload;
+import com.sep490.g28.hvh.be.dto.certificate.response.VerifyCertificateResponse;
+import com.sep490.g28.hvh.be.dto.certificate.response.VolunteerCertificateResponse;
 import com.sep490.g28.hvh.be.entity.Certificate;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.Volunteer;
+import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.CertificateErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.CertificateRepository;
@@ -22,22 +26,27 @@ import com.sep490.g28.hvh.be.service.CertificateService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+
 import javax.imageio.ImageIO;
-
-
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -47,34 +56,91 @@ public class CertificateServiceImpl implements CertificateService {
     StorageService storageService;
 
     TemplateEngine templateEngine;
-     StoragePathGenerator storagePathGenerator;
+    StoragePathGenerator storagePathGenerator;
 
-//    @Value("${front-end.web.baseUrl}")
+    //    @Value("${front-end.web.baseUrl}")
+    //todo
     private String frontendBaseUrl = "http://localhost:8080/";
     private final VolunteerRepository volunteerRepository;
     private final EventRepository eventRepository;
+    private final CurrentUserProvider currentUserProvider;
 
 
-    // TODO: validate user participated in event
     @Override
     @Transactional
     public String generate(UUID volId, UUID eventId) {
 
-        Volunteer volunteer = volunteerRepository.findById(volId).isPresent()?volunteerRepository.findById(volId).get():null;
-        Event event = eventRepository.findById(eventId).isPresent()?eventRepository.findById(eventId).get():null;
+        Volunteer volunteer = volunteerRepository.findById(volId).isPresent() ? volunteerRepository.findById(volId).get() : null;
+        Event event = eventRepository.findById(eventId).isPresent() ? eventRepository.findById(eventId).get() : null;
+
+        generate(volunteer, event);
+
+        return "success";
+    }
+
+    @Override
+    public Page<VolunteerCertificateResponse> getCertificatesByVolunteer(int pageNumber, int pageSize, String eventName) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+
+        Page<VolunteerCertificateResponse> page = certificateRepository.findByVolunteerIdAndEventName(
+                pageable,
+                currentUserProvider.getId(),
+                eventName
+        );
+
+        //get signed urls of certificates
+        List<CompletableFuture<VolunteerCertificateResponse>> futures =
+                page.getContent().stream()
+                        .map(cert -> {
+                            if (cert.getCertSignedUrl() == null){
+                                return CompletableFuture.completedFuture(cert);
+                            }
+                            return storageService.getSignedUrlAsync(cert.getCertSignedUrl())
+                                    .thenApply(url -> {
+                                        cert.setCertSignedUrl(url);
+                                        return cert;
+                                    })
+                                    .exceptionally(ex -> {
+                                        log.warn("Failed to get signed url for path: {}", cert.getCertSignedUrl(), ex);
+                                        cert.setCertSignedUrl(null);
+                                        return cert;
+                                    });
+
+                        }).toList();
+
+        List<VolunteerCertificateResponse> responses = futures.stream().map(CompletableFuture::join).toList();
+        return new PageImpl<>(responses, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public VerifyCertificateResponse verifyCertificate(String certCode) {
+        Certificate cert = certificateRepository.findByCode(certCode).orElseThrow(
+                () -> new AppException(CertificateErrorCode.CERTIFICATE_NOT_EXISTED)
+        );
+
+        VerifyCertificateResponse response = new VerifyCertificateResponse();
+        response.setCertSignedUrl(storageService.getSignedUrl(cert.getCertificatePath()));
+
+        return response;
+    }
+
+    public void generate(Volunteer volunteer, Event event) {
 
         //create record of Certificate
         Certificate cert = new Certificate();
 
         String certCode = generateCode();
         cert.setCode(certCode);
+
         String certPath = storagePathGenerator.volunteerCertificate(volunteer.getId(), certCode, ".pdf");
         cert.setCertificatePath(certPath);
 
         cert.setEvent(event);
         cert.setVolunteer(volunteer);
         cert.setStatus(ECertificateStatus.ACTIVE);
-        certificateRepository.save(cert);
 
         //create content payload for the certificate
         CertificateContentPayload payload = new CertificateContentPayload();
@@ -87,20 +153,21 @@ public class CertificateServiceImpl implements CertificateService {
 
         String verifyUrl = frontendBaseUrl + "/verify/certificate/" + certCode;
         payload.setVerifyUrl(verifyUrl);
+
+        //generate qr code for verifying
         String qrBase64 = generateQrBase64(verifyUrl);
         payload.setQrBase64(qrBase64);
 
-
-        // 3. render HTML
+        //render HTML to prepare for generate pdf
         String html = renderHtml(payload);
 
-        // 4. generate PDF
+        //generate PDF
         byte[] pdfBytes = generatePdf(html);
 
+        certificateRepository.save(cert);
         // 5. upload file
-        storageService.upload(pdfBytes,certPath);
-
-        return certPath;
+        storageService.upload(pdfBytes, certPath);
+        log.info("Generate certificate successfully, certPath={}", certPath);
     }
 
     private String generateCode() {
@@ -116,31 +183,11 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     private byte[] generatePdf(String html) {
-//        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-//
-//            PdfRendererBuilder builder = new PdfRendererBuilder();
-//
-//            // font (fix tiếng Việt)
-//            builder.useFont(
-//                    new ClassPathResource("fonts/Roboto-Regular.ttf").getFile(),
-//                    "Roboto"
-//            );
-//
-//            builder.withHtmlContent(html, "classpath:/templates/template-cert.html");
-//            builder.toStream(os);
-//            builder.run();
-//
-//            return os.toByteArray();
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException("PDF error", e);
-//        }
-
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium().launch(
                     new BrowserType.LaunchOptions().setHeadless(true)
             );
-            Page page = browser.newPage();
+            com.microsoft.playwright.Page page = browser.newPage();
 
             page.setContent(html);
             // chờ load xong (font, ảnh...)
@@ -148,7 +195,7 @@ public class CertificateServiceImpl implements CertificateService {
 
             page.setContent(html);
 
-            return page.pdf(new Page.PdfOptions()
+            return page.pdf(new com.microsoft.playwright.Page.PdfOptions()
                     .setWidth("297mm")
                     .setHeight("210mm")
                     .setFormat("A4")
@@ -156,7 +203,7 @@ public class CertificateServiceImpl implements CertificateService {
                     .setPrintBackground(true)
             );
 
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -189,32 +236,6 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
 
-
-//    @Override
-//    public VerifyCertificateResponse verify(String code) {
-//
-//        Certificate cert = certificateRepository.findByCode(code)
-//                .orElseThrow(() -> new RuntimeException("INVALID"));
-//
-//        return VerifyCertificateResponse.builder()
-//                .status(cert.getStatus().name())
-//                .userId(cert.getUserId())
-//                .eventId(cert.getEventId())
-//                .issuedAt(cert.getIssuedAt())
-//                .build();
-//    }
-//
-//    @Override
-//    public List<CertificateResponse> getByUser(UUID userId) {
-//        return certificateRepository.findByUserId(userId)
-//                .stream()
-//                .map(c -> CertificateResponse.builder()
-//                        .code(c.getCode())
-//                        .fileUrl(c.getFileUrl())
-//                        .build())
-//                .toList();
-//    }
-//
 //    @Override
 //    @Transactional
 //    public void revoke(UUID id) {

@@ -10,7 +10,10 @@ import java.util.UUID;
 
 @Entity
 @Table(
-        name = "certificates"
+        name = "certificates",
+        indexes = {
+                @Index(name = "idx_certificates_code", columnList = "code")
+        }
 )
 @Getter
 @Setter

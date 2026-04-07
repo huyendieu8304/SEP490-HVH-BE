@@ -247,7 +247,15 @@
             
             <div class="signature-section">
 <!--                todo-->
-                <p class="date-line" >Hà Nội, ngày 06 tháng 04 năm 2026</p>
+                <p class="date-line"
+                   th:text="'Hà Nội, ngày '
+            + ${#temporals.format(*{issuedDate}, 'dd')}
+            + ' tháng '
+            + ${#temporals.format(*{issuedDate}, 'MM')}
+            + ' năm '
+            + ${#temporals.format(*{issuedDate}, 'yyyy')}">
+                </p>
+<!--                <p class="date-line" >Hà Nội, ngày 06 tháng 04 năm 2026</p>-->
                 <p class="signer-name" th:text="*{hostFullName}">LÊ TRẦN HOÀNG NAM</p>
                 <div class="sig-line"></div>
                 <p class="signer-title">NGƯỜI ĐẠI DIỆN TỔ CHỨC</p>
