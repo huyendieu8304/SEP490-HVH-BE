@@ -77,7 +77,7 @@ public class EventServiceImpl implements EventService {
         //Get the slice based on the current action is refresh (swipe up) or load more (scroll end)
         Page<Event> page = null;
 
-
+        //check if activitySubDomains is null or empty
         if(activitySubDomains == null || activitySubDomains.isEmpty()) {
 
             //If the action is refresh, get the slice within 1 hour ago

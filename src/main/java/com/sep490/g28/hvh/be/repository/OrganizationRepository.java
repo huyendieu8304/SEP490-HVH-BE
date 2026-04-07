@@ -13,7 +13,7 @@ public interface OrganizationRepository extends JpaRepository<Organization, UUID
 
     @Query(value = """
             SELECT o.id, o.name, o.org_type,
-                   COUNT(DISTINCT e.id) AS totalEvents
+                   COUNT(DISTINCT e.id) AS totalEvents, o.credit_hour
             FROM organizations o
             LEFT JOIN events e ON e.organization_id = o.id
             WHERE (:name IS NULL OR o.name ILIKE CONCAT('%', :name, '%'))
@@ -24,5 +24,18 @@ public interface OrganizationRepository extends JpaRepository<Organization, UUID
     List<Object[]> search(
             @Param("name") String name,
             @Param("orgTypes") List<String> orgTypes,
+            Pageable pageable);
+
+    @Query(value = """
+            SELECT o.id, o.name, o.org_type,
+                   COUNT(DISTINCT e.id) AS totalEvents, o.credit_hour
+            FROM organizations o
+            LEFT JOIN events e ON e.organization_id = o.id
+            WHERE (:name IS NULL OR o.name ILIKE CONCAT('%', :name, '%'))
+            GROUP BY o.id
+            -- #pageable
+            """, nativeQuery = true)
+    List<Object[]> searchWithoutOrgType(
+            @Param("name") String name,
             Pageable pageable);
 }

@@ -13,14 +13,6 @@ public class OrganizationSimpleResponse {
     private String name;
     private EOrgType orgType;
     private long numberOfHostedEvents;
+    private long creditHour;
     //todo add rating
-
-    public static OrganizationSimpleResponse from(Object[] row){
-        return new OrganizationSimpleResponse(
-                (UUID) row[0],
-                (String) row[1],
-                row[2] != null ? EOrgType.valueOf((String) row[2]) : null,
-                Long.parseLong(row[3].toString())
-        );
-    }
 }

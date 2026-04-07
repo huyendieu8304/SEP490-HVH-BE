@@ -15,6 +15,7 @@ import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
+import com.sep490.g28.hvh.be.mapper.OrganizationMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.OrganizationService;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
@@ -52,6 +53,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     EmailService emailService;
     HostRepository hostRepository;
     EventRepository eventRepository;
+    OrganizationMapper organizationMapper;
 
     @Override
     public RegisterOrganizationResponse registerOrganization(RegisterOrganizationRequest request) {
@@ -430,10 +432,16 @@ public class OrganizationServiceImpl implements OrganizationService {
                 Sort.by(Sort.Direction.DESC, "created_at")
         );
 
-        List<Object[]> rawOrgData = organizationRepository.search(name, orgTypes, pageable);
+        List<Object[]> rawOrgData;
 
+        //check if orgTypes is null or empty
+        if(orgTypes == null || orgTypes.isEmpty()) {
+            rawOrgData = organizationRepository.searchWithoutOrgType(name, pageable);
+        } else {
+            rawOrgData = organizationRepository.search(name, orgTypes, pageable);
+        }
         List<OrganizationSimpleResponse> organizations = rawOrgData.stream()
-                .map(OrganizationSimpleResponse::from).toList();
+                .map(organizationMapper::toOrganizationSimpleResponse).toList();
 
         return new PageImpl<>(organizations, pageable, organizations.size());
     }
