@@ -100,6 +100,7 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.getOrganizationDetails(id));
     }
 
+    @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/organizations")
     public ResponseEntity<Page<OrganizationSimpleResponseForSystemAdmin>> getOrganizationsBySystemAdmin(
             @RequestParam(defaultValue = "0")
