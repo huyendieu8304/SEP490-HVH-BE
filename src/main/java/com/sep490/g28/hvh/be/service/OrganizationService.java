@@ -29,4 +29,7 @@ public interface OrganizationService {
     OrganizationDetailsResponse getOrganizationDetails(UUID ordId);
 
     void deductCreditHourOfOrganization(Organization organization, int numberOfHourDeduct);
+
+    Page<OrganizationSimpleResponseForSystemAdmin> getOrganizationsBySystemAdmin(
+            int pageNumber, int pageSize, String name, List<String> orgTypeLists);
 }

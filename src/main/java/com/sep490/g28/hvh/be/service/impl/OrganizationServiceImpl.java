@@ -658,4 +658,26 @@ public class OrganizationServiceImpl implements OrganizationService {
         organizationRepository.save(organization);
         log.info("The credit hour of organization was deducted by 3, organizationId={}", organization.getId());
     }
+
+    @Override
+    public Page<OrganizationSimpleResponseForSystemAdmin> getOrganizationsBySystemAdmin(int pageNumber, int pageSize, String name, List<String> orgTypes) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "created_at")
+        );
+
+        List<Object[]> rawOrgData;
+
+        //check if orgTypes is null or empty
+        if(orgTypes == null || orgTypes.isEmpty()) {
+            rawOrgData = organizationRepository.searchByAdminWithoutOrgType(name, pageable);
+        } else {
+            rawOrgData = organizationRepository.searchByAdmin(name, orgTypes, pageable);
+        }
+        List<OrganizationSimpleResponseForSystemAdmin> organizations = rawOrgData.stream()
+                .map(organizationMapper::toOrganizationSimpleResponseForSystemAdmin).toList();
+
+        return new PageImpl<>(organizations, pageable, organizations.size());
+    }
 }
