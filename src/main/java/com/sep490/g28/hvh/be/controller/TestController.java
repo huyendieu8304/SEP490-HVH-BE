@@ -5,6 +5,7 @@ import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationReques
 import com.sep490.g28.hvh.be.dto.organization.response.RegisterOrganizationResponse;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.service.OrganizationService;
+import com.sep490.g28.hvh.be.service.impl.CertificateServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 
 @RestController
@@ -104,6 +106,16 @@ public class TestController {
             @Valid @RequestBody RegisterOrganizationRequest request
     ) {
         return ResponseEntity.ok(organizationService.registerOrganization(request));
+    }
+
+    private final CertificateServiceImpl certificateServiceImpl;
+
+    @PostMapping("/certificate")
+    public ResponseEntity<String> generate (
+            @RequestParam UUID volId,
+            @RequestParam UUID eventId
+    ){
+        return ResponseEntity.ok(certificateServiceImpl.generate(volId, eventId));
     }
 
 }

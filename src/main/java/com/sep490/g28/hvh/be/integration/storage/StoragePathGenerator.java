@@ -16,10 +16,12 @@ public class StoragePathGenerator {
     private static final String IDENTITY_VERIFICATION_FOLDER = "/identity-verification";
     private static final String ORG_REGISTRATION_FOLDER = "/org-registration";
     private static final String EVENT_FOLDER = "/event";
+    private static final String VOL_FOLDER = "/volunteer";
 
     private static final String EVENT_IMAGE_DIR = "/image";
     private static final String EVENT_CLAIM_DIR = "/claim";
     private static final String EVENT_MOMENT_DIR = "/moment";
+    private static final String VOL_CERT_DIR = "/cert";
 
     private static final String CID_FRONT_FILE_NAME = "/cid-front";
     private static final String CID_BACK_FILE_NAME = "/cid-back";
@@ -76,4 +78,8 @@ public class StoragePathGenerator {
         return  EVENT_FOLDER + "/" + eventId + EVENT_MOMENT_DIR + "/" + applicationId + "_" + order + fileExtension;
     }
 
+    //================================================================================================
+    public String volunteerCertificate(UUID volId, String certCode, String fileExtension) {
+        return VOL_FOLDER+ "/" + volId + VOL_CERT_DIR + "/" + certCode + fileExtension;
+    }
 }
