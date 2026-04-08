@@ -10,4 +10,6 @@ public enum ENotificationDataAction {
 
     VOL_REVIEW_DETAILS,
 
+    VOL_CERTIFICATES,
+
 }

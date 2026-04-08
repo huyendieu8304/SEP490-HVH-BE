@@ -185,7 +185,6 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         UUID orgManagerId = host.getCreatedBy().getId();
 
-        notification.setType(ENotificationType.MNG_EVENT_CREATED);
         notification.setTitle("Sự kiện mới được tạo");
         notification.setBody(String.format("Sự kiện \"%s\" vừa được tạo và cần xác nhận.", event.getName()));
         notification.setData(Map.of(
@@ -193,6 +192,7 @@ public class NotificationServiceImpl implements NotificationService {
                 DATA_REF_ID_KEY, event.getId().toString(),
                 DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
         ));
+        notification.setType(ENotificationType.MNG_EVENT_CREATED);
 
         notification = saveNotificationForUser(notification, orgManagerId);
 
@@ -779,6 +779,101 @@ public class NotificationServiceImpl implements NotificationService {
 
         notification = saveNotificationForUser(notification, volunteerId);
         notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
+    @Override
+    public void sendVolunteerReceivedCertificateNotification(Volunteer volunteer, Event event) {
+        Notification notification = buildVolunteerReceivedCertificateNotification(event.getName());
+
+        notification = saveNotificationForUser(notification, volunteer.getId());
+        notificationPublisher.enqueueNotification(notification, volunteer.getId());
+    }
+
+    private Notification buildVolunteerReceivedCertificateNotification(String eventName) {
+        Notification notification = new Notification();
+        notification.setTitle("Nhận được chứng chỉ");
+        notification.setBody(String.format(
+                "Xin chúc mừng bạn đã nhận được chứng chỉ chứng nhận những đóng góp của bạn cho sự kiện %s.",
+                eventName
+        ));
+
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_RECEIVED_CERTIFICATE.name(),
+                DATA_ACTION, ENotificationDataAction.VOL_CERTIFICATES.name()
+        ));
+        notification.setType(ENotificationType.VOL_RECEIVED_CERTIFICATE);
+        return notification;
+    }
+
+    @Override
+    public void sendVolunteersReceivedCertificatesNotifications(List<Volunteer> volunteers, Event event) {
+
+        Notification notification = buildVolunteerReceivedCertificateNotification(event.getName());
+
+        //link volunteer to notification
+        List<UserNotification> userNotifications = new ArrayList<>();
+        for (Volunteer value : volunteers) {
+            UserNotification un = new UserNotification();
+            un.setNotification(notification);
+            un.setUser(userRepository.getReferenceById(value.getId()));
+
+            userNotifications.add(un);
+        }
+        userNotificationRepository.saveAll(userNotifications);
+
+        //push notification
+        for (Volunteer volunteer : volunteers) {
+            notificationPublisher.enqueueNotification(
+                    notification,
+                    volunteer.getId()
+            );
+        }
+//        log.info("Send volunteer received certificates notification for {} participated in event {}", volunteers.size(), event.getName());
+    }
+
+    @Override
+    public void sendEventCompletedNotifications(Event event, UUID orgManagerId, UUID hostId) {
+        //send notification to host
+        Notification notificationForHost = new Notification();
+
+        notificationForHost.setTitle("Sự kiện đã hoàn thành");
+        notificationForHost.setBody(String.format("Sự kiện %s đã qua 2 ngày kể từ ngày kết thúc sự kiện," +
+                " những tình nguyện viên đủ điều kiện đã được đánh giá tự động 5 sao cho tất cả các tiêu chí" +
+                " và chứng chỉ đã được gửi tới những tình nguyện viên hợp lệ. Chúc mừng bạn đã hoàn thành sự kiện. " +
+                "Chúng tôi rất mong sẽ được đồng hành cùng bạn trong các sự kiện sắp tới.",
+                event.getName())
+        );
+        notificationForHost.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_COMPLETED.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notificationForHost.setType(ENotificationType.HOST_EVENT_COMPLETED);
+
+        //save notification
+        notificationForHost = saveNotificationForUser(notificationForHost, hostId);
+
+        //send notification to manager
+        Notification notificationForManager = new Notification();
+        notificationForManager.setTitle("Sự kiện đã hoàn thành");
+        notificationForManager.setBody(String.format("Sự kiện %s đã qua 2 ngày kể từ ngày kết thúc sự kiện," +
+                " những tình nguyện viên đủ điều kiện đã được đánh giá tự động 5 sao cho tất cả các tiêu chí" +
+                " và chứng chỉ đã được gửi tới những tình nguyện viên hợp lệ. Chúc mừng bạn đã hoàn thành sự kiện. " +
+                "Chúng tôi rất mong sẽ được đồng hành cùng bạn trong các sự kiện sắp tới.",
+                event.getName())
+        );
+        notificationForManager.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.MNG_EVENT_COMPLETED.name(),
+                DATA_REF_ID_KEY, event.getId().toString(),
+                DATA_ACTION, ENotificationDataAction.MNG_EVENT_DETAILS.name()
+        ));
+        notificationForManager.setType(ENotificationType.MNG_EVENT_COMPLETED);
+
+        //save notification
+        notificationForManager = saveNotificationForUser(notificationForManager, orgManagerId);
+
+        notificationPublisher.enqueueNotification(notificationForHost, hostId);
+        notificationPublisher.enqueueNotification(notificationForManager, orgManagerId);
     }
 
 

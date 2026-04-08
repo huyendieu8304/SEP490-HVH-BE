@@ -53,4 +53,10 @@ public interface NotificationService {
     void sendEventAssignedHostNotification(UUID oldHostId, UUID newHostId, Event event);
 
     void sendVolunteerReviewedByHostNotification(UUID volunteerId, Event event, EventApplication application, UUID reviewId);
+
+    void sendVolunteerReceivedCertificateNotification(Volunteer volunteer, Event event);
+
+    void sendVolunteersReceivedCertificatesNotifications(List<Volunteer> volunteers, Event event);
+
+    void sendEventCompletedNotifications(Event event, UUID orgManagerId, UUID hostId);
 }
