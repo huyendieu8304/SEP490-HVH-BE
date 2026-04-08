@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
+import com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
@@ -144,4 +145,18 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             WHERE a.session.id = :sessionId
             """)
     Page<ActualParticipantResponse> findCheckedInVolunteer(UUID sessionId, Pageable pageable);
+
+    @Query("""
+            SELECT new com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection(
+            a,
+            r,
+            v
+            ) FROM EventApplication a
+            LEFT JOIN a.review r
+            LEFT JOIN a.volunteer v
+            WHERE a.session.id = :sessionId
+            AND a.status = 'COMPLETED'
+            AND a.creditHour >= 0
+            """)
+    List<EligibleApplicationProjection> findEligibleApplicationProjection(UUID sessionId);
 }

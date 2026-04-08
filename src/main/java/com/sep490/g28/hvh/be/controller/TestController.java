@@ -8,6 +8,7 @@ import com.sep490.g28.hvh.be.entity.Volunteer;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
+import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.service.OrganizationService;
 import com.sep490.g28.hvh.be.service.impl.CertificateServiceImpl;
 import jakarta.validation.Valid;
@@ -119,6 +120,7 @@ public class TestController {
 
     VolunteerRepository volunteerRepository;
     EventRepository eventRepository;
+    EventService eventService;
 
     @PostMapping("/certificate")
     public ResponseEntity<String> generate (
@@ -130,6 +132,12 @@ public class TestController {
         Event event = eventRepository.findById(eventId).isPresent() ? eventRepository.findById(eventId).get() : null;
 
         certificateServiceImpl.generateCertificate(volunteer, event);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/complete-event")
+    public ResponseEntity<Void> completeEvent(){
+        eventService.completeEvent();
         return ResponseEntity.ok().build();
     }
 

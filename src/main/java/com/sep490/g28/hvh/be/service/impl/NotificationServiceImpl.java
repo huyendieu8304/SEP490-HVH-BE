@@ -809,6 +809,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendVolunteersReceivedCertificatesNotifications(List<Volunteer> volunteers, Event event) {
 
         Notification notification = buildVolunteerReceivedCertificateNotification(event.getName());
+        notification = notificationRepository.save(notification);
 
         //link volunteer to notification
         List<UserNotification> userNotifications = new ArrayList<>();
