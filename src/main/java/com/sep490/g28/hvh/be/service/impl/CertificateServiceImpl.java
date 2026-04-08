@@ -39,6 +39,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -166,7 +167,9 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     private String generateCode() {
-        return "CERT-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+        String random = UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+        return date + "-" + random;
     }
 
     private String renderHtml(CertificateContentPayload payload) {
