@@ -18,6 +18,10 @@ public class ActualParticipantResponse {
     String avatarUrl;
     String address;
 
+    String nickname;
+    String email;
+    String phone;
+
     Integer creditScore;
     Integer honorScore;
 
@@ -32,6 +36,9 @@ public class ActualParticipantResponse {
             String bio,
             String avatarUrl,
             String address,
+            String nickname,
+            String email,
+            String phone,
             Integer creditScore,
             Integer honorScore,
             Short avgRating,
@@ -44,6 +51,9 @@ public class ActualParticipantResponse {
         this.bio = bio;
         this.avatarUrl = avatarUrl;
         this.address = address;
+        this.nickname = nickname;
+        this.email = email;
+        this.phone = phone;
         this.creditScore = creditScore;
         this.honorScore = honorScore;
         this.avgRating = avgRating;
