@@ -41,9 +41,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -58,25 +56,12 @@ public class CertificateServiceImpl implements CertificateService {
     TemplateEngine templateEngine;
     StoragePathGenerator storagePathGenerator;
 
+
     //    @Value("${front-end.web.baseUrl}")
     //todo
     private String frontendBaseUrl = "http://localhost:8080/";
-    private final VolunteerRepository volunteerRepository;
-    private final EventRepository eventRepository;
     private final CurrentUserProvider currentUserProvider;
 
-
-    @Override
-    @Transactional
-    public String generate(UUID volId, UUID eventId) {
-
-        Volunteer volunteer = volunteerRepository.findById(volId).isPresent() ? volunteerRepository.findById(volId).get() : null;
-        Event event = eventRepository.findById(eventId).isPresent() ? eventRepository.findById(eventId).get() : null;
-
-        generate(volunteer, event);
-
-        return "success";
-    }
 
     @Override
     public Page<VolunteerCertificateResponse> getCertificatesByVolunteer(int pageNumber, int pageSize, String eventName) {
@@ -127,9 +112,28 @@ public class CertificateServiceImpl implements CertificateService {
         return response;
     }
 
-    public void generate(Volunteer volunteer, Event event) {
-
+    @Override
+    @Transactional
+    public void generateCertificate(Volunteer volunteer, Event event) {
         //create record of Certificate
+        Certificate cert = buidCertificate(volunteer,event);
+
+        //create content payload for the certificate
+        CertificateContentPayload payload = buildCertificatePayload(volunteer, event,cert);
+
+        //render HTML to prepare for generate pdf
+        String html = renderHtml(payload);
+
+        //generate PDF
+        byte[] pdfBytes = generatePdf(html);
+
+        certificateRepository.save(cert);
+        // 5. upload file
+        storageService.upload(pdfBytes, cert.getCertificatePath());
+        log.info("Generate certificate successfully, certPath={}", cert.getCertificatePath());
+    }
+
+    private Certificate buidCertificate(Volunteer volunteer, Event event) {
         Certificate cert = new Certificate();
 
         String certCode = generateCode();
@@ -141,8 +145,10 @@ public class CertificateServiceImpl implements CertificateService {
         cert.setEvent(event);
         cert.setVolunteer(volunteer);
         cert.setStatus(ECertificateStatus.ACTIVE);
+        return cert;
+    }
 
-        //create content payload for the certificate
+    private CertificateContentPayload buildCertificatePayload(Volunteer volunteer, Event event, Certificate cert) {
         CertificateContentPayload payload = new CertificateContentPayload();
         payload.setOrganizationName(event.getOrganization().getName());
         payload.setVolunteerFullName(volunteer.getFullName());
@@ -151,23 +157,14 @@ public class CertificateServiceImpl implements CertificateService {
         payload.setHostFullName(event.getHost().getFullName());
         payload.setIssuedDate(LocalDate.now().toString());
 
-        String verifyUrl = frontendBaseUrl + "/verify/certificate/" + certCode;
+        String verifyUrl = frontendBaseUrl + "/verify/certificate/" + cert.getCode();
+
         payload.setVerifyUrl(verifyUrl);
 
         //generate qr code for verifying
         String qrBase64 = generateQrBase64(verifyUrl);
         payload.setQrBase64(qrBase64);
-
-        //render HTML to prepare for generate pdf
-        String html = renderHtml(payload);
-
-        //generate PDF
-        byte[] pdfBytes = generatePdf(html);
-
-        certificateRepository.save(cert);
-        // 5. upload file
-        storageService.upload(pdfBytes, certPath);
-        log.info("Generate certificate successfully, certPath={}", certPath);
+        return payload;
     }
 
     private String generateCode() {
@@ -235,6 +232,42 @@ public class CertificateServiceImpl implements CertificateService {
         }
     }
 
+    @Override
+    @Transactional
+    public void generateCertificates(List<Volunteer> volunteers, Event event){
+        List<Certificate> certificates = new ArrayList<>();
+
+        Map<String, byte[]> pdfMap = new HashMap<>();
+
+        for (Volunteer volunteer: volunteers) {
+            //create record of Certificate
+            Certificate cert = buidCertificate(volunteer,event);
+
+            //create content payload for the certificate
+            CertificateContentPayload payload = buildCertificatePayload(volunteer, event,cert);
+
+            //render HTML to prepare for generate pdf
+            String html = renderHtml(payload);
+
+            //generate PDF
+            byte[] pdfBytes = generatePdf(html);
+
+            certificates.add(cert);
+            pdfMap.put(cert.getCertificatePath(), pdfBytes);
+        }
+
+        certificateRepository.saveAll(certificates);
+
+        pdfMap.forEach((certPath, pdfBytes) -> CompletableFuture.runAsync(() ->
+            storageService.upload(pdfBytes, certPath)
+        ));
+        log.info("Generate certificate successfully for {} volunteers participated in event {} , eventId={}",
+                volunteers.size(),
+                event.getName(),
+                event.getId()
+                );
+
+    }
 
 //    @Override
 //    @Transactional

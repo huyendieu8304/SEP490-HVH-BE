@@ -2,12 +2,16 @@ package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.certificate.response.VerifyCertificateResponse;
 import com.sep490.g28.hvh.be.dto.certificate.response.VolunteerCertificateResponse;
+import com.sep490.g28.hvh.be.entity.Event;
+import com.sep490.g28.hvh.be.entity.Volunteer;
 import org.springframework.data.domain.Page;
 
-import java.util.UUID;
+import java.util.List;
 
 public interface CertificateService {
-    String generate(UUID volId, UUID eventId);
+    void generateCertificate(Volunteer volunteer, Event event);
+
+    void generateCertificates(List<Volunteer> volunteers, Event event);
 
     Page<VolunteerCertificateResponse> getCertificatesByVolunteer(int pageNumber, int pageSize, String eventName);
 
