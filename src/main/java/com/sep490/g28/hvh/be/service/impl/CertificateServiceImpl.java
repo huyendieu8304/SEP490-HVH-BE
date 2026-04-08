@@ -4,8 +4,6 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.LoadState;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ECertificateStatus;
@@ -20,13 +18,13 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.CertificateErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.CertificateRepository;
-import com.sep490.g28.hvh.be.repository.EventRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.CertificateService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -55,13 +53,13 @@ public class CertificateServiceImpl implements CertificateService {
 
     TemplateEngine templateEngine;
     StoragePathGenerator storagePathGenerator;
+    Browser browser;
 
+    CurrentUserProvider currentUserProvider;
 
-    //    @Value("${front-end.web.baseUrl}")
-    //todo
-    private String frontendBaseUrl = "http://localhost:8080/";
-    private final CurrentUserProvider currentUserProvider;
-
+    @Value("${front-end.web.baseUrl}")
+    @NonFinal
+    String frontendBaseUrl;
 
     @Override
     public Page<VolunteerCertificateResponse> getCertificatesByVolunteer(int pageNumber, int pageSize, String eventName) {
@@ -155,7 +153,7 @@ public class CertificateServiceImpl implements CertificateService {
         payload.setVid(volunteer.getVid().toString());
         payload.setEventName(event.getName());
         payload.setHostFullName(event.getHost().getFullName());
-        payload.setIssuedDate(LocalDate.now().toString());
+        payload.setIssuedDate(LocalDate.now());
 
         String verifyUrl = frontendBaseUrl + "/verify/certificate/" + cert.getCode();
 
@@ -180,36 +178,26 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     private byte[] generatePdf(String html) {
-        try (Playwright playwright = Playwright.create()) {
-            Browser browser = playwright.chromium().launch(
-                    new BrowserType.LaunchOptions().setHeadless(true)
-            );
-            com.microsoft.playwright.Page page = browser.newPage();
 
+        try (com.microsoft.playwright.Page page = browser.newPage()) {
+            //set html content for page
             page.setContent(html);
-            // chờ load xong (font, ảnh...)
+            // wait for loading image and fonts
             page.waitForLoadState(LoadState.NETWORKIDLE);
-
-            page.setContent(html);
-
             return page.pdf(new com.microsoft.playwright.Page.PdfOptions()
+                    .setFormat("A4")
                     .setWidth("297mm")
                     .setHeight("210mm")
-                    .setFormat("A4")
                     .setLandscape(true)
                     .setPrintBackground(true)
             );
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
-
     }
 
     private String generateQrBase64(String text) {
         try {
             QRCodeWriter writer = new QRCodeWriter();
-            BitMatrix matrix = writer.encode(text, BarcodeFormat.QR_CODE, 200, 200);
+            BitMatrix matrix = writer.encode(text, BarcodeFormat.QR_CODE, 110, 110);
 
             int width = matrix.getWidth();
             int height = matrix.getHeight();

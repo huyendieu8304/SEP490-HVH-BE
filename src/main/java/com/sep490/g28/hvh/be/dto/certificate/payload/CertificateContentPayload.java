@@ -3,6 +3,8 @@ package com.sep490.g28.hvh.be.dto.certificate.payload;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class CertificateContentPayload {
@@ -11,7 +13,7 @@ public class CertificateContentPayload {
     String vid;
     String eventName;
     String hostFullName;
-    String issuedDate;
+    LocalDate issuedDate;
     String verifyUrl;
     String qrBase64;
 }

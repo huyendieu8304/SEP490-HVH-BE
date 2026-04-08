@@ -22,12 +22,12 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
                     ) FROM Certificate c
                     LEFT JOIN c.event e
                     LEFT JOIN e.organization o
-                    WHERE c.volunteer.id = :volunteerId 
+                    WHERE c.volunteer.id = :volunteerId
                         AND c.status = com.sep490.g28.hvh.be.constant.ECertificateStatus.ACTIVE
                         AND (:eventName IS NULL OR e.name ILIKE CONCAT('%', CAST(:eventName AS string), '%'))
-                    ORDER BY c.issuedAt DESC            
+                    ORDER BY c.issuedAt DESC
             """)
-    Page<VolunteerCertificateResponse> findByVolunteerIdAndEventName(Pageable pageable, UUID id, String eventName);
+    Page<VolunteerCertificateResponse> findByVolunteerIdAndEventName(Pageable pageable, UUID volunteerId, String eventName);
 
     Optional<Certificate> findByCode(String code);
 }

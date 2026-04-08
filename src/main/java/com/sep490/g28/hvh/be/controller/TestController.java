@@ -12,7 +12,9 @@ import com.sep490.g28.hvh.be.service.OrganizationService;
 import com.sep490.g28.hvh.be.service.impl.CertificateServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -27,6 +29,7 @@ import java.util.UUID;
 @Validated
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TestController {
 
 //    @PostMapping(
@@ -112,7 +115,7 @@ public class TestController {
         return ResponseEntity.ok(organizationService.registerOrganization(request));
     }
 
-    private final CertificateServiceImpl certificateServiceImpl;
+    CertificateServiceImpl certificateServiceImpl;
 
     VolunteerRepository volunteerRepository;
     EventRepository eventRepository;
