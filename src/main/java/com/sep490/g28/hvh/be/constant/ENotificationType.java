@@ -43,4 +43,7 @@ public enum ENotificationType {
     HOST_EVENT_ASSIGNED,
 
     VOL_REVIEWED_BY_HOST,
+    VOL_CLAIM_APPROVED,
+    VOL_CLAIM_REJECTED,
+    VOL_MOMENT_DELETED,
 }

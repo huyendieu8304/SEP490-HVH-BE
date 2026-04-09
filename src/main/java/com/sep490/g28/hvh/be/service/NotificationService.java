@@ -53,4 +53,7 @@ public interface NotificationService {
     void sendEventAssignedHostNotification(UUID oldHostId, UUID newHostId, Event event);
 
     void sendVolunteerReviewedByHostNotification(UUID volunteerId, Event event, EventApplication application, UUID reviewId);
+
+    void sendClaimApprovedByHostNotification(UUID volunteerId, Event event, EventApplication application);
+    void sendClaimRejectedByHostNotification(UUID volunteerId, Event event, EventApplication application);
 }
