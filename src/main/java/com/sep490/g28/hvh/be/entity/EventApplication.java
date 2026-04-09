@@ -70,4 +70,7 @@ public class EventApplication {
             columnDefinition = "TIMESTAMP WITH TIME ZONE"
     )
     private OffsetDateTime updatedAt;
+
+    @OneToOne(mappedBy = "eventApplication", fetch = FetchType.LAZY)
+    private VolunteerReview review;
 }
