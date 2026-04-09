@@ -128,4 +128,16 @@ public class TestSupabaseController {
         return ResponseEntity.ok(authClient.getAccountInfo(accountId));
     }
 
+
+    @GetMapping("/check-password")
+    public ResponseEntity<String> getAccountInfo(
+            @RequestParam String email,
+            @RequestParam String password
+    ){
+        if (authClient.checkOldPassword(email, password)){
+            return ResponseEntity.ok("OK");
+        } else
+            return ResponseEntity.ok("ehhhhh");
+    }
+
 }

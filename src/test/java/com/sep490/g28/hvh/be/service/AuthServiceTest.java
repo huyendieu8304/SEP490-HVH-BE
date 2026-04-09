@@ -12,6 +12,7 @@ import com.sep490.g28.hvh.be.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,13 +37,13 @@ public class AuthServiceTest {
     @Mock
     EmailService emailService;
 
-    AuthService authService;
+    @InjectMocks
+    AuthServiceImpl authService;
 
     private User user;
 
     @BeforeEach
     public void setUp() {
-        authService = new AuthServiceImpl(otpService, emailService, userRepository, authClient);
 
         user = new User();
         user.setId(UUID.randomUUID());

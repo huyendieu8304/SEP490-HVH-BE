@@ -57,4 +57,7 @@ public interface OtpService {
      * @return {@code true} if OTP is valid
      */
     boolean verifyVerifyForgotPasswordOtp(String email, String inputOtp);
+
+    String getVerifyChangePhoneNumberOtp(String email);
+    boolean verifyVerifyChangePhoneNumberOtp(String email, String inputOtp);
 }

@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +37,13 @@ public class EmailOtpController {
     @PostMapping("/email-otp/verify-forgot-password")
     public ResponseEntity<String> sendVerifyForgotPasswordOtp(@RequestParam @Email String email) {
         emailOtpService.sendVerifyForgotPasswordOtp(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAnyRole('SYS_ADMIN', 'ORG_MANAGER','HOST','VOL')")
+    @PostMapping("/email-otp/verify-change-phone-number")
+    public ResponseEntity<String> sendVerifyChangePhoneNumberOtp() {
+        emailOtpService.sendVerifyChangePhoneNumberOtp();
         return ResponseEntity.ok().build();
     }
 
