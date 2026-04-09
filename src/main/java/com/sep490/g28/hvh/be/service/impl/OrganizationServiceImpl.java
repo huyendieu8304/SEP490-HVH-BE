@@ -27,10 +27,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -479,14 +476,11 @@ public class OrganizationServiceImpl implements OrganizationService {
         Long totalHosts = hostRepository.countHostByOrganizationId(ordId);
 
         //get total honor hours
-        long totalHonorHours = 0;
-        List<Event> events = eventRepository.findAllByOrganizationId(ordId);
+        Set<String> activitySubDomains = new HashSet<>();
+        List<Event> events = eventRepository.findAllByOrganizationId(organization.getId());
 
         for(Event e : events) {
-
-            for(EventSession es : e.getSessions()) {
-                totalHonorHours += Duration.between(es.getStartDateTime(), es.getEndDateTime()).toHours();
-            }
+            activitySubDomains.add(e.getActivitySubDomain().getName());
         }
 
         //get signed urls
@@ -569,7 +563,11 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .managerPhone(managerPhone)
                 .managerCID(managerCID)
                 .totalHosts(totalHosts)
-                .totalHonorHours(totalHonorHours)
+                .hostedEventCount(organization.getHostedEventCount())
+                .creditHour(organization.getCreditHour())
+                .avgRating(organization.getAvgRating())
+                .status(organization.getStatus())
+                .activitySubDomains(activitySubDomains)
                 .note(note.toString())
                 .build();
     }
@@ -667,7 +665,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 Sort.by(Sort.Direction.DESC, "created_at")
         );
 
-        List<Object[]> rawOrgData;
+        Page<Organization> rawOrgData;
 
         //check if orgTypes is null or empty
         if(orgTypes == null || orgTypes.isEmpty()) {
@@ -675,9 +673,26 @@ public class OrganizationServiceImpl implements OrganizationService {
         } else {
             rawOrgData = organizationRepository.searchByAdmin(name, orgTypes, pageable);
         }
-        List<OrganizationSimpleResponseForSystemAdmin> organizations = rawOrgData.stream()
-                .map(organizationMapper::toOrganizationSimpleResponseForSystemAdmin).toList();
 
-        return new PageImpl<>(organizations, pageable, organizations.size());
+        return rawOrgData
+                .map(o -> {
+                    Set<String> activitySubDomains = new HashSet<>();
+                    List<Event> events = eventRepository.findAllByOrganizationId(o.getId());
+
+                    for(Event e : events) {
+                        activitySubDomains.add(e.getActivitySubDomain().getName());
+                    }
+
+                    return new OrganizationSimpleResponseForSystemAdmin(
+                            o.getId(),
+                            o.getName(),
+                            o.getOrgType(),
+                            o.getHostedEventCount(),
+                            o.getCreditHour(),
+                            o.getAvgRating(),
+                            o.getStatus(),
+                            activitySubDomains
+                    );
+                });
     }
 }

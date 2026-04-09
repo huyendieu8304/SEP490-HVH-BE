@@ -19,14 +19,4 @@ public class OrganizationMapper {
                 Long.parseLong(row[4].toString())
         );
     }
-
-    public OrganizationSimpleResponseForSystemAdmin toOrganizationSimpleResponseForSystemAdmin(Object[] row){
-        return new OrganizationSimpleResponseForSystemAdmin(
-                (UUID) row[0],
-                (String) row[1],
-                row[2] != null ? EOrgType.valueOf((String) row[2]) : null,
-                Long.parseLong(row[3].toString()),
-                Long.parseLong(row[4].toString())
-        );
-    }
 }

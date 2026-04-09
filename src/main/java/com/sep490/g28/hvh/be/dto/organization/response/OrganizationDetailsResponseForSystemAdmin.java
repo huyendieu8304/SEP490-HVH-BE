@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.dto.organization.response;
 
 import com.sep490.g28.hvh.be.constant.EOrgType;
+import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -31,6 +33,11 @@ public class OrganizationDetailsResponseForSystemAdmin {
     private String managerPhone;
     private String managerCID;
     private Long totalHosts;
-    private Long totalHonorHours;
+    private int hostedEventCount;
+    private int creditHour;
+    private Short avgRating;
+    private EOrganizationStatus status;
+    private Set<String> activitySubDomains;
     private String note;
+
 }
