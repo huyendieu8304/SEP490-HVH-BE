@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.dto.auth.request.ChangePasswordRequest;
+import com.sep490.g28.hvh.be.dto.auth.request.ChangePhoneRequest;
 import com.sep490.g28.hvh.be.dto.auth.request.ForgotPasswordRequest;
 import com.sep490.g28.hvh.be.entity.User;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -33,7 +34,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void forgotPassword(ForgotPasswordRequest request) {
-        //validate otp
+        //verify otp
         otpService.verifyVerifyForgotPasswordOtp(request.getEmail(), request.getOtp());
 
         //check whether the email is used for a account?
@@ -70,5 +71,17 @@ public class AuthServiceImpl implements AuthService {
         //change password
         authClient.changePassword(currentUserProvider.getId(), request.getNewPassword());
         log.info("Change password for account successful, id={}", currentUserProvider.getId());
+    }
+
+    @Override
+    public void changePhoneNumber(ChangePhoneRequest request) {
+
+        //verify otp
+        otpService.verifyVerifyChangePhoneNumberOtp(currentUserProvider.getEmail(), request.getOtp());
+
+        //change phone number
+        UUID currentAccountId = currentUserProvider.getId();
+        authClient.changePhoneNumber(currentAccountId, request.getNewPhoneNumber());
+        log.info("Change phone for account successful, id={}", currentAccountId);
     }
 }

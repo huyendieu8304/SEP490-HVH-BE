@@ -125,7 +125,7 @@ public class SupabaseAuthClient implements AuthClient {
                     entity,
                     UserResponse.class // THIS COULD BE VOID
             );
-            log.info(Objects.requireNonNull(responseEntity.getBody()).toString());
+//            log.info(Objects.requireNonNull(responseEntity.getBody()).toString());
         } catch (Exception e) {
             if (e instanceof SupabaseException se){
                 int status = se.getStatus();
@@ -137,6 +137,47 @@ public class SupabaseAuthClient implements AuthClient {
             }
             throw new AppException(SupabaseErrorCode.AUTH_CHANGE_PASSWORD_FAIL);
         }
+    }
+
+    @Override
+    public void changePhoneNumber(UUID accountId, String newPhone) {
+        String url = supabaseProperties.getUrl()
+                + "/auth/v1/admin/users/" + accountId;
+
+        Map<String, Object> body = Map.of(
+                "phone", toE164VN(newPhone)
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    entity,
+                    String.class
+            );
+
+//            log.info("Response: {}", response.getBody());
+
+        } catch (Exception e) {
+            if (e instanceof SupabaseException se){
+                int status = se.getStatus();
+                if (status == 500) {
+                    throw new AppException(SupabaseErrorCode.INTERNAL_SERVER_ERROR);
+                } else if (status == 404) {
+                    throw new AppException(SupabaseErrorCode.AUTH_ACCOUNT_NOT_EXISTED);
+                }
+            }
+            throw new AppException(SupabaseErrorCode.AUTH_CHANGE_PHONE_FAIL);
+        }
+    }
+
+    private String toE164VN(String phone) {
+        if (phone.startsWith("0")) {
+            return "+84" + phone.substring(1);
+        }
+        return phone;
     }
 
     @Override
