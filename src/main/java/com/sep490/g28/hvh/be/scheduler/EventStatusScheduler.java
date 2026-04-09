@@ -32,16 +32,19 @@ public class EventStatusScheduler {
 
         log.info("Done ending recruitment for event cron job");
     }
-//
-//    @Scheduled(cron = "0 0 0 * * *")
-//    public void startEvent() {
-//        log.info("Start event cron job");
-//
-//        //todo, change the event status to ONGOING
-//        eventService.completeEvent();
-//
-//        log.info("Done event cron job");
-//    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    public void startEvents() {
+        log.info("Start event cron job");
+
+        //change the events status to ONGOING
+        eventService.startEvents();
+
+        log.info("Done event cron job");
+    }
+
+    //todo create check in code will run after startEvents
+    //todo fix event SEssison, remove the not null constraint in check in code
 //
 //    @Scheduled(cron = "0 0 0 * * *")
 //    public void endedEvent() {
@@ -57,7 +60,7 @@ public class EventStatusScheduler {
     //2AM every day
 //    @Scheduled(cron = "0 0 2 * * *")
     //todo enable this cron job
-    public void completeEvent() {
+    public void completeEvents() {
         log.info("Start completing event cron job");
 
         eventService.completeEvents();

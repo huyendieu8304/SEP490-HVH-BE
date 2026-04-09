@@ -1673,5 +1673,22 @@ public class EventServiceImpl implements EventService {
         //update event in db
         eventRepository.saveAll(events);
     }
+
+    @Override
+    public void startEvents() {
+        //scan and get the event that has the start date same as today
+        LocalDate targetDate = LocalDate.now();
+        List<Event> events = eventRepository.findUpcomingEventsAndStartDateToday(targetDate);
+
+        for (Event event : events){
+            //update event status to ONGOING
+            event.setStatus(EEventStatus.ONGOING);
+            eventRepository.save(event);
+            log.info("Event status change to ONGOING, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
+    }
 }
 
