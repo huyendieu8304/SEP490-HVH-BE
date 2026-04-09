@@ -3,9 +3,9 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.options.LoadState;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
+import com.sep490.g28.hvh.be.config.PlaywrightManager;
 import com.sep490.g28.hvh.be.constant.ECertificateStatus;
 import com.sep490.g28.hvh.be.dto.certificate.payload.CertificateContentPayload;
 import com.sep490.g28.hvh.be.dto.certificate.response.VerifyCertificateResponse;
@@ -54,7 +54,7 @@ public class CertificateServiceImpl implements CertificateService {
 
     TemplateEngine templateEngine;
     StoragePathGenerator storagePathGenerator;
-    Browser browser;
+    PlaywrightManager playwrightManager;
 
     CurrentUserProvider currentUserProvider;
 
@@ -182,7 +182,7 @@ public class CertificateServiceImpl implements CertificateService {
 
     private byte[] generatePdf(String html) {
 
-        try (com.microsoft.playwright.Page page = browser.newPage()) {
+        try (com.microsoft.playwright.Page page = playwrightManager.newPage()) {
             //set html content for page
             page.setContent(html);
             // wait for loading image and fonts
