@@ -1656,5 +1656,22 @@ public class EventServiceImpl implements EventService {
         eventRepository.delete(event);
         log.info("Event deleted, eventId={}", eventId);
     }
+
+    @Override
+    public void endRecruitment() {
+        //scan and get the event that passed from event recruitmentEndDate
+        LocalDate targetDate = LocalDate.now().minusDays(1);
+        List<Event> events = eventRepository.findRecruitingEventsBefore(targetDate);
+
+        for (Event event : events){
+            //update event status to UPCOMING
+            event.setStatus(EEventStatus.UPCOMING);
+            eventRepository.save(event);
+            log.info("Event status change to UPCOMING, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
+    }
 }
 

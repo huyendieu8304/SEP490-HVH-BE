@@ -142,10 +142,18 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             Pageable pageable);
 
     @Query("""
-    SELECT e
-    FROM Event e
-    WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ENDED
-      AND e.endDate <= :targetDate
-""")
+                SELECT e
+                FROM Event e
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ENDED
+                  AND e.endDate <= :targetDate
+            """)
     List<Event> findEndedEventsBefore(@Param("targetDate") LocalDate targetDate);
+
+    @Query("""
+                SELECT e
+                FROM Event e
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.RECRUITING
+                  AND e.recruitmentEndDate <= :targetDate
+            """)
+    List<Event> findRecruitingEventsBefore(LocalDate targetDate);
 }

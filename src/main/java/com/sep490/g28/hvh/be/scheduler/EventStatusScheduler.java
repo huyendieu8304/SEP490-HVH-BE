@@ -24,15 +24,14 @@ public class EventStatusScheduler {
 //        log.info("Done force check out for volunteer cron job");
 //    }
 //
-//    @Scheduled(cron = "0 0 0 * * *")
-//    public void endRecruiment() {
-//        log.info("Start ending recruitment for event cron job");
-//
-//        //todo hcange the status to UPCOMING
-//        eventService.completeEvent();
-//
-//        log.info("Done ending recruitment for event cron job");
-//    }
+    @Scheduled(cron = "0 0 0 * * *")
+    public void endRecruitment() {
+        log.info("Start ending recruitment for event cron job");
+
+        eventService.endRecruitment();
+
+        log.info("Done ending recruitment for event cron job");
+    }
 //
 //    @Scheduled(cron = "0 0 0 * * *")
 //    public void startEvent() {
