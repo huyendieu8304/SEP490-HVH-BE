@@ -70,4 +70,6 @@ public interface EventService {
     void endRecruitment();
 
     void startEvents();
+
+    void endEvents();
 }

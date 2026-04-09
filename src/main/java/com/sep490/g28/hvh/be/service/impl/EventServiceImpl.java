@@ -1690,5 +1690,22 @@ public class EventServiceImpl implements EventService {
         //update event in db
         eventRepository.saveAll(events);
     }
+
+    @Override
+    public void endEvents() {
+        //scan and get the event that has the end date is yesterday
+        LocalDate targetDate = LocalDate.now().minusDays(1);
+        List<Event> events = eventRepository.findOngoingEventsAndEndDateYesterday(targetDate);
+
+        for (Event event : events){
+            //update event status to ENDED
+            event.setStatus(EEventStatus.ENDED);
+            eventRepository.save(event);
+            log.info("Event status change to ENDED, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
+    }
 }
 

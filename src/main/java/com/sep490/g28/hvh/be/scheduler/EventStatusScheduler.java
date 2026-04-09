@@ -26,46 +26,46 @@ public class EventStatusScheduler {
 //
     @Scheduled(cron = "0 0 0 * * *")
     public void endRecruitment() {
-        log.info("Start ending recruitment for event cron job");
+        log.info("Start ending recruitment for events cron job");
 
         eventService.endRecruitment();
 
-        log.info("Done ending recruitment for event cron job");
+        log.info("Done ending recruitment for events cron job");
     }
 
-    @Scheduled(cron = "0 0 0 * * *")
+//    @Scheduled(cron = "0 0 0 * * *")
     public void startEvents() {
-        log.info("Start event cron job");
+        log.info("Start start events cron job");
 
         //change the events status to ONGOING
         eventService.startEvents();
 
-        log.info("Done event cron job");
+        log.info("Done start events cron job");
     }
 
     //todo create check in code will run after startEvents
     //todo fix event SEssison, remove the not null constraint in check in code
 //
 //    @Scheduled(cron = "0 0 0 * * *")
-//    public void endedEvent() {
-//        log.info("Start event cron job");
-//
-//        //run after force check out
-//        //todo, change the event status to ENDED
-//        eventService.completeEvent();
-//
-//        log.info("Done event cron job");
-//    }
+    public void endEvents() {
+        log.info("Start end events cron job");
+
+        //run after force check out
+        //change the event status to ENDED
+        eventService.endEvents();
+
+        log.info("Done end events cron job");
+    }
 
     //2AM every day
 //    @Scheduled(cron = "0 0 2 * * *")
     //todo enable this cron job
     public void completeEvents() {
-        log.info("Start completing event cron job");
+        log.info("Start completing events cron job");
 
         eventService.completeEvents();
 
-        log.info("Done completing event cron job");
+        log.info("Done completing events cron job");
     }
 
 

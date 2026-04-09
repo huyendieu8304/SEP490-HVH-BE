@@ -164,4 +164,12 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
                   AND e.startDate = :targetDate
             """)
     List<Event> findUpcomingEventsAndStartDateToday(LocalDate targetDate);
+
+    @Query("""
+                SELECT e
+                FROM Event e
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ONGOING
+                  AND e.endDate <= :targetDate
+            """)
+    List<Event> findOngoingEventsAndEndDateYesterday(LocalDate targetDate);
 }
