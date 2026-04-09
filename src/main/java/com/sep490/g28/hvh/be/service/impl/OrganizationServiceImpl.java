@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EOrgRegistrationStatus;
 import com.sep490.g28.hvh.be.constant.EOrgType;
+import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
@@ -371,6 +372,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             organization.setOrgIntroduction(organizationRegistration.getOrgIntroduction());
             organization.setLegalDocument(organizationRegistration.getLegalDocument());
             organization.setOtherEvidences(organizationRegistration.getOtherEvidences());
+            organization.setStatus(EOrganizationStatus.ACTIVE);
             organization.setCreateBy(currentAdmin);
 
             organizationRepository.save(organization);
