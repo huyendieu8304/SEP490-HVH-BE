@@ -24,7 +24,7 @@ public class EmailOtpServiceImpl implements EmailOtpService {
 
     OtpService otpService;
     EmailService emailService;
-    private final CurrentUserProvider currentUserProvider;
+    CurrentUserProvider currentUserProvider;
 
     @Override
     public void sendVerifyVolAccountRegistrationOtp(String email){
