@@ -62,11 +62,11 @@ public class SupabaseAuthClient implements AuthClient {
     @Override
     public UUID createAccount(ERole role, String email, String password, String phone) {
         Map<String, Object> appMetadata = Map.of(
-                "role", role.name(),
-                "phone", phone
+                "role", role.name()
         );
         CreateUserRequest request = new CreateUserRequest(
                 email,
+                toE164VN(phone),
                 password,
                 true,
                 appMetadata
