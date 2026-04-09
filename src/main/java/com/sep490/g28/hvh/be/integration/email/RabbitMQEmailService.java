@@ -152,7 +152,15 @@ public class RabbitMQEmailService implements EmailService {
     }
 
     @Override
-    public void sendEventCancelledByHostEmail(String orgManagerEmail, String orgManagerFullName, String organizationName, String eventName, String hostFullName, String hostEmail, String cancelReason) {
+    public void sendEventCancelledByHostEmail(
+            String orgManagerEmail,
+            String orgManagerFullName,
+            String organizationName,
+            String eventName,
+            String hostFullName,
+            String hostEmail,
+            String cancelReason
+    ) {
         String subject = "HVH - Sự kiện bị hủy";
         String body = String.format("""
                 Xin chào %s.
@@ -164,7 +172,8 @@ public class RabbitMQEmailService implements EmailService {
                 eventName,
                 organizationName,
                 hostFullName,
-                hostEmail
+                hostEmail,
+                cancelReason
                 );
         emailPublisher.enqueue(orgManagerEmail, subject, body);
         log.info("Email inform organization manager about the event cancellation  by host was pushed to message queue, toEmail={}", orgManagerEmail);
