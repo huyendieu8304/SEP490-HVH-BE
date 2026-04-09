@@ -63,5 +63,7 @@ public interface EventService {
 
     void assignHostToEvent(UUID eventId, AssignHostToEventRequest request);
 
-    void completeEvent();
+    void completeEvents();
+
+    void deleteEvent(UUID eventId);
 }

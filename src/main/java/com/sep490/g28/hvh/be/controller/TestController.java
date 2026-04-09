@@ -137,7 +137,7 @@ public class TestController {
 
     @PostMapping("/complete-event")
     public ResponseEntity<Void> completeEvent(){
-        eventService.completeEvent();
+        eventService.completeEvents();
         return ResponseEntity.ok().build();
     }
 

@@ -1558,7 +1558,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void completeEvent() {
+    public void completeEvents() {
         //scan and get the event that 2 day passed from event endDate
         LocalDate targetDate = LocalDate.now().minusDays(2);
         List<Event> events = eventRepository.findEndedEventsBefore(targetDate);
@@ -1638,6 +1638,23 @@ public class EventServiceImpl implements EventService {
             );
             log.info("Send event complete notification to org manager and host of event, eventId={}", event.getId());
         }
+    }
+
+    @Override
+    public void deleteEvent(UUID eventId) {
+        //find the event
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check the event status cancelable?
+        if (!EEventStatus.canEventBeDeleted(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_DELETED);
+        }
+
+        //delete the event from db
+        eventRepository.delete(event);
+        log.info("Event deleted, eventId={}", eventId);
     }
 }
 

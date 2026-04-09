@@ -61,7 +61,7 @@ public class EventStatusScheduler {
     public void completeEvent() {
         log.info("Start completing event cron job");
 
-        eventService.completeEvent();
+        eventService.completeEvents();
 
         log.info("Done completing event cron job");
     }
