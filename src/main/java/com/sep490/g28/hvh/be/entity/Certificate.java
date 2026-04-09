@@ -56,7 +56,6 @@ public class Certificate {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
-    //todo, set default in migration code
     private ECertificateStatus status = ECertificateStatus.ACTIVE; //ACTIVE/REVOKED
 
 }

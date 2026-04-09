@@ -56,7 +56,8 @@ public class EventStatusScheduler {
 //    }
 
     //2AM every day
-    @Scheduled(cron = "0 0 2 * * *")
+//    @Scheduled(cron = "0 0 2 * * *")
+    //todo enable this cron job
     public void completeEvent() {
         log.info("Start completing event cron job");
 
