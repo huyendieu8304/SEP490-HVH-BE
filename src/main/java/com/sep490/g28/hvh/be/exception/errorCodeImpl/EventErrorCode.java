@@ -70,6 +70,8 @@ public enum EventErrorCode implements ErrorCode {
     EVENT_MOMENT_ALREADY_SHARED(7046, "Đã chia sẻ khoảnh khắc trong phiên sự kiện này.", HttpStatus.CONFLICT),
     EVENT_MOMENT_NOT_FOUND(7047, "Không tìm thấy khoảnh khắc.", HttpStatus.NOT_FOUND),
     EVENT_CLAIM_INVALID_HONOR_HOUR_REQUEST(7048, "Số giờ cần bổ sung không được vượt quá số giờ tín nhiệm thực tế", HttpStatus.NOT_FOUND),
+    EVENT_CANNOT_DELETED(7037, "Sự kiện đang ở trong trạng thái không cho phép xóa.", HttpStatus.CONFLICT),
+
     ;
 
     private final int code;

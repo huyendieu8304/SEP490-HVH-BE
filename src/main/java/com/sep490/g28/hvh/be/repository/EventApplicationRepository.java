@@ -146,6 +146,7 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             LEFT JOIN CheckInLog c ON a.id = c.eventApplication.id
             LEFT JOIN Volunteer v ON a.volunteer.id = v.id
             WHERE a.session.id = :sessionId
+                AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
             """)
     Page<ActualParticipantResponse> findCheckedInVolunteer(UUID sessionId, Pageable pageable);
 

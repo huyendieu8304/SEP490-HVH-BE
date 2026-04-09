@@ -295,4 +295,14 @@ public class EventController {
         eventService.assignHostToEvent(eventId, request);
         return ResponseEntity.ok().build();
     }
+
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @DeleteMapping("/host/events/{eventId}")
+    public ResponseEntity<UpdateEventResponse> deleteEvent(
+            @PathVariable UUID eventId
+    ){
+        eventService.deleteEvent(eventId);
+        return ResponseEntity.ok().build();
+    }
+
 }

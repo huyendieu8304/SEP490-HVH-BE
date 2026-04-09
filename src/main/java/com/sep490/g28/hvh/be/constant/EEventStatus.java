@@ -44,4 +44,8 @@ public enum EEventStatus {
     public static boolean canEventBeAssignedHost(EEventStatus status) {
         return  (status.equals(RECRUITING) || status.equals(UPCOMING) || status.equals(ONGOING));
     }
+
+    public static boolean canEventBeDeleted(EEventStatus status) {
+        return  (status.equals(EDITING) || status.equals(REJECTED_BY_MNG) || status.equals(REJECTED_BY_AD));
+    }
 }
