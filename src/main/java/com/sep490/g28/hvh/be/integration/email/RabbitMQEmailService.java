@@ -196,4 +196,16 @@ public class RabbitMQEmailService implements EmailService {
         emailPublisher.enqueue(orgManagerEmail, subject, body);
         log.info("Email inform organization manager about the event cancellation by admin was pushed to message queue, toEmail={}", orgManagerEmail);
     }
+
+    @Override
+    public void sendVerifyChangePhoneNumberOtp(String email, String otp) {
+        String subject = "HVH - Xác nhận yêu cầu đổi số điện thoại";
+        String body = String.format("""
+                Chào bạn, chúng tôi gửi mail này nhằm xác nhận rằng bạn đang đổi số điện thoại liên lạc trong tài khoản ở Hà Nội Volunteer Hub.
+                Hãy sử dụng mã OTP dưới đây dể xác nhận.
+                Mã OTP: %s
+                """, otp);
+        emailPublisher.enqueue(email, subject, body);
+        log.info("Email contain verify change phone number was pushed to message queue, toEmail={}", email);
+    }
 }

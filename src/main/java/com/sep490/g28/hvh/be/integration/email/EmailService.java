@@ -107,4 +107,6 @@ public interface EmailService {
             String eventName,
             String cancelReason
     );
+
+    void sendVerifyChangePhoneNumberOtp(String email, String otp);
 }

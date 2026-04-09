@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.service.impl;
 
+import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.entity.User;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
@@ -23,6 +24,7 @@ public class EmailOtpServiceImpl implements EmailOtpService {
 
     OtpService otpService;
     EmailService emailService;
+    private final CurrentUserProvider currentUserProvider;
 
     @Override
     public void sendVerifyVolAccountRegistrationOtp(String email){
@@ -59,5 +61,14 @@ public class EmailOtpServiceImpl implements EmailOtpService {
 
         String otp = otpService.getVerifyForgotPasswordOtp(email);
         emailService.sendVerifyForgotPasswordOtp(email, otp);
+    }
+
+    @Override
+    public void sendVerifyChangePhoneNumberOtp() {
+
+        String userEmail = currentUserProvider.getEmail();
+
+        String otp = otpService.getVerifyChangePhoneNumberOtp(userEmail);
+        emailService.sendVerifyChangePhoneNumberOtp(userEmail, otp);
     }
 }
