@@ -173,5 +173,43 @@ public class SupabaseAuthClient implements AuthClient {
                 || user.banned_until().isBefore(OffsetDateTime.now());
     }
 
+    @Override
+    public boolean checkOldPassword(String email, String oldPassword) {
+
+        String url = supabaseProperties.getUrl()+"/auth/v1/token?grant_type=password";
+
+        Map<String, Object> body = Map.of(
+                "email", email,
+                "password", oldPassword
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body);
+        try {
+//            ResponseEntity<String> responseEntity =
+                    restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+            );
+//            log.info("Status: {}", responseEntity.getStatusCode());
+//            log.info("Headers: {}", responseEntity.getHeaders());
+//            log.info("Body: {}", responseEntity.getBody());
+            return true;
+        } catch (Exception e) {
+            if (e instanceof SupabaseException se){
+                int status = se.getStatus();
+                if (status == 500) {
+                    throw new AppException(SupabaseErrorCode.INTERNAL_SERVER_ERROR);
+                } else if (status == 404) {
+                    throw new AppException(SupabaseErrorCode.AUTH_ACCOUNT_NOT_EXISTED);
+                } else if (status == 400) {
+                    return false;
+                }
+            }
+            throw new AppException(SupabaseErrorCode.AUTH_CONFIRM_OLD_PASSWORD_FAIL);
+        }
+    }
+
 
 }

@@ -28,4 +28,6 @@ public interface AuthClient {
     UserResponse getAccountInfo(UUID accountId);
 
     boolean isAccountActive(UUID accountId);
+
+    boolean checkOldPassword(String userEmail, String oldPassword);
 }
