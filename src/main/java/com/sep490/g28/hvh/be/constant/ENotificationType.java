@@ -49,4 +49,5 @@ public enum ENotificationType {
     HOST_EVENT_COMPLETED,
     MNG_EVENT_COMPLETED,
 
+    VOL_CHECK_IN_CODE
 }

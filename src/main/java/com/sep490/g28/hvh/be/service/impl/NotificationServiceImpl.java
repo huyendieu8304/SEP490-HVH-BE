@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ENotificationDataAction;
 import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.constant.ERole;
+import com.sep490.g28.hvh.be.dto.eventapplication.projection.ApplicationEventVolunteerProjection;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
@@ -17,7 +18,8 @@ import com.sep490.g28.hvh.be.notification.repository.NotificationTokenRepository
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTopicSubscriptionRepository;
 import com.sep490.g28.hvh.be.notification.service.NotificationTokenTxService;
-import com.sep490.g28.hvh.be.repository.EventRepository;
+import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
+import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +39,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationTopicSubscriptionRepository notificationTopicSubscriptionRepository;
     private final UserNotificationRepository userNotificationRepository;
-    private final EventRepository eventRepository;
+    private final EventApplicationRepository eventApplicationRepository;
+
 
     private final CurrentUserProvider currentUserProvider;
 
@@ -54,6 +55,7 @@ public class NotificationServiceImpl implements NotificationService {
     private static final String DATA_REF_ID_KEY = "refId";
     private static final String DATA_ACTION = "action";
     private static final String DATA_NOTIFICATION_TYPE = "type";
+    private final EventSessionRepository eventSessionRepository;
 
     @Override
     public void registerNotificationToken(RegisterNotificationTokenRequest request) {
@@ -875,6 +877,49 @@ public class NotificationServiceImpl implements NotificationService {
 
         notificationPublisher.enqueueNotification(notificationForHost, hostId);
         notificationPublisher.enqueueNotification(notificationForManager, orgManagerId);
+    }
+
+    @Override
+    public void sendEventSessionsCheckInCodeNotifications() {
+        //Get approve applications of eventSessions
+        LocalDate today = LocalDate.now();
+
+        List<ApplicationEventVolunteerProjection> projections = eventApplicationRepository.getApprovedApplicationOfSessionToday(today);
+
+        Map<Notification, UUID> notifications = new HashMap<>();
+        for (ApplicationEventVolunteerProjection projection : projections){
+            Notification notification = new Notification();
+            notification.setTitle(String.format("Check in code sự kiện %s", projection.getEventName()));
+            notification.setBody(String.format("Hôm nay là ngày diễn ra session mà bạn đã đăng kí của sự kiện %s, để check in sự kiện, hãy nhập code sau: %s",
+                    projection.getEventName(),
+                    projection.getCheckInCode()
+                    )
+            );
+            notification.setData(Map.of(
+                    DATA_NOTIFICATION_TYPE, ENotificationType.VOL_CHECK_IN_CODE.name(),
+                    DATA_REF_ID_KEY, projection.getApplicationId().toString(),
+                    DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+            ));
+            notification.setType(ENotificationType.VOL_CHECK_IN_CODE);
+
+            notifications.put(notification, projection.getVolunteerId());
+        }
+
+        //link the notification to volunteer
+        List<UserNotification> userNotifications = new ArrayList<>();
+        for (Map.Entry<Notification, UUID> entry : notifications.entrySet()){
+            UserNotification un = new UserNotification();
+            un.setNotification(entry.getKey());
+            un.setUser(userRepository.getReferenceById(entry.getValue()));
+
+            userNotifications.add(un);
+        }
+        userNotificationRepository.saveAll(userNotifications);
+
+        //push notification
+        for (Map.Entry<Notification, UUID> entry : notifications.entrySet()){
+            notificationPublisher.enqueueNotification(entry.getKey(), entry.getValue());
+        }
     }
 
 

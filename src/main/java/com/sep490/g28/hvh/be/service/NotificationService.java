@@ -59,4 +59,6 @@ public interface NotificationService {
     void sendVolunteersReceivedCertificatesNotifications(List<Volunteer> volunteers, Event event);
 
     void sendEventCompletedNotifications(Event event, UUID orgManagerId, UUID hostId);
+
+    void sendEventSessionsCheckInCodeNotifications();
 }

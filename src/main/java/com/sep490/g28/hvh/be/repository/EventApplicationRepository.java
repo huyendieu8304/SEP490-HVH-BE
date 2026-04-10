@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
+import com.sep490.g28.hvh.be.dto.eventapplication.projection.ApplicationEventVolunteerProjection;
 import com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.EventApplication;
@@ -163,4 +164,23 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             AND a.creditHour >= 0
             """)
     List<EligibleApplicationProjection> findEligibleApplicationProjection(UUID sessionId);
+
+
+    @Query("""
+        SELECT new com.sep490.g28.hvh.be.dto.eventapplication.projection.ApplicationEventVolunteerProjection(
+        e.id,
+        e.name,
+        v.id,
+        s.checkInCode,
+        a.id
+        )
+        FROM EventApplication a
+        LEFT JOIN EventSession s ON s.id = a.session.id
+        LEFT JOIN Event e ON e.id = s.event.id
+        LEFT JOIN Volunteer v ON v.id = a.volunteer.id
+        WHERE a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
+        AND a.sessionDate = :today
+        AND e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ONGOING
+        """)
+    List<ApplicationEventVolunteerProjection> getApprovedApplicationOfSessionToday(LocalDate today);
 }
