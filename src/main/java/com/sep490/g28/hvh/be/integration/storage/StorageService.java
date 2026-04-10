@@ -74,4 +74,6 @@ public interface StorageService {
      * @param path destination path in bucket
      */
     void upload(MultipartFile file, String path);
+
+    void upload(byte[] fileBytes, String path);
 }

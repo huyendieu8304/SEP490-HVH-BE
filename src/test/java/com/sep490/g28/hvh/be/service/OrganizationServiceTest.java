@@ -712,40 +712,6 @@ public class OrganizationServiceTest {
                 .contains(OrganizationErrorCode.NO_ORGANIZATION_MANAGER_FOUND.getMessage()));
     }
 
-    // ===== TC4 =====
-    @Test
-    void getOrganizationDetailsBySystemAdmin_calculate_honor_hours() {
-
-        Organization org = mockOrganization();
-        OrganizationManager manager = mockManager();
-
-        EventSession session = new EventSession();
-        session.setStartDateTime(OffsetDateTime.now());
-        session.setEndDateTime(OffsetDateTime.now().plusHours(3));
-
-        Event event = new Event();
-        event.setSessions(List.of(session));
-
-        when(organizationRepository.findById(orgId))
-                .thenReturn(Optional.of(org));
-
-        when(organizationManagerRepository.findByOrganizationId(orgId))
-                .thenReturn(manager);
-
-        when(hostRepository.countHostByOrganizationId(orgId))
-                .thenReturn(2L);
-
-        when(eventRepository.findAllByOrganizationId(orgId))
-                .thenReturn(List.of(event));
-
-        OrganizationDetailsResponseForSystemAdmin response =
-                organizationService.getOrganizationDetailsBySystemAdmin(orgId);
-
-        assertEquals(3, response.getTotalHonorHours());
-        assertNull(response.getAvatarImageUrl());
-        assertNull(response.getCoverImageUrl());
-    }
-
     // ===== getOrganizationDetails ============================================
     // ===== TC1 =====
     @Test

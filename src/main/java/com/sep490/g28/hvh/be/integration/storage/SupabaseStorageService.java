@@ -201,4 +201,36 @@ public class SupabaseStorageService implements StorageService {
             throw new AppException(SupabaseErrorCode.STORAGE_UPLOAD_FAIL);
         }
     }
+
+    @Override
+    public void upload(byte[] fileBytes, String path) {
+        String url = supabaseProperties.getUrl()
+                + "/storage/v1/object/"
+                + supabaseProperties.getBucket()
+                + "/" + path;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentLength(fileBytes.length);
+
+        HttpEntity<byte[]> request = new HttpEntity<>(fileBytes, headers);
+
+        try {
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    request,
+                    Void.class
+            );
+            log.info("Upload PDF to path: {}", path);
+
+        } catch (Exception e) {
+            if (e instanceof SupabaseException se) {
+                if (se.getStatus() == 500) {
+                    throw new AppException(SupabaseErrorCode.INTERNAL_SERVER_ERROR);
+                }
+            }
+            throw new AppException(SupabaseErrorCode.STORAGE_UPLOAD_FAIL);
+        }
+    }
 }
