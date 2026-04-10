@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,6 +29,13 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
                     ORDER BY c.issuedAt DESC
             """)
     Page<VolunteerCertificateResponse> findByVolunteerIdAndEventName(Pageable pageable, UUID volunteerId, String eventName);
+
+    @Query("""
+            SELECT c FROM Certificate c
+            WHERE c.volunteer.id = :volunteerId
+            AND c.status = com.sep490.g28.hvh.be.constant.ECertificateStatus.ACTIVE
+            """)
+    List<Certificate> findByVolunteerId(UUID volunteerId);
 
     Optional<Certificate> findByCode(String code);
 }

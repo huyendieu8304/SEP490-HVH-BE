@@ -76,7 +76,8 @@ public class SecurityConfig {
                                         "/api/v1/events/feeds",
                                         "/api/v1/events/event-details/**",
                                         "/api/v1/organizations/**",
-                                        "/api/v1/activity-domains"
+                                        "/api/v1/activity-domains",
+                                        "/volunteers/public-information/**"
                                 ).permitAll() //public endpoint
                                 .anyRequest().authenticated() //all other request require authentication
                         )

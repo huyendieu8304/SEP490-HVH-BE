@@ -113,4 +113,12 @@ public class VolunteerController {
         return ResponseEntity.ok(volunteerService.getVolunteerActivitiesByAdmin(id, pageNumber, pageSize));
     }
 
+    @GetMapping("/volunteers/public-information/{volunteerId}")
+    public ResponseEntity<VolunteerPublicInformationResponse> getVolunteerPublicInformation(
+            @PathVariable("volunteerId") UUID volunteerId
+    ) {
+        return ResponseEntity.ok(volunteerService.getVolunteerPublicInformation(volunteerId));
+    }
+
+
 }
