@@ -19,10 +19,7 @@ import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
-import com.sep490.g28.hvh.be.repository.IdentityVerificationRepository;
-import com.sep490.g28.hvh.be.repository.SystemAdminRepository;
-import com.sep490.g28.hvh.be.repository.UserRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
+import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.VolunteerServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,6 +70,9 @@ public class VolunteerServiceTest {
     @Mock
     EmailService emailService;
 
+    @Mock
+    CertificateRepository certificateRepository;
+
     UUID id;
     SystemAdmin admin;
 
@@ -83,6 +83,7 @@ public class VolunteerServiceTest {
                 volunteerRepository,
                 userRepository,
                 identityVerificationRepository,
+                certificateRepository,
                 storageService,
                 storagePathGenerator,
                 otpService,

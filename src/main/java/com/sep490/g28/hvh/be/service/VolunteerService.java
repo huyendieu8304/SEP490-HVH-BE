@@ -21,4 +21,6 @@ public interface VolunteerService {
     Page<VolunteerActivitiesResponseForAdmin> getVolunteerActivitiesByAdmin(UUID id, int pageNumber, int pageSize);
 
     VolunteerPublicInformationResponse getVolunteerPublicInformation(UUID volunteerId);
+
+    VolunteerAccountInformationResponse getVolunteerAccountInformation();
 }

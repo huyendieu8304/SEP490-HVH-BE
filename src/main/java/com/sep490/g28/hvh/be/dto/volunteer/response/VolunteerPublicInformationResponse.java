@@ -7,12 +7,14 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 @Setter
 @Builder
 public class VolunteerPublicInformationResponse {
+    private UUID vid;
     private String fullName;
     private String nickname;
     private String bio;

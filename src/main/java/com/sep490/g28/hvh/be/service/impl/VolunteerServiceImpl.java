@@ -348,6 +348,8 @@ public class VolunteerServiceImpl implements VolunteerService {
         Volunteer volunteer = volunteerRepository.findById(volunteerId)
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
+
+
         //get certificates of volunteer
         List<Certificate> certificateList = certificateRepository.findByVolunteerId(volunteerId);
 
@@ -390,6 +392,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         }
 
         return new VolunteerPublicInformationResponse(
+                volunteer.getVid(),
                 volunteer.getFullName(),
                 volunteer.getNickname(),
                 volunteer.getBio(),
@@ -399,6 +402,61 @@ public class VolunteerServiceImpl implements VolunteerService {
                 volunteer.getAvgRating(),
                 volunteer.getActivityCount(),
                 certificatesUrls
+        );
+    }
+
+    @Override
+    public VolunteerAccountInformationResponse getVolunteerAccountInformation() {
+
+        UUID volunteerId = currentUserProvider.getId();
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        //get signed URL of volunteer avatar
+        String avatarUrl = null;
+        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+
+            CompletableFuture<String> avatarFuture =
+                    storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
+
+            try {
+                CompletableFuture.allOf(avatarFuture).join();
+                avatarUrl = avatarFuture.join();
+            } catch (CompletionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof AppException ae) {
+                    //todo: handle app exception in viewEventFeeds
+                } else {
+                    throw cause instanceof RuntimeException re ? re : ex;
+                }
+            }
+        }
+
+        return new VolunteerAccountInformationResponse(
+                volunteerId,
+                volunteer.getVid(),
+                volunteer.getCid(),
+                volunteer.getEmail(),
+                volunteer.getPhone(),
+                volunteer.isPhoneVerified(),
+                volunteer.getNickname(),
+                volunteer.getFullName(),
+                volunteer.getBio(),
+                volunteer.isGender(),
+                volunteer.getDob(),
+                volunteer.getLevel(),
+                avatarUrl,
+                volunteer.getAddress(),
+                volunteer.getDetailAddress(),
+                volunteer.getEmployStatus(),
+                volunteer.getWorkAddress(),
+                volunteer.getEducationLevel(),
+                volunteer.getSid(),
+                volunteer.getCreditScore(),
+                volunteer.getHonorScore(),
+                volunteer.getAvgRating(),
+                volunteer.getActivityCount()
         );
     }
 

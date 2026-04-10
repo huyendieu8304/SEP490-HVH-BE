@@ -120,5 +120,9 @@ public class VolunteerController {
         return ResponseEntity.ok(volunteerService.getVolunteerPublicInformation(volunteerId));
     }
 
-
+    @GetMapping("/vol/volunteers/account-information")
+    public ResponseEntity<VolunteerAccountInformationResponse> getVolunteerAccountInformation(
+    ) {
+        return ResponseEntity.ok(volunteerService.getVolunteerAccountInformation());
+    }
 }
