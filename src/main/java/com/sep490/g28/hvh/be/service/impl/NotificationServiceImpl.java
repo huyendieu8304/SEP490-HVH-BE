@@ -4,7 +4,6 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ENotificationDataAction;
 import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.constant.ERole;
-import com.sep490.g28.hvh.be.dto.eventapplication.projection.ApplicationEventVolunteerProjection;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
@@ -27,12 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class NotificationServiceImpl implements NotificationService {
     private final UserRepository userRepository;
     private final NotificationTokenRepository notificationTokenRepository;
@@ -144,7 +143,6 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Subscribed user to topic of event, userId={} evenId={} topic={}", userId, eventId, topicName);
     }
 
-    @Transactional
     @Override
     public void unsubscribeUserFromTopicOfEvent(UUID userId, UUID eventId) {
         String topicName = EVENT_TOPIC_PRE + eventId;
@@ -202,7 +200,6 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional
     public void sendEventCreateApprovedByOrgManagerNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
@@ -880,47 +877,50 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendEventSessionsCheckInCodeNotifications() {
-        //Get approve applications of eventSessions
-        LocalDate today = LocalDate.now();
-
-        List<ApplicationEventVolunteerProjection> projections = eventApplicationRepository.getApprovedApplicationOfSessionToday(today);
-
-        Map<Notification, UUID> notifications = new HashMap<>();
-        for (ApplicationEventVolunteerProjection projection : projections){
+    public void sendCheckInCodeOfEventSessionNotifications(
+            List<EventApplication> eventApplications,
+            String eventName,
+            String checkInCode) {
+        List<Notification> notifications = new ArrayList<>();
+        for (EventApplication app : eventApplications) {
             Notification notification = new Notification();
-            notification.setTitle(String.format("Check in code sự kiện %s", projection.getEventName()));
+            notification.setTitle(String.format("Check in code sự kiện %s",eventName));
             notification.setBody(String.format("Hôm nay là ngày diễn ra session mà bạn đã đăng kí của sự kiện %s, để check in sự kiện, hãy nhập code sau: %s",
-                    projection.getEventName(),
-                    projection.getCheckInCode()
+                            eventName,
+                            checkInCode
                     )
             );
             notification.setData(Map.of(
                     DATA_NOTIFICATION_TYPE, ENotificationType.VOL_CHECK_IN_CODE.name(),
-                    DATA_REF_ID_KEY, projection.getApplicationId().toString(),
+                    DATA_REF_ID_KEY, app.getId().toString(),
                     DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
             ));
             notification.setType(ENotificationType.VOL_CHECK_IN_CODE);
 
-            notifications.put(notification, projection.getVolunteerId());
+            notifications.add(notification);
         }
-
-        //link the notification to volunteer
-        List<UserNotification> userNotifications = new ArrayList<>();
-        for (Map.Entry<Notification, UUID> entry : notifications.entrySet()){
-            UserNotification un = new UserNotification();
-            un.setNotification(entry.getKey());
-            un.setUser(userRepository.getReferenceById(entry.getValue()));
-
-            userNotifications.add(un);
-        }
-        userNotificationRepository.saveAll(userNotifications);
-
-        //push notification
-        for (Map.Entry<Notification, UUID> entry : notifications.entrySet()){
-            notificationPublisher.enqueueNotification(entry.getKey(), entry.getValue());
-        }
+        notifications = notificationRepository.saveAll(notifications);
+        pushNotificationsToMessageQueue(eventApplications, notifications);
     }
 
+    @Override
+    public void sendEventSessionHostedTodayNotification(UUID hostId, UUID eventId, String eventName){
+        Notification notification = new Notification();
+        notification.setTitle(String.format("Hôm nay bạn host sự kiện %s",eventName));
+        notification.setBody(String.format("Hôm nay là ngày diễn ra session của sự kiện %s, chúc sự kiện của bạn diễn ra suôn sẻ!",
+                        eventName
+                )
+        );
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_SESSION_TODAY.name(),
+                DATA_REF_ID_KEY, eventId.toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.HOST_EVENT_SESSION_TODAY);
 
+        notificationRepository.save(notification);
+
+        notification = saveNotificationForUser(notification, hostId);
+        notificationPublisher.enqueueNotification(notification, hostId);
+    }
 }

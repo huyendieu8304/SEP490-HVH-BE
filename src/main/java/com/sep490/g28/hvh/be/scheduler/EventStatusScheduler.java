@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class EventStatusScheduler {
     EventService eventService;
+    EventSessionService eventSessionService;
     OrganizationService organizationService;
 
 //    @Scheduled(cron = "0 0 0 * * *")
@@ -65,5 +66,11 @@ public class EventStatusScheduler {
         log.info("Done calculating organization avg rating cron job");
     }
 
+
+    public void createCheckInCode(){
+        log.info("Start create check in code cron job");
+        eventSessionService.createCheckInCode();
+        log.info("Done create check in code cron job");
+    }
 
 }

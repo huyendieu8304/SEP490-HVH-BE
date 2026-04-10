@@ -60,5 +60,7 @@ public interface NotificationService {
 
     void sendEventCompletedNotifications(Event event, UUID orgManagerId, UUID hostId);
 
-    void sendEventSessionsCheckInCodeNotifications();
+    void sendCheckInCodeOfEventSessionNotifications(List<EventApplication> eventApplications, String eventName, String checkInCode);
+
+    void sendEventSessionHostedTodayNotification(UUID hostId, UUID eventId, String eventName);
 }
