@@ -29,4 +29,6 @@ public interface OrganizationService {
     OrganizationDetailsResponse getOrganizationDetails(UUID ordId);
 
     void deductCreditHourOfOrganization(Organization organization, int numberOfHourDeduct);
+
+    void calculateOrganizationsAvgRating();
 }

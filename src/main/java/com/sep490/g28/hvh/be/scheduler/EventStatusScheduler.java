@@ -1,6 +1,8 @@
 package com.sep490.g28.hvh.be.scheduler;
 
 import com.sep490.g28.hvh.be.service.EventService;
+import com.sep490.g28.hvh.be.service.EventSessionService;
+import com.sep490.g28.hvh.be.service.OrganizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,20 +13,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class EventStatusScheduler {
     EventService eventService;
+    OrganizationService organizationService;
 
-
-//    //0AM
 //    @Scheduled(cron = "0 0 0 * * *")
-//    public void forceCheckOut() {
-//        log.info("Start force check out for volunteer cron job");
-//
-//        //todo
-//        // eventService.completeEvent();
-//
-//        log.info("Done force check out for volunteer cron job");
-//    }
-//
-    @Scheduled(cron = "0 0 0 * * *")
     public void endRecruitment() {
         log.info("Start ending recruitment for events cron job");
 
@@ -68,8 +59,11 @@ public class EventStatusScheduler {
         log.info("Done completing events cron job");
     }
 
-
-
+    public void calculateOrganizationsAvgRating(){
+        log.info("Start calculating organization avg rating cron job");
+        organizationService.calculateOrganizationsAvgRating();
+        log.info("Done calculating organization avg rating cron job");
+    }
 
 
 }

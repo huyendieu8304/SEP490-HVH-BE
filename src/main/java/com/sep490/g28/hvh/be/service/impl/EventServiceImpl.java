@@ -1561,7 +1561,7 @@ public class EventServiceImpl implements EventService {
     public void completeEvents() {
         //scan and get the event that 2 day passed from event endDate
         LocalDate targetDate = LocalDate.now().minusDays(2);
-        List<Event> events = eventRepository.findEndedEventsBefore(targetDate);
+        List<Event> events = eventRepository.findEndedEventsAndEndDateBefore(targetDate);
 
         Set<Volunteer> updateVolunteerSet = new HashSet<>();
         Set<Volunteer> receiveCertVolunteerSet = new HashSet<>();
@@ -1661,7 +1661,7 @@ public class EventServiceImpl implements EventService {
     public void endRecruitment() {
         //scan and get the event that passed from event recruitmentEndDate
         LocalDate targetDate = LocalDate.now().minusDays(1);
-        List<Event> events = eventRepository.findRecruitingEventsBefore(targetDate);
+        List<Event> events = eventRepository.findRecruitingEventsAndRecruitmentEndDateBefore(targetDate);
 
         for (Event event : events){
             //update event status to UPCOMING
