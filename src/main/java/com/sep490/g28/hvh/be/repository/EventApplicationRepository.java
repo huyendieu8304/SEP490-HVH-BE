@@ -170,5 +170,5 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             WHERE a.session.id = :sessionId
              AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
             """)
-    List<EventApplication> findApprovedApplicationBySessionId(UUID id);
+    List<EventApplication> findApprovedApplicationBySessionId(UUID sessionId);
 }

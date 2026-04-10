@@ -9,6 +9,7 @@ import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.EventService;
+import com.sep490.g28.hvh.be.service.EventSessionService;
 import com.sep490.g28.hvh.be.service.OrganizationService;
 import com.sep490.g28.hvh.be.service.impl.CertificateServiceImpl;
 import jakarta.validation.Valid;
@@ -138,6 +139,38 @@ public class TestController {
     @PostMapping("/complete-event")
     public ResponseEntity<Void> completeEvent(){
         eventService.completeEvents();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/end-recruitment")
+    public ResponseEntity<Void> endRecruitment(){
+        eventService.endRecruitment();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/start-event")
+    public ResponseEntity<Void> startEvents(){
+        eventService.startEvents();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/end-event")
+    public ResponseEntity<Void> endEvents(){
+        eventService.endEvents();
+        return ResponseEntity.ok().build();
+    }
+
+
+    @PostMapping("/calc-org-rating")
+    public ResponseEntity<Void> calculateOrganizationsAvgRating(){
+        organizationService.calculateOrganizationsAvgRating();
+        return ResponseEntity.ok().build();
+    }
+
+    EventSessionService eventSessionService;
+    @PostMapping("/create-check-in-code")
+    public ResponseEntity<Void> createCheckInCode(){
+        eventSessionService.createCheckInCode();
         return ResponseEntity.ok().build();
     }
 
