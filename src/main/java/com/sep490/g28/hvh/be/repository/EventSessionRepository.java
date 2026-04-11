@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.repository;
 import com.sep490.g28.hvh.be.dto.eventsession.projection.SessionEventProjection;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.OffsetDateTime;
@@ -71,4 +72,13 @@ public interface EventSessionRepository extends JpaRepository<EventSession, UUID
             OffsetDateTime start,
             OffsetDateTime end
     );
+
+    @Modifying
+    @Query("""
+                UPDATE EventSession es
+                SET es.checkInCode = NULL
+                WHERE es.endDateTime <= :endOfYesterday
+                    AND es.checkInCode IS NOT NULL
+            """)
+    void clearOldCheckInCode(OffsetDateTime endOfYesterday);
 }

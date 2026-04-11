@@ -97,7 +97,7 @@ public class NotificationServiceImpl implements NotificationService {
         //MANAGER:  to organization
         //HOST: to the organization
 
-        //subscribe the to topic admin if the user is admin
+        //subscribe the token to topic admin if the user is admin
         if (currentUserProvider.getRoleName().equals(ERole.SYS_ADMIN)) {
             topics.add(ADMIN_TOPIC);
         }

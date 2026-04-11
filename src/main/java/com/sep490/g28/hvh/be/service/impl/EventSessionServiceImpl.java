@@ -462,12 +462,22 @@ public class EventSessionServiceImpl implements EventSessionService {
     }
 
     @Override
+    @Transactional
     public void createCheckInCode() {
-        //todo sưửa entity event session, column check in code
+        ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        //clear old check in code
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        OffsetDateTime endOfYesterday = yesterday.atTime(LocalTime.MAX)
+                .atZone(vnZone)
+                .toOffsetDateTime();
+
+        eventSessionRepository.clearOldCheckInCode(endOfYesterday);
+        log.info("Cleared old check in codes");
+
         //get event session happen today and the event is ONGOING
         LocalDate today = LocalDate.now();
 
-        ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
 
         OffsetDateTime start = today.atStartOfDay(vnZone).toOffsetDateTime();
         OffsetDateTime end = today.atTime(LocalTime.MAX)
@@ -484,7 +494,8 @@ public class EventSessionServiceImpl implements EventSessionService {
         //iterate through each session to set check in code
         for (SessionEventProjection p : projections) {
             EventSession session = p.getSession();
-            do { //todo xem lai cho tao check in code nay
+            //this loop can only make sure it unique in this batch
+            do {
              checkInCode = RandomStringUtil.random6Numberic();
             } while (!checkInCodes.add(checkInCode));
 
