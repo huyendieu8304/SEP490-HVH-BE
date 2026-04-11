@@ -170,13 +170,13 @@ public class HostServiceImpl implements HostService {
         ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
 
         OffsetDateTime from = fromDate.atStartOfDay(vnZone)
-                    .toOffsetDateTime()
-                    .withOffsetSameInstant(ZoneOffset.UTC);
+                    .toOffsetDateTime();
+//                    .withOffsetSameInstant(ZoneOffset.UTC); converter would do this when create query
 
         OffsetDateTime to = toDate.atTime(LocalTime.MAX)
                     .atZone(vnZone)
-                    .toOffsetDateTime()
-                    .withOffsetSameInstant(ZoneOffset.UTC);
+                    .toOffsetDateTime();
+//                    .withOffsetSameInstant(ZoneOffset.UTC); converter would do this when create query
 
         return hostRepository.getHostActivitiesByManager(hostId, pageable, from, to);
     }

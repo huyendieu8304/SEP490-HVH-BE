@@ -5,14 +5,18 @@ import com.sep490.g28.hvh.be.constant.EUpdateAction;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
+import com.sep490.g28.hvh.be.dto.eventsession.projection.SessionEventProjection;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
 import com.sep490.g28.hvh.be.entity.ActivityDomain;
 import com.sep490.g28.hvh.be.entity.Event;
+import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
+import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.service.EventSessionService;
+import com.sep490.g28.hvh.be.service.NotificationService;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDate;
+import java.time.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,7 +35,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventSessionServiceImpl implements EventSessionService {
-    private final EventSessionRepository eventSessionRepository;
+   EventSessionRepository eventSessionRepository;
+   EventApplicationRepository eventApplicationRepository;
+
+   NotificationService notificationService;
 
     /*
     In context of this class 1 session equivalence to 1 EventDateTime
@@ -453,5 +459,64 @@ public class EventSessionServiceImpl implements EventSessionService {
         oldSessions.clear();
         oldSessions.addAll(result);
         return oldSessions;
+    }
+
+    @Override
+    @Transactional
+    public void createCheckInCode() {
+        ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        //clear old check in code
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        OffsetDateTime endOfYesterday = yesterday.atTime(LocalTime.MAX)
+                .atZone(vnZone)
+                .toOffsetDateTime();
+
+        eventSessionRepository.clearOldCheckInCode(endOfYesterday);
+        log.info("Cleared old check in codes");
+
+        //get event session happen today and the event is ONGOING
+        LocalDate today = LocalDate.now();
+
+
+        OffsetDateTime start = today.atStartOfDay(vnZone).toOffsetDateTime();
+        OffsetDateTime end = today.atTime(LocalTime.MAX)
+                .atZone(vnZone)
+                .toOffsetDateTime();
+
+        //find event session that will be hosted to day
+        List<SessionEventProjection> projections = eventSessionRepository
+                .findSessionHostedOfOngoingEventBetweenIncluded(start, end);
+
+        Set<String> checkInCodes = new HashSet<>();
+        List<EventSession> updateSession = new ArrayList<>();
+        String checkInCode;
+        //iterate through each session to set check in code
+        for (SessionEventProjection p : projections) {
+            EventSession session = p.getSession();
+            //this loop can only make sure it unique in this batch
+            do {
+             checkInCode = RandomStringUtil.random6Numberic();
+            } while (!checkInCodes.add(checkInCode));
+
+            session.setCheckInCode(checkInCode);
+            updateSession.add(session);
+        }
+        eventSessionRepository.saveAll(updateSession);
+
+        //iterate through each session to send notifications to vols and host
+        for (SessionEventProjection p : projections) {
+            EventSession session = p.getSession();
+            List<EventApplication> applications =
+                    eventApplicationRepository.findApprovedApplicationBySessionId(session.getId());
+
+            //send notification about the check in code for volunteer
+            notificationService.sendCheckInCodeOfEventSessionNotifications(applications, p.getEventName(), session.getCheckInCode());
+
+            //send notification about the event for host
+            notificationService.sendEventSessionHostedTodayNotification(p.getHostId(), p.getEventId(), p.getEventName());
+        }
+
+        log.info("Created check in codes and send notification to vol and host of today's event session");
     }
 }

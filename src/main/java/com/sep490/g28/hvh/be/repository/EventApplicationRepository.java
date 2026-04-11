@@ -163,4 +163,12 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             AND a.creditHour >= 0
             """)
     List<EligibleApplicationProjection> findEligibleApplicationProjection(UUID sessionId);
+
+    @Query("""
+            SELECT a
+            FROM EventApplication a
+            WHERE a.session.id = :sessionId
+             AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
+            """)
+    List<EventApplication> findApprovedApplicationBySessionId(UUID sessionId);
 }

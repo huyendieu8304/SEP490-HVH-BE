@@ -66,4 +66,10 @@ public interface EventService {
     void completeEvents();
 
     void deleteEvent(UUID eventId);
+
+    void endRecruitment();
+
+    void startEvents();
+
+    void endEvents();
 }

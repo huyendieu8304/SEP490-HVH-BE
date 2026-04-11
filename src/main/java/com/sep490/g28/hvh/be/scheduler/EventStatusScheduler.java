@@ -1,6 +1,8 @@
 package com.sep490.g28.hvh.be.scheduler;
 
 import com.sep490.g28.hvh.be.service.EventService;
+import com.sep490.g28.hvh.be.service.EventSessionService;
+import com.sep490.g28.hvh.be.service.OrganizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,62 +13,46 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class EventStatusScheduler {
     EventService eventService;
+    EventSessionService eventSessionService;
+    OrganizationService organizationService;
 
+    //0AM everyday
+//    @Scheduled(cron = "0 0 0 * * *")
+    public void dailyEventJob() {
+        runStep("endRecruitment", eventService::endRecruitment);
+        runStep("endEvents", eventService::endEvents);
+        runStep("startEvents", eventService::startEvents);
+        runStep("createCheckIn", eventSessionService::createCheckInCode);
+    }
 
-//    //0AM
-//    @Scheduled(cron = "0 0 0 * * *")
-//    public void forceCheckOut() {
-//        log.info("Start force check out for volunteer cron job");
-//
-//        //todo
-//        // eventService.completeEvent();
-//
-//        log.info("Done force check out for volunteer cron job");
-//    }
-//
-//    @Scheduled(cron = "0 0 0 * * *")
-//    public void endRecruiment() {
-//        log.info("Start ending recruitment for event cron job");
-//
-//        //todo hcange the status to UPCOMING
-//        eventService.completeEvent();
-//
-//        log.info("Done ending recruitment for event cron job");
-//    }
-//
-//    @Scheduled(cron = "0 0 0 * * *")
-//    public void startEvent() {
-//        log.info("Start event cron job");
-//
-//        //todo, change the event status to ONGOING
-//        eventService.completeEvent();
-//
-//        log.info("Done event cron job");
-//    }
-//
-//    @Scheduled(cron = "0 0 0 * * *")
-//    public void endedEvent() {
-//        log.info("Start event cron job");
-//
-//        //run after force check out
-//        //todo, change the event status to ENDED
-//        eventService.completeEvent();
-//
-//        log.info("Done event cron job");
-//    }
+    private void runStep(String name, Runnable step) {
+        try {
+            log.info("Start {}", name);
+            step.run();
+            log.info("Done {}", name);
+        } catch (Exception e) {
+            log.error("Fail {}", name, e);
+            throw e; // stop flow
+        }
+    }
 
     //2AM every day
 //    @Scheduled(cron = "0 0 2 * * *")
-    //todo enable this cron job
-    public void completeEvent() {
-        log.info("Start completing event cron job");
+    public void completeEvents() {
+        log.info("Start completing events cron job");
 
         eventService.completeEvents();
 
-        log.info("Done completing event cron job");
+        log.info("Done completing events cron job");
     }
 
-
+    //3AM every day
+//    @Scheduled(cron = "0 0 3 * * *")
+    public void calculateOrganizationsAvgRating(){
+        log.info("Start calculating organization avg rating cron job");
+        organizationService.calculateOrganizationsAvgRating();
+        log.info("Done calculating organization avg rating cron job");
+    }
 
 
 

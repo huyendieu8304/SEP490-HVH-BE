@@ -17,7 +17,8 @@ import com.sep490.g28.hvh.be.notification.repository.NotificationTokenRepository
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTopicSubscriptionRepository;
 import com.sep490.g28.hvh.be.notification.service.NotificationTokenTxService;
-import com.sep490.g28.hvh.be.repository.EventRepository;
+import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
+import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -25,21 +26,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class NotificationServiceImpl implements NotificationService {
     private final UserRepository userRepository;
     private final NotificationTokenRepository notificationTokenRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationTopicSubscriptionRepository notificationTopicSubscriptionRepository;
     private final UserNotificationRepository userNotificationRepository;
-    private final EventRepository eventRepository;
+    private final EventApplicationRepository eventApplicationRepository;
+
 
     private final CurrentUserProvider currentUserProvider;
 
@@ -54,6 +54,7 @@ public class NotificationServiceImpl implements NotificationService {
     private static final String DATA_REF_ID_KEY = "refId";
     private static final String DATA_ACTION = "action";
     private static final String DATA_NOTIFICATION_TYPE = "type";
+    private final EventSessionRepository eventSessionRepository;
 
     @Override
     public void registerNotificationToken(RegisterNotificationTokenRequest request) {
@@ -96,7 +97,7 @@ public class NotificationServiceImpl implements NotificationService {
         //MANAGER:  to organization
         //HOST: to the organization
 
-        //subscribe the to topic admin if the user is admin
+        //subscribe the token to topic admin if the user is admin
         if (currentUserProvider.getRoleName().equals(ERole.SYS_ADMIN)) {
             topics.add(ADMIN_TOPIC);
         }
@@ -142,7 +143,6 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Subscribed user to topic of event, userId={} evenId={} topic={}", userId, eventId, topicName);
     }
 
-    @Transactional
     @Override
     public void unsubscribeUserFromTopicOfEvent(UUID userId, UUID eventId) {
         String topicName = EVENT_TOPIC_PRE + eventId;
@@ -200,7 +200,6 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional
     public void sendEventCreateApprovedByOrgManagerNotification(Event event) {
         //send notification to host
         Notification notificationForHost = new Notification();
@@ -877,5 +876,51 @@ public class NotificationServiceImpl implements NotificationService {
         notificationPublisher.enqueueNotification(notificationForManager, orgManagerId);
     }
 
+    @Override
+    public void sendCheckInCodeOfEventSessionNotifications(
+            List<EventApplication> eventApplications,
+            String eventName,
+            String checkInCode) {
+        List<Notification> notifications = new ArrayList<>();
+        for (EventApplication app : eventApplications) {
+            Notification notification = new Notification();
+            notification.setTitle(String.format("Check in code sự kiện %s",eventName));
+            notification.setBody(String.format("Hôm nay là ngày diễn ra session mà bạn đã đăng kí của sự kiện %s, để check in sự kiện, hãy nhập code sau: %s",
+                            eventName,
+                            checkInCode
+                    )
+            );
+            notification.setData(Map.of(
+                    DATA_NOTIFICATION_TYPE, ENotificationType.VOL_CHECK_IN_CODE.name(),
+                    DATA_REF_ID_KEY, app.getId().toString(),
+                    DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+            ));
+            notification.setType(ENotificationType.VOL_CHECK_IN_CODE);
 
+            notifications.add(notification);
+        }
+        notifications = notificationRepository.saveAll(notifications);
+        pushNotificationsToMessageQueue(eventApplications, notifications);
+    }
+
+    @Override
+    public void sendEventSessionHostedTodayNotification(UUID hostId, UUID eventId, String eventName){
+        Notification notification = new Notification();
+        notification.setTitle(String.format("Hôm nay bạn host sự kiện %s",eventName));
+        notification.setBody(String.format("Hôm nay là ngày diễn ra session của sự kiện %s, chúc sự kiện của bạn diễn ra suôn sẻ!",
+                        eventName
+                )
+        );
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.HOST_EVENT_SESSION_TODAY.name(),
+                DATA_REF_ID_KEY, eventId.toString(),
+                DATA_ACTION, ENotificationDataAction.HOST_EVENT_DETAILS.name()
+        ));
+        notification.setType(ENotificationType.HOST_EVENT_SESSION_TODAY);
+
+        notificationRepository.save(notification);
+
+        notification = saveNotificationForUser(notification, hostId);
+        notificationPublisher.enqueueNotification(notification, hostId);
+    }
 }

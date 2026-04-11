@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.entity;
 
 import com.sep490.g28.hvh.be.constant.EOrgType;
+import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -47,6 +48,16 @@ public class Organization {
 
     @Column(name = "cover_image", length = 150)
     private String coverImage;
+
+    @Column(name = "avg_rating", nullable = false)
+    private Short avgRating = 0;
+
+    @Column(name = "hosted_event_count", nullable = false)
+    private int hostedEventCount = 0;
+
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private EOrganizationStatus status;
 
     @CreationTimestamp
     @Column(

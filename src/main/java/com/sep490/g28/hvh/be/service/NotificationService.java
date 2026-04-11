@@ -59,4 +59,8 @@ public interface NotificationService {
     void sendVolunteersReceivedCertificatesNotifications(List<Volunteer> volunteers, Event event);
 
     void sendEventCompletedNotifications(Event event, UUID orgManagerId, UUID hostId);
+
+    void sendCheckInCodeOfEventSessionNotifications(List<EventApplication> eventApplications, String eventName, String checkInCode);
+
+    void sendEventSessionHostedTodayNotification(UUID hostId, UUID eventId, String eventName);
 }

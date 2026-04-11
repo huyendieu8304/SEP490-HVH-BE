@@ -1510,6 +1510,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public void assignHostToEvent(UUID eventId, AssignHostToEventRequest request) {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
@@ -1558,10 +1559,11 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public void completeEvents() {
         //scan and get the event that 2 day passed from event endDate
         LocalDate targetDate = LocalDate.now().minusDays(2);
-        List<Event> events = eventRepository.findEndedEventsBefore(targetDate);
+        List<Event> events = eventRepository.findEndedEventsAndEndDateBefore(targetDate);
 
         Set<Volunteer> updateVolunteerSet = new HashSet<>();
         Set<Volunteer> receiveCertVolunteerSet = new HashSet<>();
@@ -1641,6 +1643,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public void deleteEvent(UUID eventId) {
         //find the event
         Event event = eventRepository.findById(eventId).orElseThrow(
@@ -1655,6 +1658,60 @@ public class EventServiceImpl implements EventService {
         //delete the event from db
         eventRepository.delete(event);
         log.info("Event deleted, eventId={}", eventId);
+    }
+
+    @Override
+    @Transactional
+    public void endRecruitment() {
+        //scan and get the event that passed from event recruitmentEndDate
+        LocalDate targetDate = LocalDate.now().minusDays(1);
+        List<Event> events = eventRepository.findRecruitingEventsAndRecruitmentEndDateBefore(targetDate);
+
+        for (Event event : events){
+            //update event status to UPCOMING
+            event.setStatus(EEventStatus.UPCOMING);
+            eventRepository.save(event);
+            log.info("Event status change to UPCOMING, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
+    }
+
+    @Override
+    @Transactional
+    public void startEvents() {
+        //scan and get the event that has the start date same as today
+        LocalDate targetDate = LocalDate.now();
+        List<Event> events = eventRepository.findUpcomingEventsAndStartDateToday(targetDate);
+
+        for (Event event : events){
+            //update event status to ONGOING
+            event.setStatus(EEventStatus.ONGOING);
+            eventRepository.save(event);
+            log.info("Event status change to ONGOING, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
+    }
+
+    @Override
+    @Transactional
+    public void endEvents() {
+        //scan and get the event that has the end date is yesterday
+        LocalDate targetDate = LocalDate.now().minusDays(1);
+        List<Event> events = eventRepository.findOngoingEventsAndEndDateYesterday(targetDate);
+
+        for (Event event : events){
+            //update event status to ENDED
+            event.setStatus(EEventStatus.ENDED);
+            eventRepository.save(event);
+            log.info("Event status change to ENDED, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
     }
 }
 
