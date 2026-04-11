@@ -16,9 +16,6 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "event_applications",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"session_id", "volunteer_id"})
-        },
         indexes = {
                 @Index(name = "idx_event_applications_volunterid_sessionid", columnList = "volunteer_id, session_id")
         }
