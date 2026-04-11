@@ -16,42 +16,28 @@ public class EventStatusScheduler {
     EventSessionService eventSessionService;
     OrganizationService organizationService;
 
+    //0AM everyday
 //    @Scheduled(cron = "0 0 0 * * *")
-    public void endRecruitment() {
-        log.info("Start ending recruitment for events cron job");
-
-        eventService.endRecruitment();
-
-        log.info("Done ending recruitment for events cron job");
+    public void dailyEventJob() {
+        runStep("endRecruitment", eventService::endRecruitment);
+        runStep("endEvents", eventService::endEvents);
+        runStep("startEvents", eventService::startEvents);
+        runStep("createCheckIn", eventSessionService::createCheckInCode);
     }
 
-//    @Scheduled(cron = "0 0 0 * * *")
-    public void startEvents() {
-        log.info("Start start events cron job");
-
-        //change the events status to ONGOING
-        eventService.startEvents();
-
-        log.info("Done start events cron job");
-    }
-
-    //todo create check in code will run after startEvents
-    //todo fix event SEssison, remove the not null constraint in check in code
-//
-//    @Scheduled(cron = "0 0 0 * * *")
-    public void endEvents() {
-        log.info("Start end events cron job");
-
-        //run after force check out
-        //change the event status to ENDED
-        eventService.endEvents();
-
-        log.info("Done end events cron job");
+    private void runStep(String name, Runnable step) {
+        try {
+            log.info("Start {}", name);
+            step.run();
+            log.info("Done {}", name);
+        } catch (Exception e) {
+            log.error("Fail {}", name, e);
+            throw e; // stop flow
+        }
     }
 
     //2AM every day
 //    @Scheduled(cron = "0 0 2 * * *")
-    //todo enable this cron job
     public void completeEvents() {
         log.info("Start completing events cron job");
 
@@ -60,6 +46,8 @@ public class EventStatusScheduler {
         log.info("Done completing events cron job");
     }
 
+    //3AM every day
+//    @Scheduled(cron = "0 0 3 * * *")
     public void calculateOrganizationsAvgRating(){
         log.info("Start calculating organization avg rating cron job");
         organizationService.calculateOrganizationsAvgRating();
@@ -67,10 +55,5 @@ public class EventStatusScheduler {
     }
 
 
-    public void createCheckInCode(){
-        log.info("Start create check in code cron job");
-        eventSessionService.createCheckInCode();
-        log.info("Done create check in code cron job");
-    }
 
 }
