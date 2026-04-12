@@ -17,6 +17,7 @@ import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
+import com.sep490.g28.hvh.be.mapper.OrganizationMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.OrganizationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +82,9 @@ public class OrganizationServiceTest {
 
     @Mock
     EventRepository eventRepository;
+
+    @Mock
+    OrganizationMapper organizationMapper;
 
     @InjectMocks
     OrganizationServiceImpl organizationService;
@@ -155,7 +159,8 @@ public class OrganizationServiceTest {
                 UUID.randomUUID(),
                 "Organization A",
                 "SOCIAL_ORGANIZATION",
-                15
+                15,
+                30
         };
     }
 
@@ -164,7 +169,8 @@ public class OrganizationServiceTest {
                 UUID.randomUUID(),
                 "Organization A",
                 "GOVERNMENT_AGENCY_BASED",
-                15
+                15,
+                45
         };
     }
 
@@ -596,6 +602,15 @@ public class OrganizationServiceTest {
                 any(Pageable.class)
         )).thenReturn(rawData);
 
+        OrganizationSimpleResponse response1 = new OrganizationSimpleResponse();
+        OrganizationSimpleResponse response2 = new OrganizationSimpleResponse();
+
+        when(organizationMapper.toOrganizationSimpleResponse(rawData.get(0)))
+                .thenReturn(response1);
+
+        when(organizationMapper.toOrganizationSimpleResponse(rawData.get(1)))
+                .thenReturn(response2);
+
         Page<OrganizationSimpleResponse> result =
                 organizationService.getOrganizations(pageNumber, pageSize, name, orgTypes);
 
@@ -616,11 +631,19 @@ public class OrganizationServiceTest {
                 mockOrgRow(),
                 mockOrgRow());
 
-        when(organizationRepository.search(
-                isNull(),
+        when(organizationRepository.searchWithoutOrgType(
                 isNull(),
                 any(Pageable.class)
         )).thenReturn(rawData);
+
+        OrganizationSimpleResponse response1 = new OrganizationSimpleResponse();
+        OrganizationSimpleResponse response2 = new OrganizationSimpleResponse();
+
+        when(organizationMapper.toOrganizationSimpleResponse(rawData.get(0)))
+                .thenReturn(response1);
+
+        when(organizationMapper.toOrganizationSimpleResponse(rawData.get(1)))
+                .thenReturn(response2);
 
         Page<OrganizationSimpleResponse> result =
                 organizationService.getOrganizations(pageNumber, pageSize, null, null);
@@ -628,7 +651,7 @@ public class OrganizationServiceTest {
         assertEquals(2, result.getContent().size());
 
         verify(organizationRepository)
-                .search(isNull(), isNull(), any(Pageable.class));
+                .searchWithoutOrgType(isNull(), any(Pageable.class));
     }
 
     // ===== getOrganizationDetailsBySystemAdmin ============================================
