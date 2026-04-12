@@ -1,6 +1,5 @@
 package com.sep490.g28.hvh.be.entity;
 
-import com.sep490.g28.hvh.be.constant.EAccountStatus;
 import com.sep490.g28.hvh.be.constant.EOrgType;
 import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import jakarta.persistence.*;
