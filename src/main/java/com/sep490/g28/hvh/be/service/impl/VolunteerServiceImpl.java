@@ -8,10 +8,14 @@ import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRe
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.FaceApiErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceRegisterResponse;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
@@ -24,7 +28,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -47,6 +53,7 @@ public class VolunteerServiceImpl implements VolunteerService {
     StoragePathGenerator storagePathGenerator;
     OtpService otpService;
     AuthClient authClient;
+    FaceClient faceClient;
     SystemAdminRepository systemAdminRepository;
     CurrentUserProvider currentUserProvider;
     EmailService emailService;
@@ -460,4 +467,34 @@ public class VolunteerServiceImpl implements VolunteerService {
         );
     }
 
+    @Override
+    public void registerVolunteerFace(MultipartFile file) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        User user = userRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(AppCommonErrorCode.ACCOUNT_NOT_EXISTED));
+
+        if(user.isFaceRegistered()) {
+           throw new AppException(FaceApiErrorCode.ALREADY_REGISTERED_FACE);
+        }
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        FaceRegisterResponse response = faceClient
+                .faceRegister(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
+
+        if(response.success()) {
+            user.setFaceRegistered(true);
+            userRepository.save(user);
+        }
+    }
+
+    private String convertToValidUsername(String str) {
+        String temp = Normalizer.normalize(str, Normalizer.Form.NFD);
+        return temp.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replaceAll("đ", "d")
+                .replaceAll("Đ", "D")
+                .replaceAll("\\s+", "");
+    }
 }

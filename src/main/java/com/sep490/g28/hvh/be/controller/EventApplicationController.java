@@ -1,9 +1,6 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
-import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckOutEventRequest;
-import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
-import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
@@ -20,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -141,5 +139,19 @@ public class EventApplicationController {
     ){
 
         return ResponseEntity.ok(eventApplicationService.getActualParticipants(sessionId, pageNumber, pageSize));
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @PostMapping("/vol/event-applications/face-check-in")
+    public ResponseEntity<Void> faceCheckIn(
+            @Valid
+            @RequestPart("request")
+            FaceCheckInEventRequest request,
+
+            @RequestPart("file")
+            MultipartFile file
+    ) {
+        eventApplicationService.faceCheckInEvent(request, file);
+        return ResponseEntity.ok().build();
     }
 }
