@@ -5,6 +5,7 @@ import com.sep490.g28.hvh.be.constant.EOrgRegistrationStatus;
 import com.sep490.g28.hvh.be.constant.EOrgType;
 import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import com.sep490.g28.hvh.be.constant.ERole;
+import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.*;
@@ -26,8 +27,10 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -657,6 +660,43 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setCreditHour(organization.getCreditHour()- numberOfHourDeduct);
         organizationRepository.save(organization);
         log.info("The credit hour of organization was deducted by 3, organizationId={}", organization.getId());
+    }
+
+    @Override
+    @Transactional
+    public void calculateOrganizationsAvgRating() {
+        //get events that end for 7 days
+        LocalDate targetDate = LocalDate.now().minusDays(7);
+        List<EventOrganizationProjection> projections = eventRepository.findCompletedEventsAndEndDateBefore(targetDate);
+
+        Map<Organization, List<Event>> map = new HashMap<>();
+
+        // group by organization
+        for (EventOrganizationProjection p : projections) {
+            map.computeIfAbsent(p.getOrganization(), k -> new ArrayList<>())
+                    .add(p.getEvent());
+        }
+
+        //recalculate avg rating for each organization
+        for (Map.Entry<Organization, List<Event>> entry : map.entrySet()) {
+            Organization org = entry.getKey();
+            List<Event> events = entry.getValue();
+
+            int totalRating = org.getAvgRating() * org.getHostedEventCount();
+            int totalCount = org.getHostedEventCount();
+
+            for (Event e : events) {
+                totalRating += e.getAvgRating();
+                totalCount++;
+            }
+
+            org.setAvgRating((short) (totalRating / totalCount));
+            org.setHostedEventCount(totalCount);
+            log.info("Updated avg rating for organization, organizationId={}", org.getId());
+        }
+
+        organizationRepository.saveAll(map.keySet());
+        log.info("Updated avg rating for {} organizations", map.size());
     }
 
     @Override

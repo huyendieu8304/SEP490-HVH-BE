@@ -7,6 +7,7 @@ import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.*;
 import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.event.request.SaveEventRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
@@ -28,6 +29,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -57,11 +59,14 @@ public class EventServiceImpl implements EventService {
     NotificationService notificationService;
     EmailService emailService;
     AuthService authService;
+    CertificateService certificateService;
+    VolunteerReviewService volunteerReviewService;
 
     CurrentUserProvider currentUserProvider;
 
     EventMapper eventMapper;
     private final EventApplicationRepository eventApplicationRepository;
+    private final VolunteerReviewRepository volunteerReviewRepository;
 
     @Override
     public EventFeedResponse getEventFeeds(int pageNumber, int pageSize, boolean refresh,
@@ -1505,6 +1510,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public void assignHostToEvent(UUID eventId, AssignHostToEventRequest request) {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
@@ -1550,6 +1556,162 @@ public class EventServiceImpl implements EventService {
         notificationService.sendEventAssignedHostNotification(oldHostId, newHost.getId(), event);
 
         log.info("Event assigned to host, eventId={} hostId={}", eventId, request.getHostId());
+    }
+
+    @Override
+    @Transactional
+    public void completeEvents() {
+        //scan and get the event that 2 day passed from event endDate
+        LocalDate targetDate = LocalDate.now().minusDays(2);
+        List<Event> events = eventRepository.findEndedEventsAndEndDateBefore(targetDate);
+
+        Set<Volunteer> updateVolunteerSet = new HashSet<>();
+        Set<Volunteer> receiveCertVolunteerSet = new HashSet<>();
+        List<VolunteerReview> newReviews = new ArrayList<>();
+        for (Event event : events) {
+            List<EventSession> sessions = event.getSessions();
+            for (EventSession session : sessions) {
+                    Duration duration = Duration.between(session.getStartDateTime(), session.getEndDateTime());
+                    double requiredHours = duration.toMinutes() / 60.0 / 3;
+
+                    //get applications that has checked in and checked out info
+                    List<EligibleApplicationProjection> eligibleApplications =
+                            eventApplicationRepository
+                                    .findEligibleApplicationProjection(session.getId());
+
+                    for (EligibleApplicationProjection projection : eligibleApplications) {
+                        Volunteer volunteer = projection.getVolunteer();
+                        EventApplication application = projection.getApplication();
+
+                        //the application is legit but host has not reviewed it yet
+                        if (projection.getReview() == null){
+                            //auto review 5 stars for all legit participant
+                            VolunteerReview review = volunteerReviewService
+                                    .reviewAutomatically(volunteer, application);
+
+                            //add the new review to the list for batch updating
+                            newReviews.add(review);
+                            projection.setReview(review);
+                        }
+
+                        int creditHour = application.getCreditHour();
+                        double creditScore = (double) (projection.getReview().getAvgRating() * creditHour) /5;
+
+                        //check the vol eligible to get cert
+                        if (creditScore >= requiredHours) {
+                            receiveCertVolunteerSet.add(volunteer);
+                        }
+
+                        //update the credit score of the volunteer
+                        int creditToAdd = (int) Math.round(creditScore);
+                        volunteer.setCreditScore(volunteer.getCreditScore() + creditToAdd);
+                        updateVolunteerSet.add(volunteer);
+
+                    }
+                    //update batch in db of this session
+                    //review for vol
+                    volunteerReviewRepository.saveAll(newReviews);
+                    log.info("Create automatic review for eligible volunteers of session, sessionId={}",session.getId());
+                    newReviews.clear();
+            }
+
+            //update credit score for vol
+            volunteerRepository.saveAll(updateVolunteerSet);
+            log.info("Add credit score for volunteers of event, eventId={}",event.getId());
+            updateVolunteerSet.clear();
+
+            //generate certificates for volunteers
+            certificateService.generateCertificates(receiveCertVolunteerSet.stream().toList(), event);
+            log.info("Generate certificates for eligible volunteers of event, eventId={}",event.getId());
+            //send notification to vol to inform about the certificates
+            notificationService.sendVolunteersReceivedCertificatesNotifications(receiveCertVolunteerSet.stream().toList(), event);
+            receiveCertVolunteerSet.clear();
+
+            //update event status after process all the cert and vol score
+            event.setStatus(EEventStatus.COMPLETED);
+            eventRepository.save(event);
+            log.info("Event completed, eventId={}", event.getId());
+
+            //send notification to org mng and host
+            notificationService.sendEventCompletedNotifications(
+                    event,
+                    event.getOrganization().getOrganizationManager().getId(),
+                    event.getHost().getId()
+            );
+            log.info("Send event complete notification to org manager and host of event, eventId={}", event.getId());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteEvent(UUID eventId) {
+        //find the event
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
+        );
+
+        //check the event status cancelable?
+        if (!EEventStatus.canEventBeDeleted(event.getStatus())) {
+            throw new AppException(EventErrorCode.EVENT_CANNOT_DELETED);
+        }
+
+        //delete the event from db
+        eventRepository.delete(event);
+        log.info("Event deleted, eventId={}", eventId);
+    }
+
+    @Override
+    @Transactional
+    public void endRecruitment() {
+        //scan and get the event that passed from event recruitmentEndDate
+        LocalDate targetDate = LocalDate.now().minusDays(1);
+        List<Event> events = eventRepository.findRecruitingEventsAndRecruitmentEndDateBefore(targetDate);
+
+        for (Event event : events){
+            //update event status to UPCOMING
+            event.setStatus(EEventStatus.UPCOMING);
+            eventRepository.save(event);
+            log.info("Event status change to UPCOMING, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
+    }
+
+    @Override
+    @Transactional
+    public void startEvents() {
+        //scan and get the event that has the start date same as today
+        LocalDate targetDate = LocalDate.now();
+        List<Event> events = eventRepository.findUpcomingEventsAndStartDateToday(targetDate);
+
+        for (Event event : events){
+            //update event status to ONGOING
+            event.setStatus(EEventStatus.ONGOING);
+            eventRepository.save(event);
+            log.info("Event status change to ONGOING, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
+    }
+
+    @Override
+    @Transactional
+    public void endEvents() {
+        //scan and get the event that has the end date is yesterday
+        LocalDate targetDate = LocalDate.now().minusDays(1);
+        List<Event> events = eventRepository.findOngoingEventsAndEndDateYesterday(targetDate);
+
+        for (Event event : events){
+            //update event status to ENDED
+            event.setStatus(EEventStatus.ENDED);
+            eventRepository.save(event);
+            log.info("Event status change to ENDED, eventId={}", event.getId());
+        }
+
+        //update event in db
+        eventRepository.saveAll(events);
     }
 
     @Override

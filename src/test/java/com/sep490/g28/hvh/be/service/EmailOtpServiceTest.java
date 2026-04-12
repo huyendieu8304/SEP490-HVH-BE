@@ -11,6 +11,7 @@ import com.sep490.g28.hvh.be.service.impl.EmailOtpServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -33,17 +34,9 @@ public class EmailOtpServiceTest {
     @Mock
     EmailService emailService;
 
-    EmailOtpService emailOtpService;
+    @InjectMocks
+    EmailOtpServiceImpl emailOtpService;
 
-    @BeforeEach
-    public void setUp() {
-        emailOtpService = new EmailOtpServiceImpl(
-                userRepository,
-                authClient,
-                otpService,
-                emailService
-        );
-    }
 
     // ===== sendVerifyVolAccountRegistrationOtp =====
     @Test

@@ -36,4 +36,7 @@ public interface EventSessionService {
             List<EventSession> oldSessions,
             List<UpdateEventSessionPayload> newSessions
     );
+
+    void createCheckInCode();
+
 }

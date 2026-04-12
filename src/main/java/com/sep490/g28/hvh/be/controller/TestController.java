@@ -3,17 +3,27 @@ package com.sep490.g28.hvh.be.controller;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.RegisterOrganizationResponse;
+import com.sep490.g28.hvh.be.entity.Event;
+import com.sep490.g28.hvh.be.entity.Volunteer;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
+import com.sep490.g28.hvh.be.repository.EventRepository;
+import com.sep490.g28.hvh.be.repository.VolunteerRepository;
+import com.sep490.g28.hvh.be.service.EventService;
+import com.sep490.g28.hvh.be.service.EventSessionService;
 import com.sep490.g28.hvh.be.service.OrganizationService;
+import com.sep490.g28.hvh.be.service.impl.CertificateServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 
 @RestController
@@ -21,6 +31,7 @@ import java.util.Map;
 @Validated
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TestController {
 
 //    @PostMapping(
@@ -104,6 +115,63 @@ public class TestController {
             @Valid @RequestBody RegisterOrganizationRequest request
     ) {
         return ResponseEntity.ok(organizationService.registerOrganization(request));
+    }
+
+    CertificateServiceImpl certificateServiceImpl;
+
+    VolunteerRepository volunteerRepository;
+    EventRepository eventRepository;
+    EventService eventService;
+
+    @PostMapping("/certificate")
+    public ResponseEntity<String> generate (
+            @RequestParam UUID volId,
+            @RequestParam UUID eventId
+    ){
+
+        Volunteer volunteer = volunteerRepository.findById(volId).isPresent() ? volunteerRepository.findById(volId).get() : null;
+        Event event = eventRepository.findById(eventId).isPresent() ? eventRepository.findById(eventId).get() : null;
+
+        certificateServiceImpl.generateCertificate(volunteer, event);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/complete-event")
+    public ResponseEntity<Void> completeEvent(){
+        eventService.completeEvents();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/end-recruitment")
+    public ResponseEntity<Void> endRecruitment(){
+        eventService.endRecruitment();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/start-event")
+    public ResponseEntity<Void> startEvents(){
+        eventService.startEvents();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/end-event")
+    public ResponseEntity<Void> endEvents(){
+        eventService.endEvents();
+        return ResponseEntity.ok().build();
+    }
+
+
+    @PostMapping("/calc-org-rating")
+    public ResponseEntity<Void> calculateOrganizationsAvgRating(){
+        organizationService.calculateOrganizationsAvgRating();
+        return ResponseEntity.ok().build();
+    }
+
+    EventSessionService eventSessionService;
+    @PostMapping("/create-check-in-code")
+    public ResponseEntity<Void> createCheckInCode(){
+        eventSessionService.createCheckInCode();
+        return ResponseEntity.ok().build();
     }
 
 }

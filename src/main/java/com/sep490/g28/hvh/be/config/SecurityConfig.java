@@ -76,6 +76,7 @@ public class SecurityConfig {
                                         "/api/v1/events/feeds",
                                         "/api/v1/events/event-details/**",
                                         "/api/v1/organizations/**",
+                                        "/api/v1/certificates/**",
                                         "/api/v1/activity-domains",
                                         "/volunteers/public-information/**"
                                 ).permitAll() //public endpoint

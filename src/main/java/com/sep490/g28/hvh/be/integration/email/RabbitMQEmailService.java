@@ -152,7 +152,15 @@ public class RabbitMQEmailService implements EmailService {
     }
 
     @Override
-    public void sendEventCancelledByHostEmail(String orgManagerEmail, String orgManagerFullName, String organizationName, String eventName, String hostFullName, String hostEmail, String cancelReason) {
+    public void sendEventCancelledByHostEmail(
+            String orgManagerEmail,
+            String orgManagerFullName,
+            String organizationName,
+            String eventName,
+            String hostFullName,
+            String hostEmail,
+            String cancelReason
+    ) {
         String subject = "HVH - Sự kiện bị hủy";
         String body = String.format("""
                 Xin chào %s.
@@ -164,7 +172,8 @@ public class RabbitMQEmailService implements EmailService {
                 eventName,
                 organizationName,
                 hostFullName,
-                hostEmail
+                hostEmail,
+                cancelReason
                 );
         emailPublisher.enqueue(orgManagerEmail, subject, body);
         log.info("Email inform organization manager about the event cancellation  by host was pushed to message queue, toEmail={}", orgManagerEmail);
@@ -186,5 +195,17 @@ public class RabbitMQEmailService implements EmailService {
         );
         emailPublisher.enqueue(orgManagerEmail, subject, body);
         log.info("Email inform organization manager about the event cancellation by admin was pushed to message queue, toEmail={}", orgManagerEmail);
+    }
+
+    @Override
+    public void sendVerifyChangePhoneNumberOtp(String email, String otp) {
+        String subject = "HVH - Xác nhận yêu cầu đổi số điện thoại";
+        String body = String.format("""
+                Chào bạn, chúng tôi gửi mail này nhằm xác nhận rằng bạn đang đổi số điện thoại liên lạc trong tài khoản ở Hà Nội Volunteer Hub.
+                Hãy sử dụng mã OTP dưới đây dể xác nhận.
+                Mã OTP: %s
+                """, otp);
+        emailPublisher.enqueue(email, subject, body);
+        log.info("Email contain verify change phone number was pushed to message queue, toEmail={}", email);
     }
 }

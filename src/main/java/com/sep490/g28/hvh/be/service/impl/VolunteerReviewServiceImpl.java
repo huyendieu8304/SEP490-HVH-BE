@@ -71,11 +71,7 @@ public class VolunteerReviewServiceImpl implements VolunteerReviewService {
 
         //re calculate the avg rating and increase rating count of volunteer
         Volunteer volunteer = application.getVolunteer();
-        short newAvg = (short) ((volunteer.getAvgRating() * volunteer.getRatingCount() + review.getAvgRating()) / (volunteer.getRatingCount() + 1));
-        int newCount = volunteer.getRatingCount() + 1;
-
-        volunteer.setAvgRating(newAvg);
-        volunteer.setRatingCount(newCount);
+        recalculateAverageRatingOfVolunteer(volunteer, review);
         volunteerRepository.save(volunteer);
 
         //send notification to vol
@@ -84,5 +80,29 @@ public class VolunteerReviewServiceImpl implements VolunteerReviewService {
                 volunteer.getId(),
                 application.getId()
         );
+    }
+
+    private void recalculateAverageRatingOfVolunteer(Volunteer volunteer, VolunteerReview review) {
+        short newAvg = (short) ((volunteer.getAvgRating() * volunteer.getRatingCount() + review.getAvgRating()) / (volunteer.getRatingCount() + 1));
+        int newCount = volunteer.getRatingCount() + 1;
+
+        volunteer.setAvgRating(newAvg);
+        volunteer.setRatingCount(newCount);
+    }
+
+    @Override
+    public VolunteerReview reviewAutomatically(Volunteer volunteer, EventApplication application) {
+        VolunteerReview review = new VolunteerReview();
+        review.setEventApplication(application);
+        review.setWorkEffectivenessRating((short) 5);
+        review.setTeamworkCommunicationRating((short) 5);
+        review.setAdaptabilityProblemSolvingRating((short) 5);
+        review.setResponsibilityPunctualityRating((short) 5);
+        review.setProfessionalAttitudeRating((short) 5);
+        review.setAvgRating((short) 5);
+
+        recalculateAverageRatingOfVolunteer(volunteer, review);
+
+        return review;
     }
 }

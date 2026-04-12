@@ -4,6 +4,7 @@ import java.util.Map;
 
 public record CreateUserRequest (
         String email,
+        String phone,
         String password,
         Boolean email_confirm,
         Map<String, Object> app_metadata

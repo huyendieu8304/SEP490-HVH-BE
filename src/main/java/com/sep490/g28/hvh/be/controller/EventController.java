@@ -296,6 +296,15 @@ public class EventController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('HOST') and @eventAuthorizer.isHostOfEvent(#eventId)")
+    @DeleteMapping("/host/events/{eventId}")
+    public ResponseEntity<UpdateEventResponse> deleteEvent(
+            @PathVariable UUID eventId
+    ){
+        eventService.deleteEvent(eventId);
+        return ResponseEntity.ok().build();
+    }
+
     @PreAuthorize("hasRole('VOL')")
     @GetMapping("/vol/events/saved-events")
     public ResponseEntity<Page<EventSimpleResponse>> getSavedEventsByVolunteer(

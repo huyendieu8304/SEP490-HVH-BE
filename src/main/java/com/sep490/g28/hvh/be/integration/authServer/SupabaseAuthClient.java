@@ -62,11 +62,11 @@ public class SupabaseAuthClient implements AuthClient {
     @Override
     public UUID createAccount(ERole role, String email, String password, String phone) {
         Map<String, Object> appMetadata = Map.of(
-                "role", role.name(),
-                "phone", phone
+                "role", role.name()
         );
         CreateUserRequest request = new CreateUserRequest(
                 email,
+                toE164VN(phone),
                 password,
                 true,
                 appMetadata
@@ -125,7 +125,7 @@ public class SupabaseAuthClient implements AuthClient {
                     entity,
                     UserResponse.class // THIS COULD BE VOID
             );
-            log.info(Objects.requireNonNull(responseEntity.getBody()).toString());
+//            log.info(Objects.requireNonNull(responseEntity.getBody()).toString());
         } catch (Exception e) {
             if (e instanceof SupabaseException se){
                 int status = se.getStatus();
@@ -137,6 +137,47 @@ public class SupabaseAuthClient implements AuthClient {
             }
             throw new AppException(SupabaseErrorCode.AUTH_CHANGE_PASSWORD_FAIL);
         }
+    }
+
+    @Override
+    public void changePhoneNumber(UUID accountId, String newPhone) {
+        String url = supabaseProperties.getUrl()
+                + "/auth/v1/admin/users/" + accountId;
+
+        Map<String, Object> body = Map.of(
+                "phone", toE164VN(newPhone)
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    entity,
+                    String.class
+            );
+
+//            log.info("Response: {}", response.getBody());
+
+        } catch (Exception e) {
+            if (e instanceof SupabaseException se){
+                int status = se.getStatus();
+                if (status == 500) {
+                    throw new AppException(SupabaseErrorCode.INTERNAL_SERVER_ERROR);
+                } else if (status == 404) {
+                    throw new AppException(SupabaseErrorCode.AUTH_ACCOUNT_NOT_EXISTED);
+                }
+            }
+            throw new AppException(SupabaseErrorCode.AUTH_CHANGE_PHONE_FAIL);
+        }
+    }
+
+    private String toE164VN(String phone) {
+        if (phone.startsWith("0")) {
+            return "+84" + phone.substring(1);
+        }
+        return phone;
     }
 
     @Override
@@ -171,6 +212,44 @@ public class SupabaseAuthClient implements AuthClient {
         //not been banned or already end banned
         return user.banned_until() == null
                 || user.banned_until().isBefore(OffsetDateTime.now());
+    }
+
+    @Override
+    public boolean checkOldPassword(String email, String oldPassword) {
+
+        String url = supabaseProperties.getUrl()+"/auth/v1/token?grant_type=password";
+
+        Map<String, Object> body = Map.of(
+                "email", email,
+                "password", oldPassword
+        );
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body);
+        try {
+//            ResponseEntity<String> responseEntity =
+                    restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+            );
+//            log.info("Status: {}", responseEntity.getStatusCode());
+//            log.info("Headers: {}", responseEntity.getHeaders());
+//            log.info("Body: {}", responseEntity.getBody());
+            return true;
+        } catch (Exception e) {
+            if (e instanceof SupabaseException se){
+                int status = se.getStatus();
+                if (status == 500) {
+                    throw new AppException(SupabaseErrorCode.INTERNAL_SERVER_ERROR);
+                } else if (status == 404) {
+                    throw new AppException(SupabaseErrorCode.AUTH_ACCOUNT_NOT_EXISTED);
+                } else if (status == 400) {
+                    return false;
+                }
+            }
+            throw new AppException(SupabaseErrorCode.AUTH_CONFIRM_OLD_PASSWORD_FAIL);
+        }
     }
 
 

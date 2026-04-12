@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventStatus;
+import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.entity.Event;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -142,10 +143,46 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             Pageable pageable);
 
     @Query("""
-    SELECT e
-    FROM Event e
-    WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ENDED
-      AND e.endDate <= :targetDate
-""")
-    List<Event> findEndedEventsBefore(@Param("targetDate") LocalDate targetDate);
+                SELECT e
+                FROM Event e
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.RECRUITING
+                  AND e.recruitmentEndDate <= :targetDate
+            """)
+    List<Event> findRecruitingEventsAndRecruitmentEndDateBefore(LocalDate targetDate);
+
+    @Query("""
+                SELECT e
+                FROM Event e
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.UPCOMING
+                  AND e.startDate <= :targetDate
+            """)
+    List<Event> findUpcomingEventsAndStartDateToday(LocalDate targetDate);
+
+    @Query("""
+                SELECT e
+                FROM Event e
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ONGOING
+                  AND e.endDate <= :targetDate
+            """)
+    List<Event> findOngoingEventsAndEndDateYesterday(LocalDate targetDate);
+
+    @Query("""
+                SELECT e
+                FROM Event e
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ENDED
+                  AND e.endDate <= :targetDate
+            """)
+    List<Event> findEndedEventsAndEndDateBefore(@Param("targetDate") LocalDate targetDate);
+
+    @Query("""
+                SELECT new com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection(
+                    e,
+                    o
+                )
+                FROM Event e
+                LEFT JOIN Organization o ON e.organization.id = o.id
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.COMPLETED
+                  AND e.endDate <= :targetDate
+            """)
+    List<EventOrganizationProjection> findCompletedEventsAndEndDateBefore(LocalDate targetDate);
 }

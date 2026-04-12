@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
+import com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
@@ -132,6 +133,9 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             v.bio,
             v.avatarUrl,
             v.address,
+            v.nickname,
+            v.email,
+            v.phone,
             v.creditScore,
             v.honorScore,
             v.avgRating,
@@ -142,6 +146,29 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             LEFT JOIN CheckInLog c ON a.id = c.eventApplication.id
             LEFT JOIN Volunteer v ON a.volunteer.id = v.id
             WHERE a.session.id = :sessionId
+                AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
             """)
     Page<ActualParticipantResponse> findCheckedInVolunteer(UUID sessionId, Pageable pageable);
+
+    @Query("""
+            SELECT new com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection(
+            a,
+            r,
+            v
+            ) FROM EventApplication a
+            LEFT JOIN a.review r
+            LEFT JOIN a.volunteer v
+            WHERE a.session.id = :sessionId
+            AND a.status = 'COMPLETED'
+            AND a.creditHour >= 0
+            """)
+    List<EligibleApplicationProjection> findEligibleApplicationProjection(UUID sessionId);
+
+    @Query("""
+            SELECT a
+            FROM EventApplication a
+            WHERE a.session.id = :sessionId
+             AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
+            """)
+    List<EventApplication> findApprovedApplicationBySessionId(UUID sessionId);
 }

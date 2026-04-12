@@ -8,7 +8,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # run stage
-FROM eclipse-temurin:21-jdk-jammy
+FROM mcr.microsoft.com/playwright/java:v1.43.0-jammy
 WORKDIR /app
 
 # copy jar từ stage build

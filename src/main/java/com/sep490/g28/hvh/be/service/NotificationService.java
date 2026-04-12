@@ -54,6 +54,16 @@ public interface NotificationService {
 
     void sendVolunteerReviewedByHostNotification(UUID volunteerId, Event event, EventApplication application, UUID reviewId);
 
+    void sendVolunteerReceivedCertificateNotification(Volunteer volunteer, Event event);
+
+    void sendVolunteersReceivedCertificatesNotifications(List<Volunteer> volunteers, Event event);
+
+    void sendEventCompletedNotifications(Event event, UUID orgManagerId, UUID hostId);
+
+    void sendCheckInCodeOfEventSessionNotifications(List<EventApplication> eventApplications, String eventName, String checkInCode);
+
+    void sendEventSessionHostedTodayNotification(UUID hostId, UUID eventId, String eventName);
+
     void sendClaimApprovedByHostNotification(UUID volunteerId, Event event, EventApplication application);
     void sendClaimRejectedByHostNotification(UUID volunteerId, Event event, EventApplication application);
 }
