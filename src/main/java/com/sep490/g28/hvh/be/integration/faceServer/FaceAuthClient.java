@@ -17,7 +17,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.UUID;
 
 /**
@@ -30,7 +29,7 @@ import java.util.UUID;
 @Service
 public class FaceAuthClient implements FaceClient{
 
-    @Value("${api.base-url}")
+    @Value("${face-authen.api.base-url}")
     private String baseUrl;
 
     private final RestTemplate restTemplate;
