@@ -474,6 +474,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         User user = userRepository.findById(volunteerId)
                 .orElseThrow(() -> new AppException(AppCommonErrorCode.ACCOUNT_NOT_EXISTED));
 
+        //check if user has already registered face
         if(user.isFaceRegistered()) {
            throw new AppException(FaceApiErrorCode.ALREADY_REGISTERED_FACE);
         }
@@ -481,15 +482,19 @@ public class VolunteerServiceImpl implements VolunteerService {
         Volunteer volunteer = volunteerRepository.findById(volunteerId)
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
+        //call face api server to register face
         FaceRegisterResponse response = faceClient
                 .faceRegister(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
 
+        //check if response success
         if(response.success()) {
             user.setFaceRegistered(true);
             userRepository.save(user);
         }
     }
 
+    //convert name to valid username
+    //todo move to util
     private String convertToValidUsername(String str) {
         String temp = Normalizer.normalize(str, Normalizer.Form.NFD);
         return temp.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")

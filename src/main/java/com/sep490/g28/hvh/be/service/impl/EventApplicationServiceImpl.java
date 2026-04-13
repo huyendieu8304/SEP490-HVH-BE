@@ -763,14 +763,17 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         //check-in with face authentication
         FaceAuthenticationResponse response = faceClient.faceAuthentication(file);
 
+        //check if passed liveness check
         if(!response.liveness_passed()) {
             throw new AppException(FaceApiErrorCode.FACE_LIVENESS_CHECK_FAILED);
         }
 
+        //check if face data exist in face api server storage
         if(response.name().equals("Unknown")) {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_FAILED);
         }
 
+        //check if returned face is belong to current vol
         if(volunteerId.equals(UUID.fromString(response.name()))) {
             //save new check-in log into db
             CheckInLog newCheckInLog = new CheckInLog();
