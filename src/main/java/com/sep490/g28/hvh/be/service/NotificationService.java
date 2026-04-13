@@ -63,4 +63,7 @@ public interface NotificationService {
     void sendCheckInCodeOfEventSessionNotifications(List<EventApplication> eventApplications, String eventName, String checkInCode);
 
     void sendEventSessionHostedTodayNotification(UUID hostId, UUID eventId, String eventName);
+
+    void sendClaimApprovedByHostNotification(UUID volunteerId, Event event, EventApplication application);
+    void sendClaimRejectedByHostNotification(UUID volunteerId, Event event, EventApplication application);
 }

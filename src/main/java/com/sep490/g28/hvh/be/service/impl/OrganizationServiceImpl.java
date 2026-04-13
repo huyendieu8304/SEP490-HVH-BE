@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EOrgRegistrationStatus;
 import com.sep490.g28.hvh.be.constant.EOrgType;
+import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
@@ -16,6 +17,7 @@ import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
+import com.sep490.g28.hvh.be.mapper.OrganizationMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.OrganizationService;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
@@ -52,6 +54,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     EmailService emailService;
     HostRepository hostRepository;
     EventRepository eventRepository;
+    OrganizationMapper organizationMapper;
 
     @Override
     public RegisterOrganizationResponse registerOrganization(RegisterOrganizationRequest request) {
@@ -372,6 +375,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             organization.setOrgIntroduction(organizationRegistration.getOrgIntroduction());
             organization.setLegalDocument(organizationRegistration.getLegalDocument());
             organization.setOtherEvidences(organizationRegistration.getOtherEvidences());
+            organization.setStatus(EOrganizationStatus.ACTIVE);
             organization.setCreateBy(currentAdmin);
 
             organizationRepository.save(organization);
@@ -430,10 +434,16 @@ public class OrganizationServiceImpl implements OrganizationService {
                 Sort.by(Sort.Direction.DESC, "created_at")
         );
 
-        List<Object[]> rawOrgData = organizationRepository.search(name, orgTypes, pageable);
+        List<Object[]> rawOrgData;
 
+        //check if orgTypes is null or empty
+        if(orgTypes == null || orgTypes.isEmpty()) {
+            rawOrgData = organizationRepository.searchWithoutOrgType(name, pageable);
+        } else {
+            rawOrgData = organizationRepository.search(name, orgTypes, pageable);
+        }
         List<OrganizationSimpleResponse> organizations = rawOrgData.stream()
-                .map(OrganizationSimpleResponse::from).toList();
+                .map(organizationMapper::toOrganizationSimpleResponse).toList();
 
         return new PageImpl<>(organizations, pageable, organizations.size());
     }
@@ -471,14 +481,11 @@ public class OrganizationServiceImpl implements OrganizationService {
         Long totalHosts = hostRepository.countHostByOrganizationId(ordId);
 
         //get total honor hours
-        long totalHonorHours = 0;
-        List<Event> events = eventRepository.findAllByOrganizationId(ordId);
+        Set<String> activitySubDomains = new HashSet<>();
+        List<Event> events = eventRepository.findAllByOrganizationId(organization.getId());
 
         for(Event e : events) {
-
-            for(EventSession es : e.getSessions()) {
-                totalHonorHours += Duration.between(es.getStartDateTime(), es.getEndDateTime()).toHours();
-            }
+            activitySubDomains.add(e.getActivitySubDomain().getName());
         }
 
         //get signed urls
@@ -561,7 +568,11 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .managerPhone(managerPhone)
                 .managerCID(managerCID)
                 .totalHosts(totalHosts)
-                .totalHonorHours(totalHonorHours)
+                .hostedEventCount(organization.getHostedEventCount())
+                .creditHour(organization.getCreditHour())
+                .avgRating(organization.getAvgRating())
+                .status(organization.getStatus())
+                .activitySubDomains(activitySubDomains)
                 .note(note.toString())
                 .build();
     }
@@ -686,5 +697,44 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         organizationRepository.saveAll(map.keySet());
         log.info("Updated avg rating for {} organizations", map.size());
+    }
+
+    @Override
+    public Page<OrganizationSimpleResponseForSystemAdmin> getOrganizationsBySystemAdmin(int pageNumber, int pageSize, String name, List<String> orgTypes) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "created_at")
+        );
+
+        Page<Organization> rawOrgData;
+
+        //check if orgTypes is null or empty
+        if(orgTypes == null || orgTypes.isEmpty()) {
+            rawOrgData = organizationRepository.searchByAdminWithoutOrgType(name, pageable);
+        } else {
+            rawOrgData = organizationRepository.searchByAdmin(name, orgTypes, pageable);
+        }
+
+        return rawOrgData
+                .map(o -> {
+                    Set<String> activitySubDomains = new HashSet<>();
+                    List<Event> events = eventRepository.findAllByOrganizationId(o.getId());
+
+                    for(Event e : events) {
+                        activitySubDomains.add(e.getActivitySubDomain().getName());
+                    }
+
+                    return new OrganizationSimpleResponseForSystemAdmin(
+                            o.getId(),
+                            o.getName(),
+                            o.getOrgType(),
+                            o.getHostedEventCount(),
+                            o.getCreditHour(),
+                            o.getAvgRating(),
+                            o.getStatus(),
+                            activitySubDomains
+                    );
+                });
     }
 }

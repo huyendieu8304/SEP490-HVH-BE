@@ -99,4 +99,19 @@ public class OrganizationController {
         java.util.UUID id = java.util.UUID.fromString(inputId);
         return ResponseEntity.ok(organizationService.getOrganizationDetails(id));
     }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/organizations")
+    public ResponseEntity<Page<OrganizationSimpleResponseForSystemAdmin>> getOrganizationsBySystemAdmin(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER") int pageNumber,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE") int pageSize,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) List<String> orgTypes
+    ) {
+        return ResponseEntity.ok(organizationService.getOrganizationsBySystemAdmin(pageNumber, pageSize, name, orgTypes));
+    }
+
 }

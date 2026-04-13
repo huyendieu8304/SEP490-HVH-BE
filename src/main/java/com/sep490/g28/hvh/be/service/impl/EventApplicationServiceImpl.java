@@ -4,10 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.event.response.EventSessionDetailsResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckEventCheckInCodeRequest;
-import com.sep490.g28.hvh.be.dto.eventapplication.request.CheckOutEventRequest;
-import com.sep490.g28.hvh.be.dto.eventapplication.request.QuickCheckInEventRequest;
-import com.sep490.g28.hvh.be.dto.eventapplication.request.RejectApplicationRequest;
+import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
@@ -16,7 +13,10 @@ import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.FaceApiErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceAuthenticationResponse;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
@@ -30,6 +30,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -52,6 +53,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     EventRepository eventRepository;
     CheckInLogRepository checkInLogRepository;
     StorageService storageService;
+    FaceClient faceClient;
 
     CurrentUserProvider currentUserProvider;
 
@@ -697,5 +699,93 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         List<ActualParticipantResponse> content =
                 futures.stream().map(CompletableFuture::join).toList();
         return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public void faceCheckInEvent(FaceCheckInEventRequest request, MultipartFile file) {
+        OffsetDateTime checkInTime = OffsetDateTime.now();
+
+        UUID volunteerId = currentUserProvider.getId();
+
+        EventApplication eventApplication = eventApplicationRepository
+                .findByVolunteerIdAndSessionId(volunteerId, UUID.fromString(request.getEventSessionId()));
+
+        //check if event application exists
+        if (eventApplication == null) {
+            throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED);
+        }
+
+        CheckInLog checkInLog = checkInLogRepository
+                .findByEventApplicationId(eventApplication.getId());
+
+        //check if vol check-in log exists
+        if (checkInLog != null) {
+            throw new AppException(EventErrorCode.ALREADY_CHECKED_IN);
+        }
+
+        //find today's vol event
+        EventSession eventSession = eventSessionRepository.findById(UUID.fromString(request.getEventSessionId())).orElseThrow(
+                () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED)
+        );
+
+        //Check if event session is started
+        if(!checkInTime.isAfter(eventSession.getStartDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_NOT_STARTED);
+        }
+
+        //Check if event session is ended
+        if(!checkInTime.isBefore(eventSession.getEndDateTime())) {
+            throw new AppException(EventErrorCode.EVENT_SESSION_ENDED);
+        }
+
+        Event event = eventSession.getEvent();
+
+        //Check if current vol applied event exist
+        if(event == null) {
+            throw new AppException(EventErrorCode.EVENT_NOT_EXISTED);
+        }
+
+        //check if event is in status ONGOING
+        if(!event.getStatus().equals(EEventStatus.ONGOING)) {
+            throw new AppException(EventErrorCode.EVENT_NOT_ONGOING);
+        }
+
+        //check if current vol position is in check-in location
+        Point currentPosition = GeoUtils.toPoint(request.getCurrentPlaceLat(), request.getCurrentPlaceLng());
+
+        double distance = GeoUtils.distanceMeters(currentPosition,event.getCheckInLocation());
+
+        //Check if current user's position is in check-in location
+        if (distance > event.getCheckInAccuracyMeters()) {
+            throw new AppException(EventErrorCode.EVENT_CHECK_IN_OUT_OF_RANGE);
+        }
+
+        //check-in with face authentication
+        FaceAuthenticationResponse response = faceClient.faceAuthentication(file);
+
+        //check if passed liveness check
+        if(!response.liveness_passed()) {
+            throw new AppException(FaceApiErrorCode.FACE_LIVENESS_CHECK_FAILED);
+        }
+
+        //check if face data exist in face api server storage
+        if(response.name().equals("Unknown")) {
+            throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_FAILED);
+        }
+
+        //check if returned face is belong to current vol
+        if(volunteerId.equals(UUID.fromString(response.name()))) {
+            //save new check-in log into db
+            CheckInLog newCheckInLog = new CheckInLog();
+            newCheckInLog.setEventApplication(eventApplication);
+            newCheckInLog.setDeviceId(request.getDeviceId());
+            newCheckInLog.setApVersion(request.getApVersion());
+            newCheckInLog.setOsVersion(request.getOsVersion());
+            newCheckInLog.setCheckInLocation(currentPosition);
+            newCheckInLog.setCheckInTime(checkInTime);
+            checkInLogRepository.save(newCheckInLog);
+        } else {
+            throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_NOT_MATCH);
+        }
     }
 }

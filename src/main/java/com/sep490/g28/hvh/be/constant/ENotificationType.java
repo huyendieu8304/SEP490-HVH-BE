@@ -52,4 +52,8 @@ public enum ENotificationType {
     VOL_CHECK_IN_CODE,
 
     HOST_EVENT_SESSION_TODAY,
+
+    VOL_CLAIM_APPROVED,
+    VOL_CLAIM_REJECTED,
+    VOL_MOMENT_DELETED,
 }

@@ -19,4 +19,15 @@ public interface EventClaimRepository extends JpaRepository<EventClaim, UUID> {
             AND :sessionId IS NULL OR ec.eventApplication.session.id = :sessionId
             """)
     Page<EventClaim> findByEventIdAndSessionId(UUID eventId, UUID sessionId, Pageable pageable);
+
+    @Query("""
+                SELECT COUNT(a) > 0
+                FROM EventClaim a
+                JOIN a.eventApplication ea
+                JOIN ea.session s
+                JOIN s.event e
+                WHERE a.id = :claimId
+                  AND e.host.id = :hostId
+            """)
+    boolean existsByIdAndHost_Id(UUID claimId, UUID hostId);
 }

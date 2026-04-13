@@ -17,12 +17,10 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
-import com.sep490.g28.hvh.be.repository.IdentityVerificationRepository;
-import com.sep490.g28.hvh.be.repository.SystemAdminRepository;
-import com.sep490.g28.hvh.be.repository.UserRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
+import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.VolunteerServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,7 +69,13 @@ public class VolunteerServiceTest {
     AuthClient authClient;
 
     @Mock
+    FaceClient faceClient;
+
+    @Mock
     EmailService emailService;
+
+    @Mock
+    CertificateRepository certificateRepository;
 
     UUID id;
     SystemAdmin admin;
@@ -83,10 +87,12 @@ public class VolunteerServiceTest {
                 volunteerRepository,
                 userRepository,
                 identityVerificationRepository,
+                certificateRepository,
                 storageService,
                 storagePathGenerator,
                 otpService,
                 authClient,
+                faceClient,
                 systemAdminRepository,
                 currentUserProvider,
                 emailService

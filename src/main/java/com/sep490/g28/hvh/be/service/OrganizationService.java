@@ -31,4 +31,7 @@ public interface OrganizationService {
     void deductCreditHourOfOrganization(Organization organization, int numberOfHourDeduct);
 
     void calculateOrganizationsAvgRating();
+
+    Page<OrganizationSimpleResponseForSystemAdmin> getOrganizationsBySystemAdmin(
+            int pageNumber, int pageSize, String name, List<String> orgTypeLists);
 }

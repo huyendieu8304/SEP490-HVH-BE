@@ -923,4 +923,43 @@ public class NotificationServiceImpl implements NotificationService {
         notification = saveNotificationForUser(notification, hostId);
         notificationPublisher.enqueueNotification(notification, hostId);
     }
+
+    @Override
+    public void sendClaimApprovedByHostNotification(UUID volunteerId, Event event, EventApplication application) {
+        //send notification to host
+        Notification notification = new Notification();
+
+        notification.setTitle(String.format("Yêu cầu khiếu nại của bạn với sự kiện %s đã được phê duyệt", event.getName()));
+        notification.setBody(String.format("Quản lí sự kiện %s đã chấp thuận yêu cầu khiếu nại trong ngày %s của bạn.", event.getName(), application.getSessionDate()));
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_CLAIM_APPROVED.name()
+        ));
+        notification.setType(ENotificationType.VOL_CLAIM_APPROVED);
+
+        //save notification
+        notification = saveNotificationForUser(notification, volunteerId);
+
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
+    @Override
+    public void sendClaimRejectedByHostNotification(UUID volunteerId, Event event, EventApplication application) {
+        //send notification to volunteer
+        Notification notification = new Notification();
+
+        notification.setTitle(String.format("Yêu cầu khiếu nại của bạn với sự kiện %s đã bị từ chối", event.getName()));
+        notification.setBody(String.format("Quản lí sự kiện %s đã không chấp thuận yêu cầu khiếu nại trong ngày %s",
+                event.getName(),
+                application.getSessionDate())
+        );
+        notification.setData(Map.of(
+                DATA_NOTIFICATION_TYPE, ENotificationType.VOL_CLAIM_REJECTED.name()
+        ));
+        notification.setType(ENotificationType.VOL_CLAIM_REJECTED);
+
+        //save notification
+        notification = saveNotificationForUser(notification, volunteerId);
+
+        notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
 }

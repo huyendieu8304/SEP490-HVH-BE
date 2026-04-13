@@ -305,4 +305,42 @@ public class EventController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('VOL')")
+    @GetMapping("/vol/events/saved-events")
+    public ResponseEntity<Page<EventSimpleResponse>> getSavedEventsByVolunteer(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam(required = false)
+            String name
+    ) {
+
+        return ResponseEntity.ok(eventService.getSavedEventsByVolunteer(pageNumber, pageSize, name));
+    }
+
+    @GetMapping("/events/{organizationId}/running")
+    public ResponseEntity<Page<EventSimpleResponse>> getRunningEvents(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @PathVariable(name = "organizationId")
+            UUID orgId,
+
+            @RequestParam(required = false)
+            String name
+    ) {
+        return ResponseEntity.ok(eventService.getHostedEventsOfOrganization(pageNumber, pageSize, orgId, name));
+    }
 }

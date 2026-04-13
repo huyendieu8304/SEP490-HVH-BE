@@ -38,4 +38,25 @@ public class HttpClientConfig {
         rt.setErrorHandler(new SupabaseResponseErrorHandler());
         return rt;
     }
+
+    /**
+     * RestTemplate used to send multipart/form-data requests to Face API services.
+     *
+     * @return configured {@link RestTemplate} bean
+     */
+    @Bean
+    @Qualifier("faceapiRestTemplate")
+    public RestTemplate faceapiRestTemplate() {
+        RestTemplate rt = new RestTemplate();
+
+        rt.getInterceptors().add((request, body, execution) -> {
+
+            return execution.execute(request, body);
+        });
+
+        rt.setErrorHandler(new SupabaseResponseErrorHandler());
+        return rt;
+    }
+
+
 }

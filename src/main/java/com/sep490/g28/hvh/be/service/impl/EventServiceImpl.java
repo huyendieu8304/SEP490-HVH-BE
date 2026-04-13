@@ -82,7 +82,7 @@ public class EventServiceImpl implements EventService {
         //Get the slice based on the current action is refresh (swipe up) or load more (scroll end)
         Page<Event> page = null;
 
-
+        //check if activitySubDomains is null or empty
         if(activitySubDomains == null || activitySubDomains.isEmpty()) {
 
             //If the action is refresh, get the slice within 1 hour ago
@@ -1712,6 +1712,117 @@ public class EventServiceImpl implements EventService {
 
         //update event in db
         eventRepository.saveAll(events);
+    }
+
+    @Override
+    public Page<EventSimpleResponse> getSavedEventsByVolunteer(int pageNumber, int pageSize, String inputName) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<Event> events = volunteerSavedEventRepository.findAllSavedEventsByVolunteerId(volunteerId, inputName, pageable);
+
+        //check if there's no event with input status
+        if(events.getContent().isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, events.getTotalElements());
+        }
+
+        //Map events to EventSimpleResponse
+        return events.map(e -> {
+
+            String firstEventImageUrl = null;
+
+            //get signed URL of event images
+            if (e.getImages() != null && !e.getImages().isEmpty()) {
+
+                List<EventImage> eventImageList = e.getImages();
+
+                CompletableFuture<String> firstEventImageFuture =
+                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
+
+                try {
+                    CompletableFuture.allOf(firstEventImageFuture).join();
+                    firstEventImageUrl = firstEventImageFuture.join();
+                } catch (CompletionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof AppException ae) {
+                        //todo: handle app exception in viewEventFeeds
+                    } else {
+                        throw cause instanceof RuntimeException re ? re : ex;
+                    }
+                }
+            }
+
+            return new EventSimpleResponse(
+                    e.getId(),
+                    e.getOrganization().getName(),
+                    e.getName(),
+                    firstEventImageUrl,
+                    e.getAddress(),
+                    e.getStartDate(),
+                    e.getRecruitmentEndDate()
+            );
+        });
+    }
+
+    @Override
+    public Page<EventSimpleResponse> getHostedEventsOfOrganization(int pageNumber, int pageSize, UUID organizationId, String eventName) {
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        List<String> approvedStatus = Stream.of(
+                EEventStatus.COMPLETED
+        ).map(Enum::name).toList();
+
+        //Map events to EventSimpleResponse
+        return eventRepository.findEventsByOrganizationIdAnd(
+                organizationId,
+                approvedStatus,
+                eventName,
+                pageable
+        ).map(e -> {
+
+            String firstEventImageUrl = null;
+
+            //get signed URL of event images
+            if (e.getImages() != null && !e.getImages().isEmpty()) {
+
+                List<EventImage> eventImageList = e.getImages();
+
+                CompletableFuture<String> firstEventImageFuture =
+                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
+
+                try {
+                    CompletableFuture.allOf(firstEventImageFuture).join();
+                    firstEventImageUrl = firstEventImageFuture.join();
+                } catch (CompletionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof AppException ae) {
+                        //todo: handle app exception in viewEventFeeds
+                    } else {
+                        throw cause instanceof RuntimeException re ? re : ex;
+                    }
+                }
+            }
+
+            return new EventSimpleResponse(
+                    e.getId(),
+                    e.getOrganization().getName(),
+                    e.getName(),
+                    firstEventImageUrl,
+                    e.getAddress(),
+                    e.getStartDate(),
+                    e.getRecruitmentEndDate()
+            );
+        });
     }
 }
 

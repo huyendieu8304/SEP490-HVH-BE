@@ -72,4 +72,8 @@ public interface EventService {
     void startEvents();
 
     void endEvents();
+
+    Page<EventSimpleResponse> getSavedEventsByVolunteer(int pageNumber, int pageSize, String inputName);
+
+    Page<EventSimpleResponse> getHostedEventsOfOrganization(int pageNumber, int pageSize, UUID organizationId, String eventName);
 }

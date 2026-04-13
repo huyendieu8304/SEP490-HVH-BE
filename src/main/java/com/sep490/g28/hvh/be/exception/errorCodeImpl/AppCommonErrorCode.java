@@ -26,6 +26,7 @@ public enum AppCommonErrorCode implements ErrorCode {
     ACCOUNT_INACTIVE(1010, "Tải khoản đang bị khóa!", HttpStatus.BAD_REQUEST),
     EMAIL_USED(1011, "Email hiện đã được sử dụng cho 1 tài khoản khác.", HttpStatus.BAD_REQUEST),
     OLD_PASSWORD_INCORRECT(1012, "Mật khẩu hiện tại không đúng.", HttpStatus.BAD_REQUEST),
+    ACCOUNT_NOT_EXISTED(1012, "Tài khoản cho người dùng hiện tại không tồn tại.", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

@@ -7,6 +7,7 @@ import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipant
 import com.sep490.g28.hvh.be.dto.eventmoment.request.ShareMomentRequest;
 import com.sep490.g28.hvh.be.dto.eventmoment.response.EventMomentFeedDetailsResponse;
 import com.sep490.g28.hvh.be.dto.eventmoment.response.EventMomentFeedResponse;
+import com.sep490.g28.hvh.be.dto.eventmoment.response.EventMomentResponseForVolunteer;
 import com.sep490.g28.hvh.be.dto.eventmoment.response.ShareMomentResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -242,5 +243,96 @@ public class EventMomentServiceImpl implements EventMomentService {
         EventMoment eventMoment = eventMomentRepository.findById(eventMomentId)
                 .orElseThrow(() -> new AppException(EventErrorCode.EVENT_MOMENT_NOT_FOUND));
         eventMomentRepository.delete(eventMoment);
+    }
+
+    @Override
+    public Page<EventMomentFeedDetailsResponse> getEventMomentsForVolunteer(int pageNumber, int pageSize, String eventName) {
+
+        UUID volunteerId = currentUserProvider.getId();
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<EventMoment> eventMoments = eventMomentRepository.findAllByVolunteerId(volunteerId, eventName, pageable);
+
+        return eventMoments.map(e -> {
+            String nickName = null;
+            String name = null;
+            String avatarUrl = null;
+            CompletableFuture<String> avatarFuture = null;
+            List<String> momentPicturesUrls = new ArrayList<>();
+
+            EventApplication eventApplication = e.getEventApplication();
+            Event event = eventApplication.getSession().getEvent();
+
+            //check if the event application linked with a volunteer
+            if (eventApplication.getVolunteer() != null) {
+
+                Volunteer volunteer = eventApplication.getVolunteer();
+
+                nickName = volunteer.getNickname();
+                name = volunteer.getFullName();
+
+
+                //check if volunteer has avatar
+                if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+                    avatarFuture = storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
+                }
+            }
+
+            //get signed URL of moment pictures and volunteer avatar (if exist)
+            List<CompletableFuture<String>> momentPicturesFutures = new ArrayList<>();
+            if (e.getMomentPictures() != null) {
+                String[] momentPictures = e.getMomentPictures().split("\\s+");
+                List<String> momentPicturesList = new ArrayList<>(Arrays.asList(momentPictures));
+                for (String momentPicture : momentPicturesList) {
+                    CompletableFuture<String> momentPictureFuture =
+                            storageService.getSignedUrlAsync(momentPicture);
+                    momentPicturesFutures.add(momentPictureFuture);
+                }
+            }
+
+            try {
+
+                if (avatarFuture != null) {
+                    CompletableFuture.allOf(avatarFuture).join();
+                    avatarUrl = avatarFuture.join();
+                }
+                CompletableFuture.allOf(momentPicturesFutures.toArray(new CompletableFuture[0])).join();
+
+
+                for (CompletableFuture<String> momentPictureFuture : momentPicturesFutures) {
+                    momentPicturesUrls.add(momentPictureFuture.join());
+                }
+
+            } catch (CompletionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof AppException ae) {
+                    //todo handle here
+                } else {
+                    throw cause instanceof RuntimeException re ? re : ex;
+                }
+            }
+
+            return new EventMomentFeedDetailsResponse(
+                    volunteerId,
+                    nickName,
+                    name,
+                    avatarUrl,
+
+                    event.getId(),
+                    event.getName(),
+                    event.getAddress(),
+                    event.getDetailAddress(),
+
+                    e.getId(),
+                    e.getMomentContent(),
+                    momentPicturesUrls,
+                    e.getCreatedAt()
+            );
+        });
     }
 }

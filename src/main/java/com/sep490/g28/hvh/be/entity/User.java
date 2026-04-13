@@ -26,4 +26,7 @@ public class User {
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private EAccountStatus status;
+
+    @Column(name = "face_registered", nullable = false)
+    private boolean faceRegistered;
 }
