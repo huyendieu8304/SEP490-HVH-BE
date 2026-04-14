@@ -704,7 +704,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.DESC, "created_at")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         Page<Organization> rawOrgData;

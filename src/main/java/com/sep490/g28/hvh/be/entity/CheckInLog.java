@@ -50,7 +50,6 @@ public class CheckInLog {
 
     @Column(
             name = "check_out_time",
-            nullable = false,
             columnDefinition = "TIMESTAMP WITH TIME ZONE"
     )
     private OffsetDateTime checkOutTime; // check-out time
