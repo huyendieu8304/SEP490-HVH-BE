@@ -118,7 +118,7 @@ public class EventApplicationController {
 
     @PreAuthorize("hasRole('VOL')")
     @PostMapping("/vol/event-applications/check-out")
-    public ResponseEntity<Void> quickCheckIn(@Valid @RequestBody CheckOutEventRequest request) {
+    public ResponseEntity<Void> checkOutEvent(@Valid @RequestBody CheckOutEventRequest request) {
         eventApplicationService.checkOutEvent(request);
         return ResponseEntity.ok().build();
     }

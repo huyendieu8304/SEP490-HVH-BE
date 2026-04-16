@@ -1775,7 +1775,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.DESC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "created_at")
         );
 
         List<String> approvedStatus = Stream.of(
