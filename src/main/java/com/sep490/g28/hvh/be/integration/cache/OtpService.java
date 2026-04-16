@@ -58,6 +58,20 @@ public interface OtpService {
      */
     boolean verifyVerifyForgotPasswordOtp(String email, String inputOtp);
 
+    /**
+     * Generates an OTP for change phone flow.
+     *
+     * @param email target email
+     * @return generated OTP
+     */
     String getVerifyChangePhoneNumberOtp(String email);
+
+    /**
+     * Verifies OTP for change phone number flow.
+     *
+     * @param email    target email
+     * @param inputOtp user-provided OTP
+     * @return {@code true} if OTP is valid
+     */
     boolean verifyVerifyChangePhoneNumberOtp(String email, String inputOtp);
 }

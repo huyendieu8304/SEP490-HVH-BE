@@ -2,6 +2,13 @@ package com.sep490.g28.hvh.be.notification.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Contain configuration properties relate to sending notification by rabbitMq
+ * @param exchange exchanges for notifications
+ * @param queue queue properties
+ * @param routing routing properties
+ * @param retry retry param properties
+ */
 @ConfigurationProperties(prefix = "rabbitmq.notification")
 public record RabbitMqNotificationProperties(
 

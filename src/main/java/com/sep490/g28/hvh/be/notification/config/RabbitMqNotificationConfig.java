@@ -4,6 +4,9 @@ import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration for rabbitMq, relate to sending notification
+ */
 @Configuration
 public class RabbitMqNotificationConfig {
 
