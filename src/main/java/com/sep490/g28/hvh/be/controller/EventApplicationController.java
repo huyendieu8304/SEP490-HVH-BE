@@ -143,7 +143,7 @@ public class EventApplicationController {
 
     @PreAuthorize("hasRole('VOL')")
     @PostMapping("/vol/event-applications/face-check-in")
-    public ResponseEntity<Void> faceCheckIn(
+    public ResponseEntity<Void> faceCheckInEvent(
             @Valid
             @RequestPart("request")
             FaceCheckInEventRequest request,
