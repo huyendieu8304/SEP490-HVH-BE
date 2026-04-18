@@ -491,6 +491,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         return CheckEventCheckInCodeResponse.builder()
                 .eventId(eventId)
                 .eventSessionId(eventSessionId)
+                .applicationId(eventApplication.getId())
                 .build();
     }
 
@@ -662,7 +663,9 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         short totalCreditHourToday = 0;
 
         for(EventApplication ea: allEventApplicationToday) {
-            totalCreditHourToday += ea.getCreditHour();
+            if(ea.getCreditHour() != null) {
+                totalCreditHourToday += ea.getCreditHour();
+            }
         }
 
         //Check if total credit hour today is less than 12

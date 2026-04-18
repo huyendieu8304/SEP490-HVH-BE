@@ -57,7 +57,7 @@ public class ActivityDomainController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @PutMapping("/sys-admin/activity-domains/{id}/change-visibility")
-    public ResponseEntity<String> updateActivityDomain(@PathVariable(name = "id") Short inputId
+    public ResponseEntity<String> changeActivityDomainVisibility(@PathVariable(name = "id") Short inputId
             , @RequestBody @Valid ChangeActivityDomainVisibilityRequest request) {
         activityDomainService.changeActivityDomainVisibility(inputId, request);
         return ResponseEntity.ok().build();
@@ -65,7 +65,7 @@ public class ActivityDomainController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @PutMapping("/sys-admin/activity-domains/activity-subdomains/{id}/change-visibility")
-    public ResponseEntity<String> updateActivityDomain(@PathVariable(name = "id") Short inputId
+    public ResponseEntity<String> changeActivitySubDomainVisibility(@PathVariable(name = "id") Short inputId
             , @RequestBody @Valid ChangeActivitySubDomainVisibilityRequest request) {
         activityDomainService.changeActivitySubDomainVisibility(inputId, request);
         return ResponseEntity.ok().build();

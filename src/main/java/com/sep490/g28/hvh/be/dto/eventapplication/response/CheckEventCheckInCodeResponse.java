@@ -14,4 +14,5 @@ import java.util.UUID;
 public class CheckEventCheckInCodeResponse {
     private UUID eventId;
     private UUID eventSessionId;
+    private UUID applicationId;
 }

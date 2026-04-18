@@ -38,7 +38,7 @@ public class OrganizationController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/organizations/registrations")
-    public ResponseEntity<Page<OrganizationRegistrationSimpleResponse>> getRegistrations(
+    public ResponseEntity<Page<OrganizationRegistrationSimpleResponse>> getOrgRegistrations(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER") int pageNumber,
             @RequestParam(defaultValue = "10")
@@ -52,7 +52,7 @@ public class OrganizationController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/organizations/registrations/{id}")
-    public ResponseEntity<OrganizationRegistrationDetailsResponse> getRegistrationsDetails(
+    public ResponseEntity<OrganizationRegistrationDetailsResponse> getOrgRegistrationDetails(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
         java.util.UUID id = java.util.UUID.fromString(inputId);
