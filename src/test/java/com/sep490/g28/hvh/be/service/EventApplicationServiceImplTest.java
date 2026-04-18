@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-public class EventApplicationServiceTest {
+public class EventApplicationServiceImplTest {
     @InjectMocks
     EventApplicationServiceImpl service;
 
@@ -57,6 +57,8 @@ public class EventApplicationServiceTest {
     CheckInLogRepository checkInLogRepository;
     @Mock
     EventRepository eventRepository;
+    @Mock
+    UserRepository userRepository;
 
     @Mock NotificationService notificationService;
 
@@ -228,6 +230,12 @@ public class EventApplicationServiceTest {
         return request;
     }
 
+    private User volunteerUser(boolean isFaceRegistered){
+        User user = new User();
+        user.setFaceRegistered(isFaceRegistered);
+        return user;
+    }
+
     //----- applyEventSession --------------------------
     // TC01
     @Test
@@ -235,6 +243,7 @@ public class EventApplicationServiceTest {
 
         EventSession s = session(false);
 
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
         when(eventSessionRepository.findById(s.getId()))
                 .thenReturn(Optional.of(s));
 
@@ -264,6 +273,8 @@ public class EventApplicationServiceTest {
     void applyEventSession_autoApprove_shouldApproved() {
 
         EventSession s = session(true);
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
 
         when(eventSessionRepository.findById(s.getId()))
                 .thenReturn(Optional.of(s));
@@ -297,6 +308,8 @@ public class EventApplicationServiceTest {
     @Test
     void applyEventSession_notExist_shouldThrow() {
 
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
+
         when(eventSessionRepository.findById(any()))
                 .thenReturn(Optional.empty());
 
@@ -310,6 +323,9 @@ public class EventApplicationServiceTest {
 
         EventSession s = session(false);
         s.getEvent().setStatus(EEventStatus.APPROVED_BY_MNG);
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
+
 
         when(eventSessionRepository.findById(s.getId()))
                 .thenReturn(Optional.of(s));
@@ -325,6 +341,8 @@ public class EventApplicationServiceTest {
         EventSession s = session(false);
         s.getEvent().setRecruitmentEndDate(LocalDate.now().minusDays(1));
 
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
+
         when(eventSessionRepository.findById(s.getId()))
                 .thenReturn(Optional.of(s));
 
@@ -337,6 +355,8 @@ public class EventApplicationServiceTest {
     void applyEventSession_alreadyApplied_shouldThrow() {
 
         EventSession s = session(false);
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
 
         when(eventSessionRepository.findById(s.getId()))
                 .thenReturn(Optional.of(s));
@@ -356,6 +376,8 @@ public class EventApplicationServiceTest {
         EventSession s = session(false);
         s.setApprovedApplicationCount(10);
 
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
+
         when(eventSessionRepository.findById(s.getId()))
                 .thenReturn(Optional.of(s));
 
@@ -373,6 +395,8 @@ public class EventApplicationServiceTest {
 
         EventSession s = session(false);
 
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(true)));
+
         when(eventSessionRepository.findById(s.getId()))
                 .thenReturn(Optional.of(s));
 
@@ -385,6 +409,17 @@ public class EventApplicationServiceTest {
 
         assertThrows(AppException.class,
                 () -> service.applyEventSession(s.getId()));
+    }
+
+    //TC08
+    @Test
+    void applyEventSession_notRegisteredFace_shouldThrow() {
+        EventSession s = session(false);
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(volunteerUser(false)));
+        assertThrows(AppException.class,
+                () -> service.applyEventSession(s.getId()));
+
     }
 
     //----- approveApplication ------------------------------------------

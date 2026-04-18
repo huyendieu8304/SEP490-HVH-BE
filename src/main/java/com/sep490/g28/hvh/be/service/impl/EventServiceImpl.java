@@ -880,8 +880,6 @@ public class EventServiceImpl implements EventService {
                 () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
         );
 
-        //todo check if event belongs to org
-
         StringBuilder note = new StringBuilder();
 
         //get regular information of event

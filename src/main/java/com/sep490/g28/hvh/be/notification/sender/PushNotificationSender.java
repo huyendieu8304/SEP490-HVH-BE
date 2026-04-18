@@ -46,7 +46,19 @@ public interface PushNotificationSender {
      */
     void unsubscribeSingleTokenFromTopics(String token, Collection<String> topics);
 
+    /**
+     * Subscribe user's tokens to a topic.
+     *
+     * @param userId  Id of the user
+     * @param topicName name of topic
+     */
     void subscribeUserToTopic(UUID userId, String topicName);
 
+    /**
+     * Unsubscribe user's tokens to a topic.
+     *
+     * @param userId  Id of the user
+     * @param topicName name of topic
+     */
     void unsubscribeUserFromTopic(UUID userId, String topicName);
 }
