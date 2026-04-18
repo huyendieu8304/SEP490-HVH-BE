@@ -28,7 +28,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class EventSessionServiceTest {
+public class EventSessionServiceImplTest {
 
     @Mock
     private EventSessionRepository eventSessionRepository;

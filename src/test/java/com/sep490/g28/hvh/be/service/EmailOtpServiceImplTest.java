@@ -8,7 +8,6 @@ import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.impl.EmailOtpServiceImpl;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class EmailOtpServiceTest {
+public class EmailOtpServiceImplTest {
 
     @Mock
     UserRepository userRepository;
