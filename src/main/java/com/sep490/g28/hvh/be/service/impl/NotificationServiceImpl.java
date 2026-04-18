@@ -18,7 +18,6 @@ import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenR
 import com.sep490.g28.hvh.be.notification.repository.NotificationTopicSubscriptionRepository;
 import com.sep490.g28.hvh.be.notification.service.NotificationTokenTxService;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
-import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +53,6 @@ public class NotificationServiceImpl implements NotificationService {
     private static final String DATA_REF_ID_KEY = "refId";
     private static final String DATA_ACTION = "action";
     private static final String DATA_NOTIFICATION_TYPE = "type";
-    private final EventSessionRepository eventSessionRepository;
 
     @Override
     public void registerNotificationToken(RegisterNotificationTokenRequest request) {

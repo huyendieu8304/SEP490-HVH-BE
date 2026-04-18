@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
-public class ActivityDomainServiceTest {
+public class ActivityDomainServiceImplTest {
 
     @Mock
     ActivityDomainRepository activityDomainRepository;

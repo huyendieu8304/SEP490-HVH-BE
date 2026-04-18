@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class EventRatingServiceTest {
+public class EventRatingServiceImplTest {
 
     @InjectMocks
     EventRatingServiceImpl service;

@@ -12,6 +12,7 @@ import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipant
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.FaceApiErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
@@ -52,6 +53,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     VolunteerRepository volunteerRepository;
     EventRepository eventRepository;
     CheckInLogRepository checkInLogRepository;
+    UserRepository userRepository;
     StorageService storageService;
     FaceClient faceClient;
 
@@ -62,6 +64,18 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     @Transactional
     @Override
     public void applyEventSession(UUID sessionId) {
+
+        UUID volunteerId = currentUserProvider.getId();
+
+        User volunteerUser = userRepository.findById(volunteerId).orElseThrow(
+                ()  -> new AppException(AppCommonErrorCode.ACCOUNT_NOT_EXISTED)
+        );
+
+        //the volunteer must register face to apply for a event
+        if (!volunteerUser.isFaceRegistered()){
+            throw new AppException(AppCommonErrorCode.ACCOUNT_HAVE_NOT_REGISTERED_FACE);
+        }
+
         //find the session
         EventSession session = eventSessionRepository.findById(sessionId).orElseThrow(
                 () -> new AppException(EventErrorCode.EVENT_SESSION_NOT_EXISTED));
@@ -72,13 +86,10 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_NOT_RECRUITING);
         }
 
-        //todo check again after finish all event status, might not need to check the bellow
         //check registration deadline
         if (LocalDate.now().isAfter(event.getRecruitmentEndDate())) {
             throw new AppException(EventErrorCode.EVENT_RECRUITMENT_CLOSED);
         }
-
-        UUID volunteerId = currentUserProvider.getId();
 
         //Have ever the volunteer applied for this session yet?
         if (eventApplicationRepository.findApplicationPendingOrApproved(volunteerId, sessionId).isPresent()) {

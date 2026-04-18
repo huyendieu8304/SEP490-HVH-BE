@@ -25,7 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class EventImageServiceTest {
+public class EventImageServiceImplTest {
 
 //    @Mock
 //    EventImageRepository eventImageRepository;

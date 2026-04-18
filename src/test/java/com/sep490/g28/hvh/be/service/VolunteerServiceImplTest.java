@@ -41,7 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class VolunteerServiceTest {
+public class VolunteerServiceImplTest {
 
     @Mock
     VolunteerRepository volunteerRepository;

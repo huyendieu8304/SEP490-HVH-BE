@@ -5,6 +5,15 @@ import jakarta.persistence.Converter;
 
 import java.time.*;
 
+/**
+ * JPA AttributeConverter for handling {@link OffsetDateTime} timezone normalization.
+ *
+ * <p>Purpose:
+ * - Ensure all datetime values are stored in the database in UTC.
+ * - Automatically convert UTC values from the database to Vietnam timezone (Asia/Ho_Chi_Minh)
+ *   when mapping to entity attributes.</p>
+ *
+ **/
 @Converter(autoApply = true)
 public class OffsetDateTimeUtcToVnConverter implements AttributeConverter<OffsetDateTime, OffsetDateTime> {
     private static final ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
