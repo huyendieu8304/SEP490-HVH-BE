@@ -65,8 +65,9 @@ public class EventServiceImpl implements EventService {
     CurrentUserProvider currentUserProvider;
 
     EventMapper eventMapper;
-    private final EventApplicationRepository eventApplicationRepository;
-    private final VolunteerReviewRepository volunteerReviewRepository;
+    EventApplicationRepository eventApplicationRepository;
+    VolunteerReviewRepository volunteerReviewRepository;
+    OrganizationRepository organizationRepository;
 
     @Override
     public EventFeedResponse getEventFeeds(int pageNumber, int pageSize, boolean refresh,
@@ -1617,6 +1618,18 @@ public class EventServiceImpl implements EventService {
             volunteerRepository.saveAll(updateVolunteerSet);
             log.info("Add credit score for volunteers of event, eventId={}",event.getId());
             updateVolunteerSet.clear();
+
+            //update credit hour for organization
+            Organization organization = event.getOrganization();
+            int orgCreditHour = organization.getCreditHour();
+            for (EventSession session : sessions) {
+                orgCreditHour += (int) Math.round(
+                        Duration.between(session.getStartDateTime(), session.getEndDateTime())
+                                .toMinutes() / 60.0
+                );
+            }
+            organization.setCreditHour(orgCreditHour);
+            organizationRepository.save(organization);
 
             //generate certificates for volunteers
             certificateService.generateCertificates(receiveCertVolunteerSet.stream().toList(), event);
