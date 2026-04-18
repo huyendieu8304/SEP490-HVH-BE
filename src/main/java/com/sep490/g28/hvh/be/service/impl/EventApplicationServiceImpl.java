@@ -480,6 +480,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         return CheckEventCheckInCodeResponse.builder()
                 .eventId(eventId)
                 .eventSessionId(eventSessionId)
+                .applicationId(eventApplication.getId())
                 .build();
     }
 
