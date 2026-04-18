@@ -58,9 +58,9 @@ public class CertificateServiceImpl implements CertificateService {
 
     CurrentUserProvider currentUserProvider;
 
-    @Value("${front-end.web.baseUrl}")
+    @Value("${front-end.web.cert-url}")
     @NonFinal
-    String frontendBaseUrl;
+    String frontendCertUrl;
 
     @Override
     public Page<VolunteerCertificateResponse> getCertificatesByVolunteer(int pageNumber, int pageSize, String eventName) {
@@ -156,7 +156,7 @@ public class CertificateServiceImpl implements CertificateService {
         payload.setHostFullName(event.getHost().getFullName());
         payload.setIssuedDate(LocalDate.now());
 
-        String verifyUrl = frontendBaseUrl + "/verify/certificate/" + cert.getCode();
+        String verifyUrl = frontendCertUrl + "/verify/certificate/" + cert.getCode();
 
         payload.setVerifyUrl(verifyUrl);
 
