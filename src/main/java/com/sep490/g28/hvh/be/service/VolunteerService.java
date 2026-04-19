@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import org.springframework.data.domain.Page;
@@ -25,5 +26,7 @@ public interface VolunteerService {
 
     VolunteerAccountInformationResponse getVolunteerAccountInformation();
 
-    void registerVolunteerFace(MultipartFile file);
+    void registerVolunteerFace(String deviceId, MultipartFile file);
+
+    void updateVolunteerProfile(UpdateVolunteerProfileRequest request);
 }

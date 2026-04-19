@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.entity.*;
@@ -468,7 +469,7 @@ public class VolunteerServiceImpl implements VolunteerService {
     }
 
     @Override
-    public void registerVolunteerFace(MultipartFile file) {
+    public void registerVolunteerFace(String deviceId, MultipartFile file) {
         UUID volunteerId = currentUserProvider.getId();
 
         User user = userRepository.findById(volunteerId)
@@ -490,6 +491,35 @@ public class VolunteerServiceImpl implements VolunteerService {
         if(response.success()) {
             user.setFaceRegistered(true);
             userRepository.save(user);
+
+            volunteer.setDeviceId(deviceId);
+            volunteerRepository.save(volunteer);
+        }
+    }
+
+    @Override
+    public void updateVolunteerProfile(UpdateVolunteerProfileRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+            //delete exist avatar image
+            CompletableFuture<Void> avatarFuture =
+                    storageService.deleteFileAsync(volunteer.getAvatarUrl());
+
+            try {
+                CompletableFuture.allOf(avatarFuture).join();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                } else {
+                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                }
+            }
+
         }
     }
 

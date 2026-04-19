@@ -130,8 +130,10 @@ public class VolunteerController {
 
     @PreAuthorize("hasRole('VOL')")
     @PostMapping("/vol/volunteers/register-face-id")
-    public ResponseEntity<Void> registerVolunteerFace(@RequestPart("file") MultipartFile file) {
-        volunteerService.registerVolunteerFace(file);
+    public ResponseEntity<Void> registerVolunteerFace(
+            @RequestPart("deviceId") String deviceId,
+            @RequestPart("file") MultipartFile file) {
+        volunteerService.registerVolunteerFace(deviceId, file);
         return ResponseEntity.ok().build();
     }
 }
