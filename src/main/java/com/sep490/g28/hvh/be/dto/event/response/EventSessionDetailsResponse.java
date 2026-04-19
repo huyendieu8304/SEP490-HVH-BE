@@ -18,5 +18,6 @@ public class EventSessionDetailsResponse {
     private OffsetDateTime endDateTime;
     private int expectedVolAmount;
     private int expectedSerAmount;
+    private String checkInCode;
     private int approvedApplicationCount;
 }

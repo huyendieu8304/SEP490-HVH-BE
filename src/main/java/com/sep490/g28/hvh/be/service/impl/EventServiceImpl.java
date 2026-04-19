@@ -357,6 +357,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
@@ -937,6 +938,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
@@ -956,6 +958,7 @@ public class EventServiceImpl implements EventService {
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
                                 es.getExpectedSerAmount(),
+                                es.getCheckInCode(),
                                 es.getApprovedApplicationCount()
                         )).toList()).orElse(Collections.emptyList());;
 
@@ -1075,6 +1078,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
@@ -1094,6 +1098,7 @@ public class EventServiceImpl implements EventService {
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
                                 es.getExpectedSerAmount(),
+                                es.getCheckInCode(),
                                 es.getApprovedApplicationCount()
                         )).toList()).orElse(Collections.emptyList());;
 
@@ -1258,6 +1263,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
