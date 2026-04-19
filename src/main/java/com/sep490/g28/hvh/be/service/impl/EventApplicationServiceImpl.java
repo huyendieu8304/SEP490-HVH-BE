@@ -423,6 +423,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                     eventSession.getEndDateTime(),
                     eventSession.getExpectedVolAmount(),
                     eventSession.getExpectedSerAmount(),
+                    eventSession.getCheckInCode(),
                     eventSession.getApprovedApplicationCount()
             );
 
@@ -787,6 +788,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_FAILED);
         }
 
+        //get logged in vol
+        Volunteer volunteer = volunteerRepository.findById(volunteerId).orElseThrow(
+                () -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED)
+        );
+
         //check if returned face is belong to current vol
         if(volunteerId.equals(UUID.fromString(response.name()))) {
             //save new check-in log into db
@@ -798,6 +804,10 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             newCheckInLog.setCheckInLocation(currentPosition);
             newCheckInLog.setCheckInTime(checkInTime);
             checkInLogRepository.save(newCheckInLog);
+
+            //update vol device id
+            volunteer.setDeviceId(request.getDeviceId());
+            volunteerRepository.save(volunteer);
         } else {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_NOT_MATCH);
         }
