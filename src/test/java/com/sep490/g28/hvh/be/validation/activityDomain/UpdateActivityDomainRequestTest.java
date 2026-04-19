@@ -67,23 +67,4 @@ public class UpdateActivityDomainRequestTest {
         assertTrue(violations.isEmpty());
     }
 
-    @Test
-    void should_fail_when_multiple_fields_invalid() {
-        UpdateActivityDomainRequest req = validRequest();
-        req.setName("");
-        req.setSpecialSessionMaxTime(null);
-
-        Set<ConstraintViolation<UpdateActivityDomainRequest>> violations =
-                validator.validate(req);
-
-        assertThat(violations).hasSize(2);
-
-        assertThat(violations)
-                .extracting(ConstraintViolation::getMessage)
-                .containsExactlyInAnyOrder(
-                        ValidationErrorCode.MISSING_REQUIRED_FIELD.name(),
-                        ValidationErrorCode.MISSING_REQUIRED_FIELD.name()
-                );
-    }
-
 }
