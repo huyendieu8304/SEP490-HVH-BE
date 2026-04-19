@@ -75,12 +75,18 @@ public class ActivityDomainServiceImpl implements ActivityDomainService {
                 () -> new AppException(ActivityDomainErrorCode.DOMAIN_NOT_EXISTED)
         );
 
-        if(activityDomainRepository.existsByNameIgnoreCase(request.getName())) {
-            throw new AppException(ActivityDomainErrorCode.DOMAIN_NAME_EXISTED);
+        if(request.getName() != null ) {
+
+            if (activityDomainRepository.existsByNameIgnoreCase(request.getName())) {
+                throw new AppException(ActivityDomainErrorCode.DOMAIN_NAME_EXISTED);
+            }
+
+            activityDomain.setName(request.getName());
         }
 
-        activityDomain.setName(request.getName());
-        activityDomain.setSpecialSessionMaxTime(request.getSpecialSessionMaxTime());
+        if(request.getSpecialSessionMaxTime() != null ) {
+            activityDomain.setSpecialSessionMaxTime(request.getSpecialSessionMaxTime());
+        }
 
         activityDomainRepository.save(activityDomain);
 
