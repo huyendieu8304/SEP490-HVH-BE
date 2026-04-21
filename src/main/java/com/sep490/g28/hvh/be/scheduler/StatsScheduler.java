@@ -20,8 +20,9 @@ public class StatsScheduler {
     public void compileOrganizationsMonthlyStatistics() {
 
         //recalculate previous month's stats
-        log.info("Start compileOrganizationsMonthlyStatistics cron job");
+        log.info("Start monthly stats compile cron job");
         organizationStatsService.compileOrganizationsMonthlyStatistics();
-        log.info("Done compileOrganizationsMonthlyStatistics cron job");
+
+        log.info("Done monthly stats compile cron job");
     }
 }
