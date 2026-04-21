@@ -17,4 +17,6 @@ public interface NotificationTopicSubscriptionRepository extends JpaRepository<N
             nativeQuery = true
     )
     List<String> findTopicsByUserId(UUID userId);
+
+    void deleteByUser_IdAndTopic(UUID userId, String topicName);
 }

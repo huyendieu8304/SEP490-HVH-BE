@@ -15,6 +15,7 @@ package com.sep490.g28.hvh.be.integration.email;
  */
 public interface EmailService {
 
+    //todo sửa lại tên param, vì không nhất quán
     /**
      * Send approval email after volunteer account registration is accepted.
      *
@@ -88,4 +89,24 @@ public interface EmailService {
      * @param password default password of the account
      */
     void sendCreateHostAccountEmail(String orgName, String hostEmail, String password);
+
+    void sendEventCancelledByHostEmail(
+            String orgManagerEmail,
+            String orgManagerFullName,
+            String organizationName,
+            String eventName,
+            String hostFullName,
+            String hostEmail,
+            String cancelReason
+    );
+
+    void sendEventCancelledByAdminEmail(
+            String orgManagerEmail,
+            String orgManagerFullName,
+            String organizationName,
+            String eventName,
+            String cancelReason
+    );
+
+    void sendVerifyChangePhoneNumberOtp(String email, String otp);
 }

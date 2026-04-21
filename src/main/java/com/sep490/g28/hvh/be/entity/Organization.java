@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.entity;
 
 import com.sep490.g28.hvh.be.constant.EOrgType;
+import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -42,15 +43,46 @@ public class Organization {
     @Column(name = "other_evidences", length = 500)
     private String otherEvidences;
 
+    @Column(name = "avatar_image", length = 150)
+    private String avatarImage;
+
+    @Column(name = "cover_image", length = 150)
+    private String coverImage;
+
+    @Column(name = "avg_rating", nullable = false)
+    private Short avgRating = 0;
+
+    @Column(name = "hosted_event_count", nullable = false)
+    private int hostedEventCount = 0;
+
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private EOrganizationStatus status;
+
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(
+            name = "updated_at",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "id")
     private SystemAdmin createBy;
+
+    @Column(name = "credit_hour", nullable = false)
+    private int creditHour = 0;
+
+    @OneToOne(mappedBy = "organization", fetch = FetchType.LAZY)
+    private OrganizationManager organizationManager;
 }

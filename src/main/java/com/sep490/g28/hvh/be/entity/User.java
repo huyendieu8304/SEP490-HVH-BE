@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.entity;
 
+import com.sep490.g28.hvh.be.constant.EAccountStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,4 +22,11 @@ public class User {
 
     @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    private EAccountStatus status;
+
+    @Column(name = "face_registered", nullable = false)
+    private boolean faceRegistered;
 }

@@ -29,4 +29,10 @@ public class EventImage {
 
     @Column(name = "image_path", nullable = false)
     private String imagePath;
+
+    public EventImage(EventImage eventImage) {
+        this.id = eventImage.getId();
+        this.event = eventImage.getEvent();
+        this.imagePath = eventImage.getImagePath();
+    }
 }

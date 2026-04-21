@@ -1,7 +1,6 @@
 package com.sep490.g28.hvh.be.auth;
 
 import com.sep490.g28.hvh.be.constant.ERole;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,9 +22,6 @@ import java.util.UUID;
 @RequestScope
 @RequiredArgsConstructor
 public class CurrentUserProvider {
-
-    private final VolunteerRepository volunteerRepository;
-    private CurrentUser currentUser;
 
     /**
      * Retrieves the {@link CurrentUser} from the Spring Security context.

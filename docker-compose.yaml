@@ -1,4 +1,4 @@
-name: HVH
+name: hvh
 
 services:
   postgres:

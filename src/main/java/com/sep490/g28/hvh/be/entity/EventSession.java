@@ -32,10 +32,18 @@ public class EventSession {
     private Event event;
 
     //--------------------------------------------------------
-    @Column(name = "start_date_time", nullable = false)
+    @Column(
+            name = "start_date_time",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime startDateTime; // check-in time
 
-    @Column(name = "end_date_time", nullable = false)
+    @Column(
+            name = "end_date_time",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime endDateTime;   // check-out time
 
     @Column(name = "expected_vol_amount", nullable = false)
@@ -44,12 +52,39 @@ public class EventSession {
     @Column(name = "expected_ser_amount", nullable = false)
     private int expectedSerAmount;
 
+    @Column(name = "approved_application_count", nullable = false)
+    private int approvedApplicationCount = 0; //increase when an application is approved
+
+    @Column(name = "check_in_code", length = 6, nullable = true, unique = true)
+    private String checkInCode;
+
     //--------------------------------------------------------
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(
+            name = "updated_at",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime updatedAt;
+
+    public EventSession(EventSession session) {
+        this.id = session.id;
+        this.event = session.event;
+        this.startDateTime = session.startDateTime;
+        this.endDateTime = session.endDateTime;
+        this.expectedVolAmount = session.expectedVolAmount;
+        this.expectedSerAmount = session.expectedSerAmount;
+        this.approvedApplicationCount = session.approvedApplicationCount;
+        this.createdAt = session.createdAt;
+        this.updatedAt = session.updatedAt;
+    }
 }

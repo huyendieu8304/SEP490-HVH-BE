@@ -1,0 +1,7 @@
+{
+    email huyendieu8304@gmail.com
+}
+
+api.hvh.homes {
+    reverse_proxy app:8080
+}

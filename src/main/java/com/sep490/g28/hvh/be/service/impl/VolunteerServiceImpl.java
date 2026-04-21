@@ -5,35 +5,34 @@ import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.response.RegisterVolunteerAccountResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationDetailsResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationSimpleResponse;
-import com.sep490.g28.hvh.be.entity.IdentityVerification;
-import com.sep490.g28.hvh.be.entity.SystemAdmin;
-import com.sep490.g28.hvh.be.entity.Volunteer;
+import com.sep490.g28.hvh.be.dto.volunteer.response.*;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.FaceApiErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceRegisterResponse;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
-import com.sep490.g28.hvh.be.repository.SystemAdminRepository;
-import com.sep490.g28.hvh.be.repository.UserRepository;
-import com.sep490.g28.hvh.be.repository.VolunteerRepository;
-import com.sep490.g28.hvh.be.repository.IdentityVerificationRepository;
+import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.VolunteerService;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
+import com.sep490.g28.hvh.be.util.StringNormalizeUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -49,10 +48,12 @@ public class VolunteerServiceImpl implements VolunteerService {
     VolunteerRepository volunteerRepository;
     UserRepository userRepository;
     IdentityVerificationRepository identityVerificationRepository;
+    CertificateRepository certificateRepository;
     StorageService storageService;
     StoragePathGenerator storagePathGenerator;
     OtpService otpService;
     AuthClient authClient;
+    FaceClient faceClient;
     SystemAdminRepository systemAdminRepository;
     CurrentUserProvider currentUserProvider;
     EmailService emailService;
@@ -98,6 +99,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         verification.setCid(request.getCid());
         verification.setEmail(request.getEmail());
         verification.setPhone(request.getPhone());
+        verification.setFullName(StringNormalizeUtil.normalizeVietnameseName(request.getFullName()));
 
         verification.setCidFront(cidFrontPath);
         verification.setCidBack(cidBackPath);
@@ -136,7 +138,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         //search
@@ -244,7 +246,9 @@ public class VolunteerServiceImpl implements VolunteerService {
             volunteer.setCid(identityVerification.getCid());
             volunteer.setEmail(identityVerification.getEmail());
             volunteer.setPhone(identityVerification.getPhone());
-            volunteer.setFullName(normalizeVietnameseName(request.getFullName()));
+            if (request.getFullName() != null ) {
+                volunteer.setFullName(normalizeVietnameseName(request.getFullName()));
+            }
             volunteer.setCreatedBy(currentAdmin);
 
             volunteerRepository.save(volunteer);
@@ -292,4 +296,210 @@ public class VolunteerServiceImpl implements VolunteerService {
         identityVerificationRepository.save(identityVerification);
     }
 
+    //todo unit test
+    @Override
+    public Page<VolunteerSimpleResponseForAdmin> getVolunteersByAdmin(int pageNumber, int pageSize, String email) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+
+        Page<VolunteerSimpleResponseForAdmin> page =
+                volunteerRepository.findVolunteersByAdmin(pageable, email);
+
+        //get avatar signed urls
+        List<CompletableFuture<VolunteerSimpleResponseForAdmin>> futures =
+                page.getContent().stream()
+                        .map(v -> {
+                            if (v.getAvatarUrl() == null) {
+                                return CompletableFuture.completedFuture(v);
+                            }
+                            return storageService.getSignedUrlAsync(v.getAvatarUrl())
+                                    .thenApply(url -> {
+                                        v.setAvatarUrl(url);
+                                        return v;
+                                    })
+                                    //todo this might be put into some todos
+                                    .exceptionally(ex -> {
+                                        log.warn("Failed to get signed url for path: {}", v.getAvatarUrl(), ex);
+                                        v.setAvatarUrl(null);
+                                        return v;
+                                    });
+                        })
+                        .toList();
+
+        List<VolunteerSimpleResponseForAdmin> content =
+                futures.stream().map(CompletableFuture::join).toList();
+
+        return new PageImpl<>(content, pageable, page.getTotalElements());
+
+    }
+
+    @Override
+    public Page<VolunteerActivitiesResponseForAdmin> getVolunteerActivitiesByAdmin(
+            UUID volunteerId,
+            int pageNumber,
+            int pageSize
+    ) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+
+        return volunteerRepository.getVolunteerActivitiesByAdmin(pageable, volunteerId);
+    }
+
+    @Override
+    public VolunteerPublicInformationResponse getVolunteerPublicInformation(UUID volunteerId) {
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+
+
+        //get certificates of volunteer
+        List<Certificate> certificateList = certificateRepository.findByVolunteerId(volunteerId);
+
+        //get signed URL of certificates and volunteer's avatar
+        String avatarUrl = null;
+        CompletableFuture<String> avatarFuture = null;
+        //check if volunteer has avatar
+        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+            avatarFuture = storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
+        }
+
+        List<CompletableFuture<String>> certificatesFutures = new ArrayList<>();
+        if (certificateList != null && !certificateList.isEmpty()) {
+            for (Certificate certificate : certificateList) {
+                CompletableFuture<String> certificateFuture =
+                        storageService.getSignedUrlAsync(certificate.getCertificatePath());
+                certificatesFutures.add(certificateFuture);
+            }
+        }
+
+        List<String> certificatesUrls = new ArrayList<>();
+        try {
+            if (avatarFuture != null) {
+                CompletableFuture.allOf(avatarFuture).join();
+                avatarUrl = avatarFuture.join();
+            }
+
+            CompletableFuture.allOf(certificatesFutures.toArray(new CompletableFuture[0])).join();
+            for (CompletableFuture<String> certificateFuture : certificatesFutures) {
+                certificatesUrls.add(certificateFuture.join());
+            }
+
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof AppException ae) {
+                //todo: handle exception at getEventDetails
+            } else {
+                throw cause instanceof RuntimeException re ? re : e;
+            }
+        }
+
+        return new VolunteerPublicInformationResponse(
+                volunteer.getVid(),
+                volunteer.getFullName(),
+                volunteer.getNickname(),
+                volunteer.getBio(),
+                volunteer.getDob(),
+                avatarUrl,
+                volunteer.getCreditScore(),
+                volunteer.getAvgRating(),
+                volunteer.getActivityCount(),
+                certificatesUrls
+        );
+    }
+
+    @Override
+    public VolunteerAccountInformationResponse getVolunteerAccountInformation() {
+
+        UUID volunteerId = currentUserProvider.getId();
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        //get signed URL of volunteer avatar
+        String avatarUrl = null;
+        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+
+            CompletableFuture<String> avatarFuture =
+                    storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
+
+            try {
+                CompletableFuture.allOf(avatarFuture).join();
+                avatarUrl = avatarFuture.join();
+            } catch (CompletionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof AppException ae) {
+                    //todo: handle app exception in viewEventFeeds
+                } else {
+                    throw cause instanceof RuntimeException re ? re : ex;
+                }
+            }
+        }
+
+        return new VolunteerAccountInformationResponse(
+                volunteerId,
+                volunteer.getVid(),
+                volunteer.getCid(),
+                volunteer.getEmail(),
+                volunteer.getPhone(),
+                volunteer.isPhoneVerified(),
+                volunteer.getNickname(),
+                volunteer.getFullName(),
+                volunteer.getBio(),
+                volunteer.isGender(),
+                volunteer.getDob(),
+                volunteer.getLevel(),
+                avatarUrl,
+                volunteer.getAddress(),
+                volunteer.getDetailAddress(),
+                volunteer.getEmployStatus(),
+                volunteer.getWorkAddress(),
+                volunteer.getEducationLevel(),
+                volunteer.getSid(),
+                volunteer.getCreditScore(),
+                volunteer.getHonorScore(),
+                volunteer.getAvgRating(),
+                volunteer.getActivityCount()
+        );
+    }
+
+    @Override
+    public void registerVolunteerFace(MultipartFile file) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        User user = userRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(AppCommonErrorCode.ACCOUNT_NOT_EXISTED));
+
+        //check if user has already registered face
+        if(user.isFaceRegistered()) {
+           throw new AppException(FaceApiErrorCode.ALREADY_REGISTERED_FACE);
+        }
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        //call face api server to register face
+        FaceRegisterResponse response = faceClient
+                .faceRegister(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
+
+        //check if response success
+        if(response.success()) {
+            user.setFaceRegistered(true);
+            userRepository.save(user);
+        }
+    }
+
+    //convert name to valid username
+    //todo move to util
+    private String convertToValidUsername(String str) {
+        String temp = Normalizer.normalize(str, Normalizer.Form.NFD);
+        return temp.replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replaceAll("đ", "d")
+                .replaceAll("Đ", "D")
+                .replaceAll("\\s+", "");
+    }
 }

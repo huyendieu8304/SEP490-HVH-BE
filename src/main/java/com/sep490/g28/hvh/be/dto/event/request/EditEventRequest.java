@@ -4,16 +4,14 @@ import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
 import com.sep490.g28.hvh.be.dto.eventimage.request.EditEventImageRequest;
-import com.sep490.g28.hvh.be.validation.RequiredField;
-import com.sep490.g28.hvh.be.validation.ValidLatitude;
-import com.sep490.g28.hvh.be.validation.ValidLongitude;
-import com.sep490.g28.hvh.be.validation.ValidWard;
+import com.sep490.g28.hvh.be.validation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.validator.constraints.Length;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,12 +34,21 @@ public class EditEventRequest {
     @RequiredField(fieldName = "Mô tả sự kiện")
     String description;
 
+    @NotNull (message = "INVALID_ADDRESS")
     @NotBlank (message = "INVALID_ADDRESS")
     @ValidWard
     String address;
 
+    @NotNull(message = "INVALID_EVENT_DETAIL_ADDRESS")
+    @NotBlank(message = "INVALID_EVENT_DETAIL_ADDRESS")
+    @Length(max = 200, message = "INVALID_EVENT_DETAIL_ADDRESS")
+    String detailAddress;
+
     @NotNull(message = "INVALID_EVENT_AUTO_APPROVE")
     Boolean autoApprove;
+
+    @NotNull(message = "INVALID_EVENT_SERVING_ACTIVITY")
+    Boolean servingActivity;
 
     @NotNull(message = "INVALID_EVENT_SUBDOMAIN_ID")
     @Positive(message = "INVALID_EVENT_SUBDOMAIN_ID")
@@ -55,12 +62,16 @@ public class EditEventRequest {
 
     //--------------------------------------------------------
     @RequiredField(fieldName = "Ngày kết thúc tuyển người")
+    @Future(message = "INVALID_EVENT_RECRUITMENT_END_DATE")
+    @MinDaysFromToday(days = 3, message = "INVALID_EVENT_RECRUITMENT_END_DATE")
     LocalDate recruitmentEndDate;
 
     @Valid
     List<EditEventSessionRequest> eventSessions;
 
     //--------------------------------------------------------
+    //todo, sửa thành checkInLocationLat
+    // checkin location
     @NotNull(message = "INVALID_LATITUDE")
     @ValidLatitude
     Double checkInPlaceLat;

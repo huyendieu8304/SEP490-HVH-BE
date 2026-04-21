@@ -28,6 +28,7 @@ public class OrganizationRegistrationDetailsResponse {
     private String managerCidFrontUrl;
     private String managerCidBackUrl;
     private String managerCidHoldingUrl;
+    private List<String> legalDocumentsUrls;
     private List<String> otherEvidencesUrls;
     private String applicationReason;
     private EOrgRegistrationStatus status;

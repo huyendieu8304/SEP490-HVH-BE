@@ -61,6 +61,9 @@ public class RegisterOrganizationRequest {
     String managerCidHoldingExtension;
 
     @NotBlank(message = "INVALID_FILE_TYPE")
+    @AllowedFileExtension(fieldName = "Tài liệu chứng minh tổ chức")
+    String legalDocumentsExtensions;
+
     @AllowedFileExtension(fieldName = "Những tài liệu liên quan khác")
     String otherEvidencesExtensions;
 

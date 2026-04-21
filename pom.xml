@@ -112,6 +112,32 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Thymeleaf -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+
+		<!-- HTML -> PDF -->
+		<dependency>
+			<groupId>com.microsoft.playwright</groupId>
+			<artifactId>playwright</artifactId>
+			<version>1.43.0</version>
+		</dependency>
+
+		<!-- QR -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>3.5.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>3.5.3</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

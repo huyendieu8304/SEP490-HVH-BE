@@ -57,9 +57,30 @@ public enum ValidationErrorCode implements ErrorCode {
     INVALID_EVENT_SESSION_START_END_TIME(2035, "Thời gian kết thúc phải sau thời gian bắt đầu.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_START_TIME(2036, "Thời gian bắt đầu không được sớm hơn 5 giờ sáng.", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_SESSION_END_TIME(2037, "Thời gian kết thúc không được muộn hơn 23 giờ.", HttpStatus.BAD_REQUEST),
-    INVALID_EVENT_CHECKIN_ACCURACY_RANGE(2038, "Phạm vi check in phải lớn hơn 300m, và nhỏ hơn 3000m", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_CHECKIN_ACCURACY_RANGE(2038, "Phạm vi check in cần tối thiểu là 300m, và tối đa là 3000m", HttpStatus.BAD_REQUEST),
     INVALID_NOTIFICATION_TOKEN(2039, "Token để nhận thông báo không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_DEVICE_ID(2040, "ID thiết bị không hợp lệ", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_STATUS(2041, "Trạng thái sự kiện không tồn tại", HttpStatus.BAD_REQUEST ),
+
+    INVALID_EVENT_RECRUITMENT_END_DATE(2042, "Ngày kết thúc tuyển tình nguyện viên phải ở sau ngày hôm nay ít nhất 3 ngày.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_SESSION_DATE(2043, "Ngày tổ chức sự kiện phải ở sau ngày hôm nay.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_DETAIL_ADDRESS(2044, "Địa chỉ chi tiết của sự kiện không được bỏ trống và không nên dài quá 200 kí tự.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_SERVING_ACTIVITY(2045, "Sự kiện phải được phân loại là hoạt động mang tính chất phục vụ hay phi phục vụ.", HttpStatus.BAD_REQUEST),
+
+    INVALID_NOTIFICATION_TITLE(2046, "Tiêu đề của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+    INVALID_NOTIFICATION_BODY(2047, "Nội dung của thông báo không được bỏ trống", HttpStatus.BAD_REQUEST),
+
+    INVALID_EVENT_REJECT_REASON(2048, "Lí do từ chối phê duyệt sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_CANCEL_REASON(2049, "Lí do hủy sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+
+    INVALID_EVENT_DESCRIPTION(2050, "Mô tả sự kiện không được bỏ trống.", HttpStatus.BAD_REQUEST),
+    INVALID_LAT_LNG(2051, "Địa điểm check in phải có cả kinh độ và vĩ độ.", HttpStatus.BAD_REQUEST),
+    AT_LEAST_ONE_FIELD_REQUIRED(2052, "Cần ít nhất 1 trường thông tin trong request body", HttpStatus.BAD_REQUEST),
+
+    INVALID_CHECK_IN_CODE(2053, "Mã check-in không hợp lệ", HttpStatus.BAD_REQUEST),
+
+    INVALID_RATING_VALUE(2054, "Giá trị rating phải là số nguyên từ 1 đến 5.", HttpStatus.BAD_REQUEST),
+    INVALID_VOL_REVIEW_COMMENT(2055, "Bình luận đánh giá tình nguyện viên không được là chuỗi rỗng và không vượt quá 250 kí tự.", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

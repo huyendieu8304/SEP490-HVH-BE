@@ -39,5 +39,11 @@ public class VolunteerSavedEvent {
     private Event event;
 
     @CreationTimestamp
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime createdAt;
 }

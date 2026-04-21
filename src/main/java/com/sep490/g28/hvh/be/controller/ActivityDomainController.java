@@ -19,7 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/activity-domain")
+@RequestMapping("/api/v1")
 @Validated
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
@@ -28,21 +28,20 @@ public class ActivityDomainController {
     ActivityDomainService activityDomainService;
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PostMapping("/create")
+    @PostMapping("/sys-admin/activity-domains/create")
     public ResponseEntity<String> createActivityDomain(@RequestBody @Valid CreateActivityDomainRequest request) {
         activityDomainService.createActivityDomain(request);
         return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PostMapping("/{id}/update")
+    @PutMapping("/sys-admin/activity-domains/{id}/update")
     public ResponseEntity<String> updateActivityDomain(@PathVariable(name = "id") Short inputId
             , @RequestBody @Valid UpdateActivityDomainRequest request) {
         activityDomainService.updateActivityDomain(inputId, request);
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/activity-domains")
     public ResponseEntity<Page<ActivityDomainDetailsResponse>> getActivityDomains(
             @RequestParam(defaultValue = "0")
@@ -57,7 +56,7 @@ public class ActivityDomainController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PostMapping("/{id}/change-visibility")
+    @PutMapping("/sys-admin/activity-domains/{id}/change-visibility")
     public ResponseEntity<String> updateActivityDomain(@PathVariable(name = "id") Short inputId
             , @RequestBody @Valid ChangeActivityDomainVisibilityRequest request) {
         activityDomainService.changeActivityDomainVisibility(inputId, request);
@@ -65,7 +64,7 @@ public class ActivityDomainController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PostMapping("activity-subdomain/{id}/change-visibility")
+    @PutMapping("/sys-admin/activity-domains/activity-subdomains/{id}/change-visibility")
     public ResponseEntity<String> updateActivityDomain(@PathVariable(name = "id") Short inputId
             , @RequestBody @Valid ChangeActivitySubDomainVisibilityRequest request) {
         activityDomainService.changeActivitySubDomainVisibility(inputId, request);

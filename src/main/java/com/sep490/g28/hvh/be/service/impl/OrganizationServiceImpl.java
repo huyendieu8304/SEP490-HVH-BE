@@ -3,16 +3,13 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EOrgRegistrationStatus;
 import com.sep490.g28.hvh.be.constant.EOrgType;
+import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import com.sep490.g28.hvh.be.constant.ERole;
+import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
-import com.sep490.g28.hvh.be.dto.organization.response.OrganizationRegistrationDetailsResponse;
-import com.sep490.g28.hvh.be.dto.organization.response.OrganizationRegistrationSimpleResponse;
-import com.sep490.g28.hvh.be.dto.organization.response.RegisterOrganizationResponse;
-import com.sep490.g28.hvh.be.entity.Organization;
-import com.sep490.g28.hvh.be.entity.OrganizationManager;
-import com.sep490.g28.hvh.be.entity.OrganizationRegistration;
-import com.sep490.g28.hvh.be.entity.SystemAdmin;
+import com.sep490.g28.hvh.be.dto.organization.response.*;
+import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.OrganizationErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
@@ -20,6 +17,7 @@ import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
+import com.sep490.g28.hvh.be.mapper.OrganizationMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.OrganizationService;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
@@ -27,16 +25,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -57,6 +52,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     CurrentUserProvider currentUserProvider;
     AuthClient authClient;
     EmailService emailService;
+    HostRepository hostRepository;
+    EventRepository eventRepository;
+    OrganizationMapper organizationMapper;
 
     @Override
     public RegisterOrganizationResponse registerOrganization(RegisterOrganizationRequest request) {
@@ -80,21 +78,41 @@ public class OrganizationServiceImpl implements OrganizationService {
         String managerCidBackPath = storagePathGenerator.orgRegistrationCidBack(id, request.getManagerCidBackExtension());
         String managerCidHoldingPath = storagePathGenerator.orgRegistrationCidHolding(id, request.getManagerCidHoldingExtension());
 
-        String[] otherEvidences = request.getOtherEvidencesExtensions().split("\\s+");
-        List<String> otherEvidencesPathsList = new ArrayList<>();
-        int order = 1;
-        for (String otherEvidence : otherEvidences) {
-            String otherEvidencePath = storagePathGenerator.orgRegistrationOtherEvidences(id, order++, otherEvidence);
-            otherEvidencesPathsList.add(otherEvidencePath);
-            if (order == 6) {
+        String[] legalDocuments = request.getLegalDocumentsExtensions().split("\\s+");
+        List<String> legalDocumentsPathsList = new ArrayList<>();
+        int legal_order = 1;
+        for (String legalDocument : legalDocuments) {
+            String otherEvidencePath = storagePathGenerator.orgRegistrationLegalDocuments(id, legal_order++, legalDocument);
+            legalDocumentsPathsList.add(otherEvidencePath);
+            if (legal_order == 11) {
                 break;
             }
         }
-        StringBuilder otherEvidencesPathsSB = new StringBuilder();
-        for (String otherEvidencePath : otherEvidencesPathsList) {
-            otherEvidencesPathsSB.append(otherEvidencePath).append(" ");
+
+        StringBuilder legalDocumentsPathsSB = new StringBuilder();
+        for (String legalDocumentPath : legalDocumentsPathsList) {
+            legalDocumentsPathsSB.append(legalDocumentPath).append(" ");
         }
-        String otherEvidencesPaths = otherEvidencesPathsSB.toString().trim();
+        String legalDocumentsPaths = legalDocumentsPathsSB.toString().trim();
+
+        String otherEvidencesPaths = "";
+        List<String> otherEvidencesPathsList = new ArrayList<>();
+        if(request.getOtherEvidencesExtensions() != null) {
+            String[] otherEvidences = request.getOtherEvidencesExtensions().split("\\s+");
+            int order = 1;
+            for (String otherEvidence : otherEvidences) {
+                String otherEvidencePath = storagePathGenerator.orgRegistrationOtherEvidences(id, order++, otherEvidence);
+                otherEvidencesPathsList.add(otherEvidencePath);
+                if (order == 6) {
+                    break;
+                }
+            }
+            StringBuilder otherEvidencesPathsSB = new StringBuilder();
+            for (String otherEvidencePath : otherEvidencesPathsList) {
+                otherEvidencesPathsSB.append(otherEvidencePath).append(" ");
+            }
+            otherEvidencesPaths = otherEvidencesPathsSB.toString().trim();
+        }
 
         //get upload url
         CompletableFuture<String> managerCidFrontFuture =
@@ -104,16 +122,28 @@ public class OrganizationServiceImpl implements OrganizationService {
         CompletableFuture<String> managerCidHoldingFuture =
                 storageService.getUploadUrlAsync(managerCidHoldingPath);
 
+        List<CompletableFuture<String>> legalDocumentsFutures = new ArrayList<>();
+        for (String legalDocumentPath : legalDocumentsPathsList) {
+            CompletableFuture<String> legalDocumentFuture =
+                    storageService.getUploadUrlAsync(legalDocumentPath);
+            legalDocumentsFutures.add(legalDocumentFuture);
+        }
+
         List<CompletableFuture<String>> otherEvidencesFutures = new ArrayList<>();
-        for (String otherEvidencePath : otherEvidencesPathsList) {
-            CompletableFuture<String> otherEvidenceFuture =
-                    storageService.getUploadUrlAsync(otherEvidencePath);
-            otherEvidencesFutures.add(otherEvidenceFuture);
+        if(!otherEvidencesPathsList.isEmpty()) {
+            for (String otherEvidencePath : otherEvidencesPathsList) {
+                CompletableFuture<String> otherEvidenceFuture =
+                        storageService.getUploadUrlAsync(otherEvidencePath);
+                otherEvidencesFutures.add(otherEvidenceFuture);
+            }
         }
 
         try {
             CompletableFuture.allOf(managerCidFrontFuture, managerCidBackFuture, managerCidHoldingFuture).join();
-            CompletableFuture.allOf(otherEvidencesFutures.toArray(new CompletableFuture[0])).join();
+            CompletableFuture.allOf(legalDocumentsFutures.toArray(new CompletableFuture[0])).join();
+            if(!otherEvidencesFutures.isEmpty()) {
+                CompletableFuture.allOf(otherEvidencesFutures.toArray(new CompletableFuture[0])).join();
+            }
         } catch (CompletionException e) {
             throw (RuntimeException) e.getCause();
         }
@@ -121,9 +151,17 @@ public class OrganizationServiceImpl implements OrganizationService {
         String managerCidFrontUploadUrl = managerCidFrontFuture.join();
         String managerCidBackUploadUrl = managerCidBackFuture.join();
         String managerCidHoldingUploadUrl = managerCidHoldingFuture.join();
+
+        List<String> legalDocumentsUploadUrl = new ArrayList<>();
+        for (CompletableFuture<String> legalDocumentsFuture : legalDocumentsFutures) {
+            legalDocumentsUploadUrl.add(legalDocumentsFuture.join());
+        }
+
         List<String> otherEvidencesUploadUrl = new ArrayList<>();
-        for (CompletableFuture<String> otherEvidenceFuture : otherEvidencesFutures) {
-            otherEvidencesUploadUrl.add(otherEvidenceFuture.join());
+        if(!otherEvidencesFutures.isEmpty()) {
+            for (CompletableFuture<String> otherEvidenceFuture : otherEvidencesFutures) {
+                otherEvidencesUploadUrl.add(otherEvidenceFuture.join());
+            }
         }
 
         //4. create organization registration in db
@@ -140,6 +178,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         orgRegistration.setManagerCidFront(managerCidFrontPath);
         orgRegistration.setManagerCidBack(managerCidBackPath);
         orgRegistration.setManagerCidHolding(managerCidHoldingPath);
+        orgRegistration.setLegalDocument(legalDocumentsPaths);
         orgRegistration.setOtherEvidences(otherEvidencesPaths);
 
         organizationRegistrationRepository.save(orgRegistration);
@@ -149,6 +188,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .managerCidFrontUploadUrl(managerCidFrontUploadUrl)
                 .managerCidBackUploadUrl(managerCidBackUploadUrl)
                 .managerCidHoldingUploadUrl(managerCidHoldingUploadUrl)
+                .legalDocumentsUploadUrls(legalDocumentsUploadUrl)
                 .otherEvidencesUploadUrls(otherEvidencesUploadUrl)
                 .build();
     }
@@ -164,7 +204,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.ASC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
         //search
@@ -218,6 +258,17 @@ public class OrganizationServiceImpl implements OrganizationService {
             CompletableFuture<String> managerCidHoldingFuture =
                     storageService.getSignedUrlAsync(organizationRegistration.getManagerCidHolding());
 
+            List<CompletableFuture<String>> legalDocumentsFutures = new ArrayList<>();
+            if(organizationRegistration.getLegalDocument() != null) {
+                String[] legalDocuments = organizationRegistration.getLegalDocument().split("\\s+");
+                List<String> legalDocumentsList = new ArrayList<>(Arrays.asList(legalDocuments));
+                for (String legalDocument : legalDocumentsList) {
+                    CompletableFuture<String> legalDocumentFuture =
+                            storageService.getSignedUrlAsync(legalDocument);
+                    legalDocumentsFutures.add(legalDocumentFuture);
+                }
+            }
+
             List<CompletableFuture<String>> otherEvidencesFutures = new ArrayList<>();
             if(organizationRegistration.getOtherEvidences() != null) {
                 String[] otherEvidences = organizationRegistration.getOtherEvidences().split("\\s+");
@@ -232,6 +283,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             String managerCidFrontUrl = null;
             String managerCidBackUrl = null;
             String managerCidHoldingUrl = null;
+            List<String> legalDocumentsUrls = new ArrayList<>();
             List<String> otherEvidencesUrls = new ArrayList<>();
 
             try {
@@ -240,10 +292,18 @@ public class OrganizationServiceImpl implements OrganizationService {
                 managerCidBackUrl = managerCidBackFuture.join();
                 managerCidHoldingUrl = managerCidHoldingFuture.join();
 
+                CompletableFuture.allOf(legalDocumentsFutures.toArray(new CompletableFuture[0])).join();
+
                 CompletableFuture.allOf(otherEvidencesFutures.toArray(new CompletableFuture[0])).join();
                 response.setManagerCidFrontUrl(managerCidFrontUrl);
                 response.setManagerCidBackUrl(managerCidBackUrl);
                 response.setManagerCidHoldingUrl(managerCidHoldingUrl);
+
+                for (CompletableFuture<String> legalDocumentsFuture : legalDocumentsFutures) {
+                    legalDocumentsUrls.add(legalDocumentsFuture.join());
+                }
+                response.setLegalDocumentsUrls(legalDocumentsUrls);
+
                 for (CompletableFuture<String> otherEvidenceFuture : otherEvidencesFutures) {
                     otherEvidencesUrls.add(otherEvidenceFuture.join());
                 }
@@ -313,7 +373,9 @@ public class OrganizationServiceImpl implements OrganizationService {
             organization.setDhaRegistered(organizationRegistration.getDhaRegistered());
             organization.setOrgType(organizationRegistration.getOrgType());
             organization.setOrgIntroduction(organizationRegistration.getOrgIntroduction());
+            organization.setLegalDocument(organizationRegistration.getLegalDocument());
             organization.setOtherEvidences(organizationRegistration.getOtherEvidences());
+            organization.setStatus(EOrganizationStatus.ACTIVE);
             organization.setCreateBy(currentAdmin);
 
             organizationRepository.save(organization);
@@ -361,5 +423,356 @@ public class OrganizationServiceImpl implements OrganizationService {
         //send email
         emailService.sendRejectRegisterOrganizationEmail(organizationRegistration.getManagerEmail(), request.getRejectionReason());
         log.info("Verify organization registration id={}, rejected", id);
+    }
+
+    @Override
+    public Page<OrganizationSimpleResponse> getOrganizations(int pageNumber, int pageSize, String name, List<String> orgTypes) {
+
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "created_at")
+        );
+
+        List<Object[]> rawOrgData;
+
+        //check if orgTypes is null or empty
+        if(orgTypes == null || orgTypes.isEmpty()) {
+            rawOrgData = organizationRepository.searchWithoutOrgType(name, pageable);
+        } else {
+            rawOrgData = organizationRepository.search(name, orgTypes, pageable);
+        }
+        List<OrganizationSimpleResponse> organizations = rawOrgData.stream()
+                .map(organizationMapper::toOrganizationSimpleResponse).toList();
+
+        return new PageImpl<>(organizations, pageable, organizations.size());
+    }
+
+    @Override
+    public OrganizationDetailsResponseForSystemAdmin getOrganizationDetailsBySystemAdmin(UUID ordId) {
+        //get the organization from db
+        Organization organization = organizationRepository.findById(ordId).orElseThrow(
+                () -> new AppException(OrganizationErrorCode.ORGANIZATION_NOT_EXISTED)
+        );
+
+        StringBuilder note = new StringBuilder();
+
+        //get manager info
+
+        UUID managerId = null;
+        String managerName = null;
+        String managerEmail = null;
+        String managerPhone = null;
+        String managerCID = null;
+
+        OrganizationManager organizationManager = organizationManagerRepository.findByOrganizationId(ordId);
+
+        if(organizationManager == null) {
+            note.append(OrganizationErrorCode.NO_ORGANIZATION_MANAGER_FOUND.getMessage()).append("\n");
+        } else {
+            managerId = organizationManager.getId();
+            managerName = organizationManager.getFullName();
+            managerEmail = organizationManager.getEmail();
+            managerPhone = organizationManager.getPhone();
+            managerCID = organizationManager.getCid();
+        }
+
+        //get total of hosts
+        Long totalHosts = hostRepository.countHostByOrganizationId(ordId);
+
+        //get total honor hours
+        Set<String> activitySubDomains = new HashSet<>();
+        List<Event> events = eventRepository.findAllByOrganizationId(organization.getId());
+
+        for(Event e : events) {
+            activitySubDomains.add(e.getActivitySubDomain().getName());
+        }
+
+        //get signed urls
+        CompletableFuture<String> avatarImageFuture = null;
+        CompletableFuture<String> coverImageFuture = null;
+        if(organization.getAvatarImage() != null && organization.getCoverImage() != null) {
+            avatarImageFuture = storageService.getSignedUrlAsync(organization.getAvatarImage());
+            coverImageFuture = storageService.getSignedUrlAsync(organization.getCoverImage());
+        }
+
+        List<CompletableFuture<String>> legalDocumentsFutures = new ArrayList<>();
+        if(organization.getLegalDocument() != null) {
+            String[] legalDocuments = organization.getLegalDocument().split("\\s+");
+            List<String> legalDocumentsList = new ArrayList<>(Arrays.asList(legalDocuments));
+            for (String legalDocument : legalDocumentsList) {
+                CompletableFuture<String> legalDocumentFuture =
+                        storageService.getSignedUrlAsync(legalDocument);
+                legalDocumentsFutures.add(legalDocumentFuture);
+            }
+        }
+
+        List<CompletableFuture<String>> otherEvidencesFutures = new ArrayList<>();
+        if(organization.getOtherEvidences() != null) {
+            String[] otherEvidences = organization.getOtherEvidences().split("\\s+");
+            List<String> otherEvidencesList = new ArrayList<>(Arrays.asList(otherEvidences));
+            for (String otherEvidence : otherEvidencesList) {
+                CompletableFuture<String> otherEvidenceFuture =
+                        storageService.getSignedUrlAsync(otherEvidence);
+                otherEvidencesFutures.add(otherEvidenceFuture);
+            }
+        }
+
+        List<String> legalDocumentsUrls = new ArrayList<>();
+        List<String> otherEvidencesUrls = new ArrayList<>();
+        String avatarImageUrl = null;
+        String coverImageUrl = null;
+        try {
+
+            CompletableFuture.allOf(legalDocumentsFutures.toArray(new CompletableFuture[0])).join();
+
+            CompletableFuture.allOf(otherEvidencesFutures.toArray(new CompletableFuture[0])).join();
+
+            if(avatarImageFuture != null && coverImageFuture != null) {
+                CompletableFuture.allOf(avatarImageFuture, coverImageFuture).join();
+                avatarImageUrl = avatarImageFuture.join();
+                coverImageUrl = coverImageFuture.join();
+            }
+
+            for (CompletableFuture<String> legalDocumentsFuture : legalDocumentsFutures) {
+                legalDocumentsUrls.add(legalDocumentsFuture.join());
+            }
+
+            for (CompletableFuture<String> otherEvidenceFuture : otherEvidencesFutures) {
+                otherEvidencesUrls.add(otherEvidenceFuture.join());
+            }
+
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof AppException ae) {
+                note.append(ae.getMessage()).append("\n");
+            } else {
+                throw cause instanceof RuntimeException re ? re : e;
+            }
+        }
+
+        return OrganizationDetailsResponseForSystemAdmin.builder()
+                .id(organization.getId())
+                .name(organization.getName())
+                .dhaRegistered(organization.getDhaRegistered())
+                .orgType(organization.getOrgType())
+                .orgIntroduction(organization.getOrgIntroduction())
+                .createdAt(organization.getCreatedAt())
+                .avatarImageUrl(avatarImageUrl)
+                .coverImageUrl(coverImageUrl)
+                .legalDocumentUrls(legalDocumentsUrls)
+                .otherEvidencesUrls(otherEvidencesUrls)
+                .managerId(managerId)
+                .managerName(managerName)
+                .managerEmail(managerEmail)
+                .managerPhone(managerPhone)
+                .managerCID(managerCID)
+                .totalHosts(totalHosts)
+                .hostedEventCount(organization.getHostedEventCount())
+                .creditHour(organization.getCreditHour())
+                .avgRating(organization.getAvgRating())
+                .status(organization.getStatus())
+                .activitySubDomains(activitySubDomains)
+                .note(note.toString())
+                .build();
+    }
+
+    @Override
+    public OrganizationDetailsResponse getOrganizationDetails(UUID ordId) {
+        //get the organization from db
+        Organization organization = organizationRepository.findById(ordId).orElseThrow(
+                () -> new AppException(OrganizationErrorCode.ORGANIZATION_NOT_EXISTED)
+        );
+
+        StringBuilder note = new StringBuilder();
+
+        //get manager info
+        UUID managerId = null;
+        String managerEmail = null;
+        String managerPhone = null;
+
+        OrganizationManager organizationManager = organizationManagerRepository.findByOrganizationId(ordId);
+
+        if(organizationManager == null) {
+            note.append(OrganizationErrorCode.NO_ORGANIZATION_MANAGER_FOUND.getMessage()).append("\n");
+        } else {
+            managerId = organizationManager.getId();
+            managerEmail = organizationManager.getEmail();
+            managerPhone = organizationManager.getPhone();
+        }
+
+        //get total honor hours
+        long totalHonorHours = 0;
+        List<Event> events = eventRepository.findAllByOrganizationId(ordId);
+
+        for(Event e : events) {
+
+            for(EventSession es : e.getSessions()) {
+                totalHonorHours += Duration.between(es.getStartDateTime(), es.getEndDateTime()).toHours();
+            }
+        }
+
+        //get signed urls
+        CompletableFuture<String> avatarImageFuture = null;
+        CompletableFuture<String> coverImageFuture = null;
+        if(organization.getAvatarImage() != null && organization.getCoverImage() != null) {
+            avatarImageFuture = storageService.getSignedUrlAsync(organization.getAvatarImage());
+            coverImageFuture = storageService.getSignedUrlAsync(organization.getCoverImage());
+        }
+
+        String avatarImageUrl = null;
+        String coverImageUrl = null;
+        try {
+            if(avatarImageFuture != null && coverImageFuture != null) {
+                CompletableFuture.allOf(avatarImageFuture, coverImageFuture).join();
+                avatarImageUrl = avatarImageFuture.join();
+                coverImageUrl = coverImageFuture.join();
+            }
+
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof AppException ae) {
+                note.append(ae.getMessage()).append("\n");
+            } else {
+                throw cause instanceof RuntimeException re ? re : e;
+            }
+        }
+
+        return OrganizationDetailsResponse.builder()
+                .id(organization.getId())
+                .name(organization.getName())
+                .dhaRegistered(organization.getDhaRegistered())
+                .orgType(organization.getOrgType())
+                .orgIntroduction(organization.getOrgIntroduction())
+                .createdAt(organization.getCreatedAt())
+                .avatarImageUrl(avatarImageUrl)
+                .coverImageUrl(coverImageUrl)
+                .managerId(managerId)
+                .managerEmail(managerEmail)
+                .managerPhone(managerPhone)
+                .totalHonorHours(totalHonorHours)
+                .note(note.toString())
+                .build();
+    }
+
+    @Override
+    public void deductCreditHourOfOrganization(Organization organization, int numberOfHourDeduct) {
+        organization.setCreditHour(organization.getCreditHour()- numberOfHourDeduct);
+        organizationRepository.save(organization);
+        log.info("The credit hour of organization was deducted by 3, organizationId={}", organization.getId());
+    }
+
+    @Override
+    @Transactional
+    public void calculateOrganizationsAvgRating() {
+        //get events that end for 7 days
+        LocalDate targetDate = LocalDate.now().minusDays(7);
+        List<EventOrganizationProjection> projections = eventRepository.findCompletedEventsAndEndDateAt(targetDate);
+
+        Map<Organization, List<Event>> map = new HashMap<>();
+
+        // group by organization
+        for (EventOrganizationProjection p : projections) {
+            map.computeIfAbsent(p.getOrganization(), k -> new ArrayList<>())
+                    .add(p.getEvent());
+        }
+
+        //recalculate avg rating for each organization
+        for (Map.Entry<Organization, List<Event>> entry : map.entrySet()) {
+            Organization org = entry.getKey();
+            List<Event> events = entry.getValue();
+
+            int totalRating = org.getAvgRating() * org.getHostedEventCount();
+            int totalCount = org.getHostedEventCount();
+
+            for (Event e : events) {
+                totalRating += e.getAvgRating();
+                totalCount++;
+            }
+
+            org.setAvgRating((short) (totalRating / totalCount));
+            org.setHostedEventCount(totalCount);
+            log.info("Updated avg rating for organization, organizationId={}", org.getId());
+        }
+
+        organizationRepository.saveAll(map.keySet());
+        log.info("Updated avg rating for {} organizations", map.size());
+    }
+
+    @Override
+    @Transactional
+    //todo delete this
+    public void calculateOrganizationsAvgRatingForMockData() {
+        //get events that end for 7 days
+        LocalDate targetDate = LocalDate.now().minusDays(7);
+        List<EventOrganizationProjection> projections = eventRepository.findCompletedEventsAndEndDateBefore(targetDate);
+
+        Map<Organization, List<Event>> map = new HashMap<>();
+
+        // group by organization
+        for (EventOrganizationProjection p : projections) {
+            map.computeIfAbsent(p.getOrganization(), k -> new ArrayList<>())
+                    .add(p.getEvent());
+        }
+
+        //recalculate avg rating for each organization
+        for (Map.Entry<Organization, List<Event>> entry : map.entrySet()) {
+            Organization org = entry.getKey();
+            List<Event> events = entry.getValue();
+
+            int totalRating = org.getAvgRating() * org.getHostedEventCount();
+            int totalCount = org.getHostedEventCount();
+
+            for (Event e : events) {
+                totalRating += e.getAvgRating();
+                totalCount++;
+            }
+
+            org.setAvgRating((short) (totalRating / totalCount));
+            org.setHostedEventCount(totalCount);
+            log.info("Updated avg rating for organization, organizationId={}", org.getId());
+        }
+
+        organizationRepository.saveAll(map.keySet());
+        log.info("Updated avg rating for {} organizations", map.size());
+    }
+
+    @Override
+    public Page<OrganizationSimpleResponseForSystemAdmin> getOrganizationsBySystemAdmin(int pageNumber, int pageSize, String name, List<String> orgTypes) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<Organization> rawOrgData;
+
+        //check if orgTypes is null or empty
+        if(orgTypes == null || orgTypes.isEmpty()) {
+            rawOrgData = organizationRepository.searchByAdminWithoutOrgType(name, pageable);
+        } else {
+            rawOrgData = organizationRepository.searchByAdmin(name, orgTypes, pageable);
+        }
+
+        return rawOrgData
+                .map(o -> {
+                    Set<String> activitySubDomains = new HashSet<>();
+                    List<Event> events = eventRepository.findAllByOrganizationId(o.getId());
+
+                    for(Event e : events) {
+                        activitySubDomains.add(e.getActivitySubDomain().getName());
+                    }
+
+                    return new OrganizationSimpleResponseForSystemAdmin(
+                            o.getId(),
+                            o.getName(),
+                            o.getOrgType(),
+                            o.getHostedEventCount(),
+                            o.getCreditHour(),
+                            o.getAvgRating(),
+                            o.getStatus(),
+                            activitySubDomains
+                    );
+                });
     }
 }

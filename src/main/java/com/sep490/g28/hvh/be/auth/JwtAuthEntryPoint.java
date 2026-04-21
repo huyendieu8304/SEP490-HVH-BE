@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +36,7 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
             AuthenticationException authException
     ) throws IOException, ServletException {
         log.info("JWT Authentication Failed, go to JwtAutEntryPoint");
+        log.info("Request URI: {}", request.getRequestURI());
 
 //        String moreInfor = "Unauthenticated";
 //        if (authException.getCause() instanceof JwtException jwtEx) {

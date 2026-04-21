@@ -30,21 +30,15 @@ public class EventSessionTimeValidator implements ConstraintValidator<EventSessi
             start = r.getStartDateTime();
             end = r.getEndDateTime();
 
-
             if (!start.isBefore(end)) {
                 invalid(context, endDateTimeFieldName,
                         ValidationErrorCode.INVALID_EVENT_SESSION_START_END_TIME);
                 return false;
             }
 
-            ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
-
-            OffsetDateTime startVN = start.atZoneSameInstant(VN).toOffsetDateTime();
-            OffsetDateTime endVN = end.atZoneSameInstant(VN).toOffsetDateTime();
-
-            //get date only (VN hour)
-            LocalDate startDay = startVN.toLocalDate();
-            LocalDate endDay = endVN.toLocalDate();
+            //get date only
+            LocalDate startDay = start.toLocalDate();
+            LocalDate endDay = end.toLocalDate();
 
             // session must be in 1 day
             if (!startDay.equals(endDay)) {
@@ -54,9 +48,8 @@ public class EventSessionTimeValidator implements ConstraintValidator<EventSessi
             }
 
             //get time only (VN hour)
-            LocalTime startTime = startVN.toLocalTime();
-            LocalTime endTime = endVN.toLocalTime();
-
+            LocalTime startTime = start.toLocalTime();
+            LocalTime endTime = end.toLocalTime();
 
             // not start before 05:00
             if (startTime.isBefore(LocalTime.of(5, 0))) {
@@ -80,13 +73,15 @@ public class EventSessionTimeValidator implements ConstraintValidator<EventSessi
             if (duration.compareTo(Duration.ofHours(1)) < 0) {
                 invalid(context, endDateTimeFieldName,
                         ValidationErrorCode.INVALID_EVENT_SESSION_TIME_RANGE);
-                return false;            }
+                return false;
+            }
 
             // max session 12h
             if (duration.compareTo(Duration.ofHours(12)) > 0) {
                 invalid(context, endDateTimeFieldName,
                         ValidationErrorCode.INVALID_EVENT_SESSION_TIME_RANGE);
-                return false;            }
+                return false;
+            }
         }
 
         return true;

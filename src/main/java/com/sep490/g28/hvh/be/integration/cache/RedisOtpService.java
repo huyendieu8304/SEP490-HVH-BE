@@ -33,6 +33,7 @@ public class RedisOtpService implements OtpService {
     private static final String TYPE_VOL_REGISTER_PRE = "otp:vol-register:";
     private static final String TYPE_ORG_REGISTER_PRE = "otp:org-register:";
     private static final String TYPE_FORGOT_PASSWORD_PRE = "otp:forgot-password:";
+    private static final String TYPE_CHANGE_PHONE_NUMBER_PRE = "otp:change-phone:";
     private static final String OTP_SUF = "otp";
     private static final String ATTEMPT_SUF = "attempt";
     private static final int MAX_ATTEMPT = 3;
@@ -77,6 +78,18 @@ public class RedisOtpService implements OtpService {
     @Override
     public boolean verifyVerifyForgotPasswordOtp(String email, String inputOtp) {
         String key = TYPE_FORGOT_PASSWORD_PRE + email;
+        return verifyOtp(key, inputOtp);
+    }
+
+    @Override
+    public String getVerifyChangePhoneNumberOtp(String email) {
+        String key = TYPE_CHANGE_PHONE_NUMBER_PRE + email;
+        return generateOtp(key);
+    }
+
+    @Override
+    public boolean verifyVerifyChangePhoneNumberOtp(String email, String inputOtp) {
+        String key = TYPE_CHANGE_PHONE_NUMBER_PRE + email;
         return verifyOtp(key, inputOtp);
     }
 

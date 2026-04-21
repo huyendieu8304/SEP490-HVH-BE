@@ -19,6 +19,7 @@ public enum VolunteerErrorCode implements ErrorCode {
     NICKNAME_USED(3004, "Nickname đã được sử dụng bởi một tình nguyện viên khác.", HttpStatus.BAD_REQUEST),
     REGISTRATION_NOT_EXISTED(3005, "Đơn đăng kí tình nguyện viên không tồn tại.", HttpStatus.NOT_FOUND),
     REGISTRATION_VERIFIED(3006, "Đơn đăng kí tình nguyện viên đã được xác thực.", HttpStatus.BAD_REQUEST),
+    VOLUNTEER_NOT_EXISTED(3007, "Tình nguyện viên không tồn tại", HttpStatus.NOT_FOUND)
     ;
 
     private final int code;

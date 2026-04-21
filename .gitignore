@@ -31,4 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+/serviceAccountKey.json
+/logs/app.log
+/deploy/.env.dev
+/deploy/.env.prod
+/deploy/FCM_SAKey.json
 /src/main/resources/serviceAccountKey.json

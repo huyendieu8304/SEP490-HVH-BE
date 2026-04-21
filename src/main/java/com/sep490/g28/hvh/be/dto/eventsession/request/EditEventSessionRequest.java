@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.constant.EUpdateAction;
 import com.sep490.g28.hvh.be.validation.EventSessionTime;
 import com.sep490.g28.hvh.be.validation.RequiredField;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -28,9 +29,11 @@ public class EditEventSessionRequest {
     EUpdateAction updateAction;
 
     @RequiredField(fieldName = "Thời gian bắt đầu")
+    @Future(message = "INVALID_EVENT_SESSION_DATE")
     OffsetDateTime startDateTime; // check-in time
 
     @RequiredField(fieldName = "Thời gian kết thúc")
+    @Future(message = "INVALID_EVENT_SESSION_DATE")
     OffsetDateTime endDateTime;   // check-out time
 
     @NotNull(message = "INVALID_EVENT_EXPECTED_VOL_AMOUNT")

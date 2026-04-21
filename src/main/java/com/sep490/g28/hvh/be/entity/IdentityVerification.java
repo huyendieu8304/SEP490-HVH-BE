@@ -52,11 +52,20 @@ public class IdentityVerification {
     private String rejectionReason;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "reviewed_at", nullable = false)
+    @Column(
+            name = "reviewed_at",
+            nullable = false,
+            columnDefinition = "TIMESTAMP WITH TIME ZONE"
+    )
     private OffsetDateTime reviewedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
