@@ -185,4 +185,12 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
                   AND e.endDate <= :targetDate
             """)
     List<EventOrganizationProjection> findCompletedEventsAndEndDateBefore(LocalDate targetDate);
+
+    @Query("""
+                SELECT e FROM Event e
+                WHERE
+                e.status = com.sep490.g28.hvh.be.constant.EEventStatus.COMPLETED
+                AND e.endDate BETWEEN :startDate AND :endDate
+            """)
+    List<Event> getCompletedEventBetween(LocalDate startDate, LocalDate endDate);
 }
