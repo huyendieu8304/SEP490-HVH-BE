@@ -1290,7 +1290,7 @@ public class EventApplicationServiceImplTest {
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
 
-        when(checkInLogRepository.existsByDeviceAndEventApplication(any(), any(), any(), any()))
+        when(checkInLogRepository.existsByDeviceAndEventSession(any(), any(), any(), any()))
                 .thenReturn(false);
 
         Volunteer volunteer = new Volunteer();
@@ -1609,7 +1609,7 @@ public class EventApplicationServiceImplTest {
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
 
-        when(checkInLogRepository.existsByDeviceAndEventApplication(any(), any(), any(), any()))
+        when(checkInLogRepository.existsByDeviceAndEventSession(any(), any(), any(), any()))
                 .thenReturn(true);
 
         QuickCheckInEventRequest request = validQuickCheckInEventRequest();
@@ -1659,7 +1659,7 @@ public class EventApplicationServiceImplTest {
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
 
-        when(checkInLogRepository.existsByDeviceAndEventApplication(any(), any(), any(), any()))
+        when(checkInLogRepository.existsByDeviceAndEventSession(any(), any(), any(), any()))
                 .thenReturn(false);
 
         when(volunteerRepository.findById(volunteerId))
@@ -1712,7 +1712,7 @@ public class EventApplicationServiceImplTest {
         when(eventSessionRepository.findById(sessionId))
                 .thenReturn(Optional.of(session));
 
-        when(checkInLogRepository.existsByDeviceAndEventApplication(any(), any(), any(), any()))
+        when(checkInLogRepository.existsByDeviceAndEventSession(any(), any(), any(), any()))
                 .thenReturn(false);
 
         Volunteer volunteer = new Volunteer();

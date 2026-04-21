@@ -557,8 +557,8 @@ public class EventApplicationServiceImpl implements EventApplicationService {
 
         //check if current user's device is not used to check in by another user
         boolean existsByDeviceAndVolunteerId = checkInLogRepository
-                .existsByDeviceAndEventApplication(request.getDeviceId(),
-                        request.getApVersion(), request.getOsVersion(), eventApplication.getId());
+                .existsByDeviceAndEventSession(request.getDeviceId(),
+                        request.getApVersion(), request.getOsVersion(), eventSession.getId());
 
         if(existsByDeviceAndVolunteerId) {
             throw new AppException(EventErrorCode.DEVICE_ALREADY_CHECKED_IN);

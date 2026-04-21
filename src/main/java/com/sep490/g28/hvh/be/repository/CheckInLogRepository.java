@@ -24,4 +24,14 @@ public interface CheckInLogRepository extends JpaRepository<CheckInLog, UUID> {
             AND c.osVersion = :osVersion
             """)
     boolean existsByDeviceAndEventApplication(String deviceId, String apVersion, String osVersion, UUID eventApplicationId);
+
+    @Query("""
+            SELECT COUNT(c) > 0
+            FROM CheckInLog c
+            WHERE c.eventApplication.session.id = :eventSessionId
+            AND c.deviceId = :deviceId
+            AND c.apVersion = :apVersion
+            AND c.osVersion = :osVersion
+            """)
+    boolean existsByDeviceAndEventSession(String deviceId, String apVersion, String osVersion, UUID eventSessionId);
 }
