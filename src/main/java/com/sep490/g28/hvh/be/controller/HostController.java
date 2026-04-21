@@ -1,9 +1,8 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
-import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
-import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
+import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileRequest;
+import com.sep490.g28.hvh.be.dto.host.response.*;
 import com.sep490.g28.hvh.be.service.HostService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -87,4 +86,17 @@ public class HostController {
         return ResponseEntity.ok(hostService.getHostActivitiesByManager(hostId, pageNumber, pageSize, fromDate, toDate));
     }
 
+    @PreAuthorize("hasRole('HOST')")
+    @PutMapping("/host/hosts/update-profile")
+    public ResponseEntity<UpdateHostProfileResponse> updateHostProfile(
+            @RequestBody @Valid UpdateHostProfileRequest request
+    ) {
+        return ResponseEntity.ok(hostService.updateHostProfile(request));
+    }
+
+    @PreAuthorize("hasRole('HOST')")
+    @GetMapping("/host/hosts/account-information")
+    public ResponseEntity<HostAccountInformationResponse> getHostAccountInformation() {
+        return ResponseEntity.ok(hostService.getHostAccountInformation());
+    }
 }

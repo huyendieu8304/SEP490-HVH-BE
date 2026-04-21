@@ -3,15 +3,15 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
-import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
-import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
+import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileRequest;
+import com.sep490.g28.hvh.be.dto.host.response.*;
 import com.sep490.g28.hvh.be.entity.Host;
 import com.sep490.g28.hvh.be.entity.OrganizationManager;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.HostErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
+import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.HostRepository;
 import com.sep490.g28.hvh.be.repository.OrganizationManagerRepository;
@@ -30,6 +30,7 @@ import java.time.*;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static com.sep490.g28.hvh.be.util.StringNormalizeUtil.normalizeVietnameseName;
 
@@ -46,6 +47,7 @@ public class HostServiceImpl implements HostService {
     EmailService emailService;
     StorageService storageService;
 
+    StoragePathGenerator storagePathGenerator;
     CurrentUserProvider currentUserProvider;
 
     @Transactional
@@ -179,5 +181,110 @@ public class HostServiceImpl implements HostService {
 //                    .withOffsetSameInstant(ZoneOffset.UTC); converter would do this when create query
 
         return hostRepository.getHostActivitiesByManager(hostId, pageable, from, to);
+    }
+
+    @Override
+    public UpdateHostProfileResponse updateHostProfile(UpdateHostProfileRequest request) {
+
+        UUID hostId = currentUserProvider.getId();
+
+        Host host = hostRepository.findById(hostId).orElseThrow(
+                () -> new AppException(HostErrorCode.HOST_NOT_EXISTED)
+        );
+
+        String newAvatarUploadUrl = null;
+        if(request.getAvatarExtension() != null) {
+            if (host.getAvatarUrl() != null && !host.getAvatarUrl().isEmpty()) {
+                //delete exist avatar image
+                CompletableFuture<Void> avatarFuture =
+                        storageService.deleteFileAsync(host.getAvatarUrl());
+
+                try {
+                    CompletableFuture.allOf(avatarFuture).join();
+                } catch (CompletionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                    } else {
+                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                    }
+                }
+            }
+
+            //get signed URL of file
+            String newAvatarPath = storagePathGenerator.hostAvatar(hostId, request.getAvatarExtension());
+
+            CompletableFuture<String> newAvatarFuture =
+                    storageService.getUploadUrlAsync(newAvatarPath);
+
+            try {
+                CompletableFuture.allOf(newAvatarFuture).join();
+                newAvatarUploadUrl = newAvatarFuture.join();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                } else {
+                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                }
+            }
+
+            host.setAvatarUrl(newAvatarPath);
+        }
+
+        host.setFullName(request.getFullName());
+        host.setGender(request.isGender());
+        host.setDob(request.getDob());
+        host.setAddress(request.getAddress());
+        host.setDetailAddress(request.getDetailAddress());
+
+        hostRepository.save(host);
+
+        return UpdateHostProfileResponse.builder()
+                .avatarUploadUrl(newAvatarUploadUrl)
+                .build();
+    }
+
+    @Override
+    public HostAccountInformationResponse getHostAccountInformation() {
+
+        UUID hostId = currentUserProvider.getId();
+
+        Host host = hostRepository.findById(hostId).orElseThrow(
+                () -> new AppException(HostErrorCode.HOST_NOT_EXISTED)
+        );
+
+        //get signed URL of host avatar
+        String avatarUrl = null;
+        if (host.getAvatarUrl() != null && !host.getAvatarUrl().isEmpty()) {
+
+            CompletableFuture<String> avatarFuture =
+                    storageService.getSignedUrlAsync(host.getAvatarUrl());
+
+            try {
+                CompletableFuture.allOf(avatarFuture).join();
+                avatarUrl = avatarFuture.join();
+            } catch (CompletionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof AppException ae) {
+                    //todo: handle app exception in viewEventFeeds
+                } else {
+                    throw cause instanceof RuntimeException re ? re : ex;
+                }
+            }
+        }
+
+        return new HostAccountInformationResponse(
+                hostId,
+                host.getCid(),
+                host.getEmail(),
+                host.getPhone(),
+                host.getFullName(),
+                host.getGender(),
+                host.getDob(),
+                avatarUrl,
+                host.getAddress(),
+                host.getDetailAddress()
+        );
     }
 }

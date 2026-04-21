@@ -17,6 +17,9 @@ public class StoragePathGenerator {
     private static final String ORG_REGISTRATION_FOLDER = "/org-registration";
     private static final String EVENT_FOLDER = "/event";
     private static final String VOL_FOLDER = "/volunteer";
+    private static final String HOST_FOLDER = "/host";
+    private static final String ORG_MANAGER_FOLDER = "/org_manager";
+    private static final String SYS_ADMIN_FOLDER = "/sys_admin";
     private static final String ORG_FOLDER = "/organization";
 
     private static final String EVENT_IMAGE_DIR = "/image";
@@ -95,5 +98,17 @@ public class StoragePathGenerator {
 
     public String organizationCover(UUID orgId, String fileExtension) {
         return ORG_FOLDER+ "/" + orgId + "/" + COVER_FILE_NAME + fileExtension;
+    }
+
+    public String hostAvatar(UUID hostId, String fileExtension) {
+        return HOST_FOLDER + "/" + hostId + "/" + AVATAR_FILE_NAME + fileExtension;
+    }
+
+    public String orgManagerAvatar(UUID orgManagerId, String fileExtension) {
+        return ORG_MANAGER_FOLDER + "/" + orgManagerId + "/" + AVATAR_FILE_NAME + fileExtension;
+    }
+
+    public String sysAdminAvatar(UUID sysAdminId, String fileExtension) {
+        return SYS_ADMIN_FOLDER + "/" + sysAdminId + "/" + AVATAR_FILE_NAME + fileExtension;
     }
 }

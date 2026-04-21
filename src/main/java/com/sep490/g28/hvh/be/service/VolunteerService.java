@@ -28,5 +28,5 @@ public interface VolunteerService {
 
     void registerVolunteerFace(String deviceId, MultipartFile file);
 
-    void updateVolunteerProfile(UpdateVolunteerProfileRequest request);
+    UpdateVolunteerProfileResponse updateVolunteerProfile(UpdateVolunteerProfileRequest request);
 }

@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.service.VolunteerService;
@@ -135,5 +136,13 @@ public class VolunteerController {
             @RequestPart("file") MultipartFile file) {
         volunteerService.registerVolunteerFace(deviceId, file);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @PutMapping("/vol/volunteers/update-profile")
+    public ResponseEntity<UpdateVolunteerProfileResponse> updateVolunteerProfile(
+            @RequestBody @Valid UpdateVolunteerProfileRequest request
+    ) {
+        return ResponseEntity.ok(volunteerService.updateVolunteerProfile(request));
     }
 }
