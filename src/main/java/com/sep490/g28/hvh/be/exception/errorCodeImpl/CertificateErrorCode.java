@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum CertificateErrorCode implements ErrorCode {
 
-    CERTIFICATE_NOT_EXISTED(9001, "Certificate not found", HttpStatus.NOT_FOUND),
+    CERTIFICATE_NOT_EXISTED(11001, "Certificate not found", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;

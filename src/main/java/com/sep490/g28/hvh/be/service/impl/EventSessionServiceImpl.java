@@ -89,7 +89,6 @@ public class EventSessionServiceImpl implements EventSessionService {
             session.setExpectedVolAmount(r.getExpectedVolAmount());
             session.setExpectedSerAmount(r.getExpectedSerAmount());
             session.setApprovedApplicationCount(0);
-            session.setCheckInCode(RandomStringUtil.random6Numberic());
             return session;
         }).toList());
 
@@ -311,7 +310,6 @@ public class EventSessionServiceImpl implements EventSessionService {
                         session.setExpectedVolAmount(r.getExpectedVolAmount());
                         session.setExpectedSerAmount(r.getExpectedSerAmount());
                         session.setApprovedApplicationCount(0);
-                        session.setCheckInCode(RandomStringUtil.random6Numberic());
                         return session;
                     }).toList()
             );

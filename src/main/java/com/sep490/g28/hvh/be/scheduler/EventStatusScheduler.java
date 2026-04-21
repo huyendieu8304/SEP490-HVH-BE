@@ -3,7 +3,9 @@ package com.sep490.g28.hvh.be.scheduler;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.service.EventSessionService;
 import com.sep490.g28.hvh.be.service.OrganizationService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -11,13 +13,14 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventStatusScheduler {
     EventService eventService;
     EventSessionService eventSessionService;
     OrganizationService organizationService;
 
     //0AM everyday
-//    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Ho_Chi_Minh")
     public void dailyEventJob() {
         runStep("endRecruitment", eventService::endRecruitment);
         runStep("endEvents", eventService::endEvents);
@@ -37,7 +40,7 @@ public class EventStatusScheduler {
     }
 
     //2AM every day
-//    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 0 2 * * *", zone = "Asia/Ho_Chi_Minh")
     public void completeEvents() {
         log.info("Start completing events cron job");
 
@@ -46,8 +49,8 @@ public class EventStatusScheduler {
         log.info("Done completing events cron job");
     }
 
-    //3AM every day
-//    @Scheduled(cron = "0 0 3 * * *")
+    //4AM every day
+    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Ho_Chi_Minh")
     public void calculateOrganizationsAvgRating(){
         log.info("Start calculating organization avg rating cron job");
         organizationService.calculateOrganizationsAvgRating();

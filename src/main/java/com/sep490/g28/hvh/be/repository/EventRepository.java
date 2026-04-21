@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
+import com.sep490.g28.hvh.be.dto.organizationstats.response.OrganizationCountHostsAndEventsResponse;
 import com.sep490.g28.hvh.be.entity.Event;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -185,4 +186,35 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
                   AND e.endDate <= :targetDate
             """)
     List<EventOrganizationProjection> findCompletedEventsAndEndDateBefore(LocalDate targetDate);
+
+    @Query("""
+                SELECT new com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection(
+                    e,
+                    o
+                )
+                FROM Event e
+                LEFT JOIN Organization o ON e.organization.id = o.id
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.COMPLETED
+                  AND e.endDate = :targetDate
+            """)
+    List<EventOrganizationProjection> findCompletedEventsAndEndDateAt(LocalDate targetDate);
+
+    @Query("""
+                SELECT e FROM Event e
+                WHERE
+                e.status = com.sep490.g28.hvh.be.constant.EEventStatus.COMPLETED
+                AND e.endDate BETWEEN :startDate AND :endDate
+            """)
+    List<Event> getCompletedEventBetween(LocalDate startDate, LocalDate endDate);
+
+    @Query("""
+                SELECT new com.sep490.g28.hvh.be.dto.organizationstats.response.OrganizationCountHostsAndEventsResponse(
+                    COUNT(CASE WHEN e.status = com.sep490.g28.hvh.be.constant.EEventStatus.RECRUITING THEN 1 END),
+                    COUNT(CASE WHEN e.status = com.sep490.g28.hvh.be.constant.EEventStatus.UPCOMING THEN 1 END),
+                    COUNT(CASE WHEN e.status = com.sep490.g28.hvh.be.constant.EEventStatus.ONGOING THEN 1 END)
+                )
+                FROM Event e
+                WHERE e.organization.id = :orgId
+            """)
+    OrganizationCountHostsAndEventsResponse countEventsByOrg(UUID orgId);
 }
