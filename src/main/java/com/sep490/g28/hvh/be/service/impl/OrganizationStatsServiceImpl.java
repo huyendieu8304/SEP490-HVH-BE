@@ -1,9 +1,15 @@
 package com.sep490.g28.hvh.be.service.impl;
 
+import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.dto.host.payload.TopHostPayload;
+import com.sep490.g28.hvh.be.dto.organizationstats.response.OrganizationCountHostsAndEventsResponse;
+import com.sep490.g28.hvh.be.dto.organizationstats.response.OrganizationStatsResponseForManager;
 import com.sep490.g28.hvh.be.entity.Event;
+import com.sep490.g28.hvh.be.entity.Organization;
 import com.sep490.g28.hvh.be.entity.OrganizationStats;
 import com.sep490.g28.hvh.be.repository.EventRepository;
+import com.sep490.g28.hvh.be.repository.HostRepository;
+import com.sep490.g28.hvh.be.repository.OrganizationRepository;
 import com.sep490.g28.hvh.be.repository.OrganizationStatsRepository;
 import com.sep490.g28.hvh.be.service.OrganizationStatsService;
 import lombok.AccessLevel;
@@ -23,7 +29,11 @@ import java.util.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrganizationStatsServiceImpl implements OrganizationStatsService {
     OrganizationStatsRepository organizationStatsRepository;
+    OrganizationRepository organizationRepository;
     EventRepository eventRepository;
+    HostRepository hostRepository;
+
+    CurrentUserProvider currentUserProvider;
 
     @Override
     @Transactional
@@ -169,6 +179,41 @@ public class OrganizationStatsServiceImpl implements OrganizationStatsService {
                 organizationStatsRepository.save(stats);
             }
         }
+    }
+
+    @Override
+    public List<OrganizationStatsResponseForManager> getOrganizations6MonthsStatistics() {
+
+        Organization organization = organizationRepository.findByOrganizationManager_Id(currentUserProvider.getId());
+
+        YearMonth now = YearMonth.now();
+        YearMonth from = now.minusMonths(5); // tổng 6 tháng
+
+        int fromYm = from.getYear() * 100 + from.getMonthValue();
+
+        List<OrganizationStats> statsList =  organizationStatsRepository.findLast6MonthsStats(organization.getId(), fromYm);
+
+        return statsList.stream().map((stats) -> {
+            OrganizationStatsResponseForManager response = new OrganizationStatsResponseForManager();
+            response.setYear(stats.getYear());
+            response.setMonth(stats.getMonth());
+            response.setCompletedEvents(stats.getCompletedEvents());
+            response.setCreditHours(stats.getCreditHours());
+            response.setApprovedApplications(stats.getApprovedApplications());
+            response.setAttendedApplications(stats.getAttendedApplications());
+            response.setTopHostPayloads(stats.getTopHostPayloads());
+            return response;
+        }).toList();
+    }
+
+    @Override
+    public OrganizationCountHostsAndEventsResponse countHostsAndEvents() {
+        Organization organization = organizationRepository.findByOrganizationManager_Id(currentUserProvider.getId());
+
+        OrganizationCountHostsAndEventsResponse response = eventRepository.countEventsByOrg(organization.getId());
+        response.setHostsCount(hostRepository.countByOrganizationId(organization.getId()));
+
+        return response;
     }
 
 }

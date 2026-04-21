@@ -59,4 +59,15 @@ public interface OrganizationStatsRepository extends JpaRepository<OrganizationS
             List<TopHostPayload> topHostPayloads
     );
 
+
+    @Query("""
+        SELECT s FROM OrganizationStats s
+        WHERE s.orgId = :orgId
+          AND (s.year * 100 + s.month) >= :fromYm
+        ORDER BY (s.year * 100 + s.month) DESC
+    """)
+    List<OrganizationStats> findLast6MonthsStats(
+            @Param("orgId") UUID orgId,
+            @Param("fromYm") int fromYm
+    );
 }
