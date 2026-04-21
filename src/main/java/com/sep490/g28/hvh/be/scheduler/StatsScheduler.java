@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.scheduler;
 
 import com.sep490.g28.hvh.be.service.OrganizationStatsService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class StatsScheduler {
     OrganizationStatsService organizationStatsService;
 

@@ -20,8 +20,7 @@ public class EventStatusScheduler {
     OrganizationService organizationService;
 
     //0AM everyday
-//    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Ho_Chi_Minh")
-    @Scheduled(cron = "0 30 0 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Ho_Chi_Minh")
     public void dailyEventJob() {
         runStep("endRecruitment", eventService::endRecruitment);
         runStep("endEvents", eventService::endEvents);
