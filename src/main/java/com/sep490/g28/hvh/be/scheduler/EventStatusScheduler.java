@@ -17,7 +17,7 @@ public class EventStatusScheduler {
     OrganizationService organizationService;
 
     //0AM everyday
-//    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Ho_Chi_Minh")
     public void dailyEventJob() {
         runStep("endRecruitment", eventService::endRecruitment);
         runStep("endEvents", eventService::endEvents);
@@ -37,7 +37,7 @@ public class EventStatusScheduler {
     }
 
     //2AM every day
-//    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 0 2 * * *", zone = "Asia/Ho_Chi_Minh")
     public void completeEvents() {
         log.info("Start completing events cron job");
 
@@ -46,8 +46,8 @@ public class EventStatusScheduler {
         log.info("Done completing events cron job");
     }
 
-    //3AM every day
-//    @Scheduled(cron = "0 0 3 * * *")
+    //4AM every day
+    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Ho_Chi_Minh")
     public void calculateOrganizationsAvgRating(){
         log.info("Start calculating organization avg rating cron job");
         organizationService.calculateOrganizationsAvgRating();

@@ -188,6 +188,18 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     List<EventOrganizationProjection> findCompletedEventsAndEndDateBefore(LocalDate targetDate);
 
     @Query("""
+                SELECT new com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection(
+                    e,
+                    o
+                )
+                FROM Event e
+                LEFT JOIN Organization o ON e.organization.id = o.id
+                WHERE e.status = com.sep490.g28.hvh.be.constant.EEventStatus.COMPLETED
+                  AND e.endDate = :targetDate
+            """)
+    List<EventOrganizationProjection> findCompletedEventsAndEndDateAt(LocalDate targetDate);
+
+    @Query("""
                 SELECT e FROM Event e
                 WHERE
                 e.status = com.sep490.g28.hvh.be.constant.EEventStatus.COMPLETED
