@@ -1783,7 +1783,11 @@ public class EventServiceImpl implements EventService {
         );
 
         List<String> approvedStatus = Stream.of(
-                EEventStatus.COMPLETED
+                EEventStatus.RECRUITING,
+                EEventStatus.UPCOMING,
+                EEventStatus.ONGOING,
+                EEventStatus.UPCOMING,
+                EEventStatus.ENDED
         ).map(Enum::name).toList();
 
         //Map events to EventSimpleResponse
