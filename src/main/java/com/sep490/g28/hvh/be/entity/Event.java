@@ -158,4 +158,12 @@ public class Event {
     @Column(name = "rating_count", nullable = false)
     private long ratingCount = 0L;
 
+    @Column(name = "total_credit_hours")
+    private int totalCreditHours = 0;
+
+    @Column(name = "total_approved_applications")
+    private int totalApprovedApplications = 0;
+
+    @Column(name = "total_attended_applications")
+    private int totalAttendedApplications = 0;
 }

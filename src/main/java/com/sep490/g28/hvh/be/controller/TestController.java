@@ -11,6 +11,7 @@ import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.service.EventSessionService;
 import com.sep490.g28.hvh.be.service.OrganizationService;
+import com.sep490.g28.hvh.be.service.OrganizationStatsService;
 import com.sep490.g28.hvh.be.service.impl.CertificateServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
@@ -163,7 +164,7 @@ public class TestController {
 
     @PostMapping("/calc-org-rating")
     public ResponseEntity<Void> calculateOrganizationsAvgRating(){
-        organizationService.calculateOrganizationsAvgRating();
+        organizationService.calculateOrganizationsAvgRatingForMockData();
         return ResponseEntity.ok().build();
     }
 
@@ -173,5 +174,22 @@ public class TestController {
         eventSessionService.createCheckInCode();
         return ResponseEntity.ok().build();
     }
+
+    OrganizationStatsService organizationStatsService;
+    @PutMapping("/org-stat-monthly")
+    public ResponseEntity<Void> statOrgMonthly(){
+        organizationStatsService.compileOrganizationsMonthlyStatistics();
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/org-stat-monthly/mont-year")
+    public ResponseEntity<Void> statOrgMonthlyBy(
+            @RequestParam int month,
+            @RequestParam int year
+    ){
+        organizationStatsService.compileOrganizationsMonthlyStatistics(year, month);
+        return ResponseEntity.ok().build();
+    }
+
 
 }

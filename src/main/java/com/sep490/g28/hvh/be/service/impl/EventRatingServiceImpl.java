@@ -52,9 +52,8 @@ public class EventRatingServiceImpl implements EventRatingService {
         Event event = application.getSession().getEvent();
 
         LocalDate now = LocalDate.now();
-        //check rating time, in 7 days after the event ENDED (after 7 day from the eventEndDate)
-        if ( !now.isAfter(event.getEndDate())
-                || now.isAfter(event.getEndDate().plusDays(7))){
+        //check rating time, in 7 days after the event session date in the application
+        if ( now.isAfter(application.getSessionDate().plusDays(7))){
             throw new AppException(RateAndReviewErrorCode.RATE_EVENT_NOT_IN_ALLOWED_TIME);
         }
 

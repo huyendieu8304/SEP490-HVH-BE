@@ -667,6 +667,44 @@ public class OrganizationServiceImpl implements OrganizationService {
     public void calculateOrganizationsAvgRating() {
         //get events that end for 7 days
         LocalDate targetDate = LocalDate.now().minusDays(7);
+        List<EventOrganizationProjection> projections = eventRepository.findCompletedEventsAndEndDateAt(targetDate);
+
+        Map<Organization, List<Event>> map = new HashMap<>();
+
+        // group by organization
+        for (EventOrganizationProjection p : projections) {
+            map.computeIfAbsent(p.getOrganization(), k -> new ArrayList<>())
+                    .add(p.getEvent());
+        }
+
+        //recalculate avg rating for each organization
+        for (Map.Entry<Organization, List<Event>> entry : map.entrySet()) {
+            Organization org = entry.getKey();
+            List<Event> events = entry.getValue();
+
+            int totalRating = org.getAvgRating() * org.getHostedEventCount();
+            int totalCount = org.getHostedEventCount();
+
+            for (Event e : events) {
+                totalRating += e.getAvgRating();
+                totalCount++;
+            }
+
+            org.setAvgRating((short) (totalRating / totalCount));
+            org.setHostedEventCount(totalCount);
+            log.info("Updated avg rating for organization, organizationId={}", org.getId());
+        }
+
+        organizationRepository.saveAll(map.keySet());
+        log.info("Updated avg rating for {} organizations", map.size());
+    }
+
+    @Override
+    @Transactional
+    //todo delete this
+    public void calculateOrganizationsAvgRatingForMockData() {
+        //get events that end for 7 days
+        LocalDate targetDate = LocalDate.now().minusDays(7);
         List<EventOrganizationProjection> projections = eventRepository.findCompletedEventsAndEndDateBefore(targetDate);
 
         Map<Organization, List<Event>> map = new HashMap<>();

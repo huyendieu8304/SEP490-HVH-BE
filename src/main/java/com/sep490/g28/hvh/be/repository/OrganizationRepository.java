@@ -59,4 +59,6 @@ public interface OrganizationRepository extends JpaRepository<Organization, UUID
     Page<Organization> searchByAdminWithoutOrgType(
             @Param("name") String name,
             Pageable pageable);
+
+    Organization findByOrganizationManager_Id(UUID organizationManagerId);
 }

@@ -58,4 +58,13 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                 ORDER BY e.createdAt DESC
             """)
     Page<HostActivitiesResponseForManager> getHostActivitiesByManager(UUID hostId, Pageable pageable, OffsetDateTime from, OffsetDateTime to);
+
+
+    @Query("""
+        SELECT COUNT(h)
+        FROM Host h
+        WHERE h.organization.id = :orgId
+    """)
+    int countByOrganizationId(UUID orgId);
+
 }

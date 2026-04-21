@@ -49,6 +49,9 @@ public class EventServiceImpl implements EventService {
     VolunteerRepository volunteerRepository;
     VolunteerSavedEventRepository volunteerSavedEventRepository;
     OrganizationManagerRepository organizationManagerRepository;
+    EventApplicationRepository eventApplicationRepository;
+    VolunteerReviewRepository volunteerReviewRepository;
+    OrganizationRepository organizationRepository;
 
     StorageService storageService;
 
@@ -61,12 +64,11 @@ public class EventServiceImpl implements EventService {
     AuthService authService;
     CertificateService certificateService;
     VolunteerReviewService volunteerReviewService;
+    OrganizationStatsService organizationStatsService;
 
     CurrentUserProvider currentUserProvider;
 
     EventMapper eventMapper;
-    private final EventApplicationRepository eventApplicationRepository;
-    private final VolunteerReviewRepository volunteerReviewRepository;
 
     @Override
     public EventFeedResponse getEventFeeds(int pageNumber, int pageSize, boolean refresh,
@@ -1573,6 +1575,9 @@ public class EventServiceImpl implements EventService {
         Set<Volunteer> receiveCertVolunteerSet = new HashSet<>();
         List<VolunteerReview> newReviews = new ArrayList<>();
         for (Event event : events) {
+            int countEventApprovedApplications = 0;
+            int countEventAttendedApplications = 0;
+
             List<EventSession> sessions = event.getSessions();
             for (EventSession session : sessions) {
                     Duration duration = Duration.between(session.getStartDateTime(), session.getEndDateTime());
@@ -1582,6 +1587,12 @@ public class EventServiceImpl implements EventService {
                     List<EligibleApplicationProjection> eligibleApplications =
                             eventApplicationRepository
                                     .findEligibleApplicationProjection(session.getId());
+
+                    // count APPROVED applications of a session
+                    countEventApprovedApplications += session.getApprovedApplicationCount();
+
+                    //count the application that the volunteer really participated
+                    countEventAttendedApplications += eligibleApplications.size();
 
                     for (EligibleApplicationProjection projection : eligibleApplications) {
                         Volunteer volunteer = projection.getVolunteer();
@@ -1624,6 +1635,32 @@ public class EventServiceImpl implements EventService {
             log.info("Add credit score for volunteers of event, eventId={}",event.getId());
             updateVolunteerSet.clear();
 
+            //update credit hour for organization
+            Organization organization = event.getOrganization();
+            int eventCreditHour = 0;
+            for (EventSession session : sessions) {
+                eventCreditHour += (int) Math.round(
+                        Duration.between(session.getStartDateTime(), session.getEndDateTime())
+                                .toMinutes() / 60.0
+                );
+            }
+            organization.setCreditHour(organization.getCreditHour() + eventCreditHour);
+            organizationRepository.save(organization);
+
+            LocalDate eventEndedDate = event.getEndDate();
+            int month = eventEndedDate.getMonthValue();
+            int year = eventEndedDate.getYear();
+
+            //update organization stats
+            organizationStatsService.updateOrganizationCreditHoursAndCountApplicationsAndCountCompletedEventStats(
+                    organization.getId(),
+                    month,
+                    year,
+                    countEventApprovedApplications,
+                    countEventAttendedApplications,
+                    eventCreditHour
+            );
+
             //generate certificates for volunteers
             certificateService.generateCertificates(receiveCertVolunteerSet.stream().toList(), event);
             log.info("Generate certificates for eligible volunteers of event, eventId={}",event.getId());
@@ -1632,6 +1669,9 @@ public class EventServiceImpl implements EventService {
             receiveCertVolunteerSet.clear();
 
             //update event status after process all the cert and vol score
+            event.setTotalCreditHours(eventCreditHour);
+            event.setTotalApprovedApplications(countEventApprovedApplications);
+            event.setTotalAttendedApplications(countEventAttendedApplications);
             event.setStatus(EEventStatus.COMPLETED);
             eventRepository.save(event);
             log.info("Event completed, eventId={}", event.getId());
