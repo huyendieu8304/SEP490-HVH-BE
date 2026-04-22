@@ -70,8 +70,6 @@ public class EditEventRequest {
     List<EditEventSessionRequest> eventSessions;
 
     //--------------------------------------------------------
-    //todo, sửa thành checkInLocationLat
-    // checkin location
     @NotNull(message = "INVALID_LATITUDE")
     @ValidLatitude
     Double checkInPlaceLat;
