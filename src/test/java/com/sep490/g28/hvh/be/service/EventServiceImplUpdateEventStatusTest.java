@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection;
 import com.sep490.g28.hvh.be.entity.*;
+import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -14,9 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -81,6 +84,13 @@ public class EventServiceImplUpdateEventStatusTest {
         event.setSessions(List.of(session));
 
         return event;
+    }
+
+    private Event event(EEventStatus status) {
+        Event e = new Event();
+        e.setId(UUID.randomUUID());
+        e.setStatus(status);
+        return e;
     }
 
     // ==== completeEvents ===================================
@@ -239,5 +249,121 @@ public class EventServiceImplUpdateEventStatusTest {
                 );
 
         verify(eventRepository).save(event);
+    }
+
+    // ==== deleteEvent ===================================
+    @Test
+    void deleteEvent_success_shouldDelete() {
+        Event e = event(EEventStatus.EDITING);
+
+        when(eventRepository.findById(e.getId()))
+                .thenReturn(Optional.of(e));
+
+        service.deleteEvent(e.getId());
+
+        verify(eventRepository).delete(e);
+    }
+
+    @Test
+    void deleteEvent_notFound_shouldThrow() {
+        UUID id = UUID.randomUUID();
+
+        when(eventRepository.findById(id))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.deleteEvent(id));
+    }
+
+    @Test
+    void deleteEvent_invalidStatus_shouldThrow() {
+        Event e = event(EEventStatus.ONGOING);
+
+        when(eventRepository.findById(e.getId()))
+                .thenReturn(Optional.of(e));
+
+        assertThrows(AppException.class,
+                () -> service.deleteEvent(e.getId()));
+    }
+
+    // ================= endRecruitment =================
+
+    @Test
+    void endRecruitment_shouldUpdateStatus() {
+        Event e = event(EEventStatus.RECRUITING);
+
+        when(eventRepository.findRecruitingEventsAndRecruitmentEndDateBefore(any()))
+                .thenReturn(List.of(e));
+
+        service.endRecruitment();
+
+        assertEquals(EEventStatus.UPCOMING, e.getStatus());
+
+        verify(eventRepository).save(e);
+        verify(eventRepository).saveAll(List.of(e));
+    }
+
+    @Test
+    void endRecruitment_empty_shouldNotCrash() {
+        when(eventRepository.findRecruitingEventsAndRecruitmentEndDateBefore(any()))
+                .thenReturn(List.of());
+
+        service.endRecruitment();
+
+        verify(eventRepository).saveAll(List.of());
+    }
+
+    // ================= startEvents =================
+
+    @Test
+    void startEvents_shouldUpdateStatus() {
+        Event e = event(EEventStatus.UPCOMING);
+
+        when(eventRepository.findUpcomingEventsAndStartDateToday(any()))
+                .thenReturn(List.of(e));
+
+        service.startEvents();
+
+        assertEquals(EEventStatus.ONGOING, e.getStatus());
+
+        verify(eventRepository).save(e);
+        verify(eventRepository).saveAll(List.of(e));
+    }
+
+    @Test
+    void startEvents_empty_shouldNotCrash() {
+        when(eventRepository.findUpcomingEventsAndStartDateToday(any()))
+                .thenReturn(List.of());
+
+        service.startEvents();
+
+        verify(eventRepository).saveAll(List.of());
+    }
+
+    // ================= endEvents =================
+
+    @Test
+    void endEvents_shouldUpdateStatus() {
+        Event e = event(EEventStatus.ONGOING);
+
+        when(eventRepository.findOngoingEventsAndEndDateYesterday(any()))
+                .thenReturn(List.of(e));
+
+        service.endEvents();
+
+        assertEquals(EEventStatus.ENDED, e.getStatus());
+
+        verify(eventRepository).save(e);
+        verify(eventRepository).saveAll(List.of(e));
+    }
+
+    @Test
+    void endEvents_empty_shouldNotCrash() {
+        when(eventRepository.findOngoingEventsAndEndDateYesterday(any()))
+                .thenReturn(List.of());
+
+        service.endEvents();
+
+        verify(eventRepository).saveAll(List.of());
     }
 }
