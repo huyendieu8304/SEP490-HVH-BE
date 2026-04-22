@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
@@ -144,5 +145,17 @@ public class VolunteerController {
             @RequestBody @Valid UpdateVolunteerProfileRequest request
     ) {
         return ResponseEntity.ok(volunteerService.updateVolunteerProfile(request));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PutMapping("/sys-admin/volunteers/{id}/update-vol-profile")
+    public ResponseEntity<UpdateVolunteerProfileResponse> updateVolunteerProfileBySystemAdmin(
+            @PathVariable UUID id,
+
+            @RequestBody
+            @Valid
+            UpdateVolunteerProfileBySystemAdminRequest request
+    ) {
+        return ResponseEntity.ok(volunteerService.updateVolunteerProfileBySystemAdmin(id, request));
     }
 }
