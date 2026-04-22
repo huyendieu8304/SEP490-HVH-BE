@@ -1,9 +1,16 @@
 package com.sep490.g28.hvh.be.service.impl;
 
+import com.sep490.g28.hvh.be.dto.systemstats.response.SystemStatsResponse;
 import com.sep490.g28.hvh.be.entity.OrganizationStats;
 import com.sep490.g28.hvh.be.entity.SystemStats;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.SystemStatsService;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -11,15 +18,20 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
 
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SystemStatsServiceImpl implements SystemStatsService {
 
     OrganizationStatsRepository organizationStatsRepository;
     SystemStatsRepository systemStatsRepository;
     VolunteerRepository volunteerRepository;
     OrganizationRepository organizationRepository;
-    EventRepository eventRepository;
 
 
+    @Override
+    @Transactional
     public void compileSystemStatsDaily() {
 
         YearMonth yearMonth = YearMonth.now();
@@ -69,7 +81,8 @@ public class SystemStatsServiceImpl implements SystemStatsService {
         systemStatsRepository.save(systemStats);
     }
 
-    //todo remove this after
+    //todo remove this
+    @Override
     public void compileSystemStatsMonthly(int year, int month) {
 //        //re compile verified volunteers, verifiedOrganization, counteventindomain
 //        YearMonth prev = YearMonth.now().minusMonths(1);
@@ -119,5 +132,30 @@ public class SystemStatsServiceImpl implements SystemStatsService {
         systemStats.setVerifiedVolunteers(systemStats.getVerifiedOrganizations() + countNewOrganization);
 
         systemStatsRepository.save(systemStats);
+    }
+
+    @Override
+    @Transactional
+    public List<SystemStatsResponse> getSystem6MonthsStatistics() {
+
+        YearMonth now = YearMonth.now();
+        YearMonth from = now.minusMonths(5); // tổng 6 tháng
+
+        int fromYm = from.getYear() * 100 + from.getMonthValue();
+
+        List<SystemStats> statsList = systemStatsRepository.findLast6MonthsStats(fromYm);
+
+        return statsList.stream().map(stats -> {
+            SystemStatsResponse systemStatsResponse = new SystemStatsResponse();
+            systemStatsResponse.setYear(stats.getYear());
+            systemStatsResponse.setMonth(stats.getMonth());
+            systemStatsResponse.setVerifiedOrganizations(stats.getVerifiedOrganizations());
+            systemStatsResponse.setVerifiedVolunteers(stats.getVerifiedVolunteers());
+            systemStatsResponse.setCompletedEvents(stats.getCompletedEvents());
+            systemStatsResponse.setCreditHours(stats.getCreditHours());
+            systemStatsResponse.setApprovedApplications(stats.getApprovedApplications());
+            systemStatsResponse.setAttendedApplications(stats.getAttendedApplications());
+            return systemStatsResponse;
+        }).toList();
     }
 }
