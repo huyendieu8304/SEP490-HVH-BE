@@ -129,7 +129,7 @@ public class SystemStatsServiceImpl implements SystemStatsService {
         int countNewOrganization = organizationRepository.countCreatedBetween(startTimeOfMonth, endTimeOfMonth);
 
         systemStats.setVerifiedVolunteers(systemStats.getVerifiedVolunteers() + countNewVolunteer);
-        systemStats.setVerifiedVolunteers(systemStats.getVerifiedOrganizations() + countNewOrganization);
+        systemStats.setVerifiedOrganizations(systemStats.getVerifiedOrganizations() + countNewOrganization);
 
         systemStatsRepository.save(systemStats);
     }
