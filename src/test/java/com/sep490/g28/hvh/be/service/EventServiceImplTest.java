@@ -1081,7 +1081,7 @@ public class EventServiceImplTest {
 
         assertTrue(result.isEmpty());
     }
-    // ==== getApprovedEventsByManager ===================================
+    // ==== getPendingEventsByAdmin ===================================
     private EventSimpleResponseForAdmin eventSimpleResponseForAdmin() {
         return new EventSimpleResponseForAdmin();
     }
@@ -1127,6 +1127,8 @@ public class EventServiceImplTest {
 
         assertTrue(result.isEmpty());
     }
+
+    // ==== getRunningEventsByAdmin ===================================
 
     @Test
     void getRunningEventsByAdmin_normal() {
