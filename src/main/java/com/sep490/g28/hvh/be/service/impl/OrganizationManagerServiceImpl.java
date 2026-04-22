@@ -18,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -86,6 +87,7 @@ public class OrganizationManagerServiceImpl implements OrganizationManagerServic
         orgManager.setDob(request.getDob());
         orgManager.setAddress(request.getAddress());
         orgManager.setDetailAddress(request.getDetailAddress());
+        orgManager.setUpdatedAt(OffsetDateTime.now());
 
         organizationManagerRepository.save(orgManager);
 

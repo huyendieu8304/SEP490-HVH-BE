@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
+import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileRequest;
 import com.sep490.g28.hvh.be.dto.host.response.*;
 import com.sep490.g28.hvh.be.service.HostService;
@@ -98,5 +99,68 @@ public class HostController {
     @GetMapping("/host/hosts/account-information")
     public ResponseEntity<HostAccountInformationResponse> getHostAccountInformation() {
         return ResponseEntity.ok(hostService.getHostAccountInformation());
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/hosts/{organizationId}")
+    public ResponseEntity<Page<HostSimpleResponseForSystemAdmin>> getHostsOfOrganizationBySystemAdmin(
+            @PathVariable UUID organizationId,
+
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam(required = false)
+            String email
+    ) {
+        return ResponseEntity.ok(hostService.getHostsOfOrganizationBySystemAdmin(pageNumber, pageSize, organizationId, email));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/hosts/{id}/info")
+    public ResponseEntity<HostInfoResponseForSystemAdmin> getHostInfoBySystemAdmin(
+            @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(hostService.getHostInfoBySystemAdmin(id));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/hosts/{hostId}/activities")
+    public ResponseEntity<Page<HostActivitiesResponseForSystemAdmin>> getHostActivitiesBySystemAdmin(
+            @PathVariable UUID hostId,
+
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam
+            LocalDate fromDate,
+
+            @RequestParam
+            LocalDate toDate
+    ) {
+        return ResponseEntity.ok(hostService.getHostActivitiesBySystemAdmin(hostId, pageNumber, pageSize, fromDate, toDate));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PutMapping("/sys-admin/hosts/{hostId}/update-profile")
+    public ResponseEntity<UpdateHostProfileResponse> updateHostProfileBySystemAdmin(
+            @PathVariable UUID hostId,
+
+            @RequestBody
+            @Valid
+            UpdateHostProfileBySystemAdminRequest request
+    ) {
+        return ResponseEntity.ok(hostService.updateHostProfileBySystemAdmin(hostId, request));
     }
 }
