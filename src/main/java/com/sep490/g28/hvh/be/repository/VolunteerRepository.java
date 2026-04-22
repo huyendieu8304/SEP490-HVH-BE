@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public interface VolunteerRepository extends JpaRepository<Volunteer, UUID> {
@@ -66,4 +67,15 @@ public interface VolunteerRepository extends JpaRepository<Volunteer, UUID> {
             ORDER BY a.createdAt DESC
             """)
     Page<VolunteerActivitiesResponseForAdmin> getVolunteerActivitiesByAdmin(Pageable pageable, UUID volunteerId);
+
+    @Query("""
+        SELECT COUNT(v)
+        FROM Volunteer v
+        WHERE v.createdAt >= :start
+          AND v.createdAt < :end
+    """)
+    int countCreatedBetween(
+            OffsetDateTime start,
+            OffsetDateTime end
+    );
 }
