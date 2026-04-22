@@ -1,19 +1,14 @@
 package com.sep490.g28.hvh.be.entity;
 
-import com.sep490.g28.hvh.be.dto.activityDomain.payload.CountEventInDomainPayload;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -56,9 +51,9 @@ public class SystemStats {
     @Column(name = "attended_applications")
     private int attendedApplications = 0;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "count_event_in_domain", columnDefinition = "jsonb")
-    private List<CountEventInDomainPayload> countEventInDomainPayloads = new ArrayList<>();
+//    @JdbcTypeCode(SqlTypes.JSON)
+//    @Column(name = "count_event_in_domain", columnDefinition = "jsonb")
+//    private List<CountEventInDomainPayload> countEventInDomainPayloads = new ArrayList<>();
 
     @CreationTimestamp
     @Column(

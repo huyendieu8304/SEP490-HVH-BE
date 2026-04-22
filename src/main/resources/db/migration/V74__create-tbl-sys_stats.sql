@@ -9,7 +9,6 @@ CREATE TABLE sys_stats
     credit_hours           INTEGER,
     approved_applications  INTEGER,
     attended_applications  INTEGER,
-    count_event_in_domain  JSONB,
     created_at             TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at             TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT pk_sys_stats PRIMARY KEY (id)
