@@ -1,9 +1,9 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.host.request.CreateHostAccountRequest;
-import com.sep490.g28.hvh.be.dto.host.response.HostActivitiesResponseForManager;
-import com.sep490.g28.hvh.be.dto.host.response.HostInfoResponseForManager;
-import com.sep490.g28.hvh.be.dto.host.response.HostSimpleResponseForManager;
+import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileBySystemAdminRequest;
+import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileRequest;
+import com.sep490.g28.hvh.be.dto.host.response.*;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
@@ -22,4 +22,22 @@ public interface HostService {
             LocalDate fromDate,
             LocalDate toDate
     );
+
+    UpdateHostProfileResponse updateHostProfile(UpdateHostProfileRequest request);
+
+    HostAccountInformationResponse getHostAccountInformation();
+
+    Page<HostSimpleResponseForSystemAdmin> getHostsOfOrganizationBySystemAdmin(int pageNumber, int pageSize, UUID organizationId, String email);
+
+    HostInfoResponseForSystemAdmin getHostInfoBySystemAdmin(UUID hostId);
+
+    Page<HostActivitiesResponseForSystemAdmin> getHostActivitiesBySystemAdmin(
+            UUID hostId,
+            int pageNumber,
+            int pageSize,
+            LocalDate fromDate,
+            LocalDate toDate
+    );
+
+    UpdateHostProfileResponse updateHostProfileBySystemAdmin(UUID hostId, UpdateHostProfileBySystemAdminRequest request);
 }
