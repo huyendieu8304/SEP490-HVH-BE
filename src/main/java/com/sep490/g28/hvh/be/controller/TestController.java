@@ -8,10 +8,7 @@ import com.sep490.g28.hvh.be.entity.Volunteer;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
-import com.sep490.g28.hvh.be.service.EventService;
-import com.sep490.g28.hvh.be.service.EventSessionService;
-import com.sep490.g28.hvh.be.service.OrganizationService;
-import com.sep490.g28.hvh.be.service.OrganizationStatsService;
+import com.sep490.g28.hvh.be.service.*;
 import com.sep490.g28.hvh.be.service.impl.CertificateServiceImpl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
@@ -188,6 +185,17 @@ public class TestController {
             @RequestParam int year
     ){
         organizationStatsService.compileOrganizationsMonthlyStatistics(year, month);
+        return ResponseEntity.ok().build();
+    }
+
+    SystemStatsService systemStatsService;
+
+    @PutMapping("/sys-stats-monthly/mont-year")
+    public ResponseEntity<Void> statSysMonthlyBy(
+            @RequestParam int month,
+            @RequestParam int year
+    ){
+        systemStatsService.compileSystemStatsMonthly(year, month);
         return ResponseEntity.ok().build();
     }
 

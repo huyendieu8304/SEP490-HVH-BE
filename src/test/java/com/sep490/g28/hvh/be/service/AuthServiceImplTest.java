@@ -1,5 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
+import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
+import com.sep490.g28.hvh.be.dto.auth.request.ChangePasswordRequest;
 import com.sep490.g28.hvh.be.dto.auth.request.ForgotPasswordRequest;
 import com.sep490.g28.hvh.be.entity.User;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -19,8 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -36,6 +37,8 @@ public class AuthServiceImplTest {
     AuthClient authClient;
     @Mock
     EmailService emailService;
+    @Mock
+    CurrentUserProvider currentUserProvider;
 
     @InjectMocks
     AuthServiceImpl authService;
@@ -140,5 +143,65 @@ public class AuthServiceImplTest {
 
         verify(authClient, never()).changePassword(any(), any());
         verify(emailService, never()).sendNewPasswordEmail(any(), any());
+    }
+
+    //======= checkAccountActive ==========================================
+    @Test
+    void checkAccountActive_active_shouldReturnTrue() {
+        UUID userId = UUID.randomUUID();
+
+        when(authClient.isAccountActive(userId)).thenReturn(true);
+
+        boolean result = authService.checkAccountActive(userId);
+
+        assertTrue(result);
+        verify(authClient).isAccountActive(userId);
+    }
+
+    @Test
+    void checkAccountActive_inactive_shouldReturnFalse() {
+        UUID userId = UUID.randomUUID();
+
+        when(authClient.isAccountActive(userId)).thenReturn(false);
+
+        boolean result = authService.checkAccountActive(userId);
+
+        assertFalse(result);
+        verify(authClient).isAccountActive(userId);
+    }
+
+    //======= changePassword ==========================================
+    @Test
+    void changePassword_valid_shouldChange() {
+        String email = "test@gmail.com";
+        UUID userId = UUID.randomUUID();
+
+        ChangePasswordRequest req = new ChangePasswordRequest();
+        req.setOldPassword("old");
+        req.setNewPassword("new");
+
+        when(currentUserProvider.getEmail()).thenReturn(email);
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(authClient.checkOldPassword(email, "old")).thenReturn(true);
+
+        authService.changePassword(req);
+
+        verify(authClient).changePassword(userId, "new");
+    }
+
+    @Test
+    void changePassword_wrongOldPassword_shouldThrow() {
+        String email = "test@gmail.com";
+
+        ChangePasswordRequest req = new ChangePasswordRequest();
+        req.setOldPassword("wrong");
+        req.setNewPassword("new");
+
+        when(currentUserProvider.getEmail()).thenReturn(email);
+        when(authClient.checkOldPassword(email, "wrong")).thenReturn(false);
+
+        assertThrows(AppException.class, () -> authService.changePassword(req));
+
+        verify(authClient, never()).changePassword(any(), any());
     }
 }

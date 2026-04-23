@@ -70,4 +70,10 @@ public interface OrganizationStatsRepository extends JpaRepository<OrganizationS
             @Param("orgId") UUID orgId,
             @Param("fromYm") int fromYm
     );
+
+    @Query("""
+                SELECT s FROM OrganizationStats s
+                WHERE s.year = :year AND s.month = :month
+            """)
+    List<OrganizationStats> findStatsBy(int year, int month);
 }
