@@ -27,4 +27,12 @@ public interface EventMomentRepository extends JpaRepository<EventMoment, UUID> 
             AND (:name IS NULL OR em.eventApplication.session.event.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
             """)
     Page<EventMoment> findAllByVolunteerId(UUID volunteerId, @Param("name") String eventName, Pageable pageable);
+
+    @Query("""
+            SELECT em
+            FROM EventMoment em
+            WHERE em.eventApplication.session.event.id = :eventId
+            AND (:name IS NULL OR em.eventApplication.session.event.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+            """)
+    Page<EventMoment> findAllByEventId(UUID eventId, @Param("name") String eventName, Pageable pageable);
 }
