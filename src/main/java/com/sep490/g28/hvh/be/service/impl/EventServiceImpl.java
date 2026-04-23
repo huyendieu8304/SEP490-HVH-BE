@@ -1016,6 +1016,7 @@ public class EventServiceImpl implements EventService {
                 .status(eventStatus)
                 .eventSessions(eventSessions)
                 .conflictSessions(conflictSessions)
+                .updateEventPayload(event.getUpdateEventPayload())
                 .note(note.toString())
                 .build();
     }
@@ -1144,6 +1145,7 @@ public class EventServiceImpl implements EventService {
                 .status(eventStatus)
                 .eventSessions(eventSessions)
                 .conflictSessions(conflictSessions)
+                .updateEventPayload(event.getUpdateEventPayload())
                 .note(note.toString())
                 .build();
     }

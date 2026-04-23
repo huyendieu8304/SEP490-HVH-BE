@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.dto.event.response;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.constant.EServedTarget;
 import com.sep490.g28.hvh.be.constant.EServingPlaceType;
+import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,6 +41,7 @@ public class EventDetailsResponseForSystemAdmin {
     private EEventStatus status;
     private List<EventSessionDetailsResponse> eventSessions;
     private List<EventSessionDetailsResponse> conflictSessions;
+    private UpdateEventPayload updateEventPayload;
     private String note;
     //todo add number of registered/joined/checked-in volunteer and average rating of event
 }
