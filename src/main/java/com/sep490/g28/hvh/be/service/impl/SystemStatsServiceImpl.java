@@ -74,7 +74,7 @@ public class SystemStatsServiceImpl implements SystemStatsService {
 
         //count organization verified yesterday
         int countNewOrganization = organizationRepository.countCreatedBetween(start, end);
-        systemStats.setVerifiedVolunteers(systemStats.getVerifiedOrganizations() + countNewOrganization);
+        systemStats.setVerifiedOrganizations(systemStats.getVerifiedOrganizations() + countNewOrganization);
 
         //get
 
