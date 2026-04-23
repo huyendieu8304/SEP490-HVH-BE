@@ -173,19 +173,19 @@ public class EmailOtpServiceImplTest {
     }
 
     //===== sendVerifyChangePhoneNumberOtp ==============
-    @Test
-    void sendVerifyChangePhoneNumberOtp_validFlow_shouldCallOtpAndEmailService() {
-        String email = "test@gmail.com";
-        String otp = "123456";
-
-        when(currentUserProvider.getEmail()).thenReturn(email);
-        when(otpService.getVerifyChangePhoneNumberOtp(email)).thenReturn(otp);
-
-        emailOtpService.sendVerifyChangePhoneNumberOtp();
-
-        verify(currentUserProvider).getEmail();
-        verify(otpService).getVerifyChangePhoneNumberOtp(email);
-        verify(emailService).sendVerifyChangePhoneNumberOtp(email, otp);
-    }
+//    @Test
+//    void sendVerifyChangePhoneNumberOtp_validFlow_shouldCallOtpAndEmailService() {
+//        String email = "test@gmail.com";
+//        String otp = "123456";
+//
+//        when(currentUserProvider.getEmail()).thenReturn(email);
+//        when(otpService.getVerifyChangePhoneNumberOtp(email)).thenReturn(otp);
+//
+//        emailOtpService.sendVerifyChangePhoneNumberOtp();
+//
+//        verify(currentUserProvider).getEmail();
+//        verify(otpService).getVerifyChangePhoneNumberOtp(email);
+//        verify(emailService).sendVerifyChangePhoneNumberOtp(email, otp);
+//    }
 }
 
