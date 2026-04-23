@@ -1,12 +1,14 @@
 package com.sep490.g28.hvh.be.dto.certificate.response;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class VolunteerCertificateResponse {
     String eventName;
     String organizationName;
