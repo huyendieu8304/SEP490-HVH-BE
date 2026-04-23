@@ -61,24 +61,26 @@ public class EditEventSessionRequestTest {
     @Test
     void should_fail_when_start_in_past() {
         var req = validRequest();
-        req.setStartDateTime(OffsetDateTime.now().minusDays(1));
+        req.setStartDateTime(OffsetDateTime.now().withHour(8).minusDays(1));
+        req.setEndDateTime(OffsetDateTime.now().withHour(10).minusDays(1));
 
         var violations = validator.validate(req);
 
         assertThat(violations.iterator().next().getMessage())
-                .isEqualTo("INVALID_EVENT_SESSION_TIME_RANGE");
+                .isEqualTo("INVALID_EVENT_SESSION_DATE");
     }
 
     // -------- endDateTime --------
     @Test
     void should_fail_when_end_in_past() {
         var req = validRequest();
-        req.setEndDateTime(OffsetDateTime.now().minusDays(1));
+        req.setStartDateTime(OffsetDateTime.now().withHour(6).minusDays(1));
+        req.setEndDateTime(OffsetDateTime.now().withHour(8).minusDays(1));
 
         var violations = validator.validate(req);
 
         assertThat(violations.iterator().next().getMessage())
-                .isEqualTo("INVALID_EVENT_SESSION_START_END_TIME");
+                .isEqualTo("INVALID_EVENT_SESSION_DATE");
     }
 
     // -------- expectedVolAmount --------
