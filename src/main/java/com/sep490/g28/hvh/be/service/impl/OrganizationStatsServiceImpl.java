@@ -153,8 +153,8 @@ public class OrganizationStatsServiceImpl implements OrganizationStatsService {
 
             List<TopHostPayload> top5 = hosts.stream()
                     .sorted(Comparator
-                            .comparing(TopHostPayload::getTotalCreditHour).reversed()
-                            .thenComparing(TopHostPayload::getTotalEvent).reversed()
+                            .comparing(TopHostPayload::getTotalCreditHour, Comparator.reverseOrder())
+                            .thenComparing(TopHostPayload::getTotalEvent, Comparator.reverseOrder())
                     )
                     .limit(5)
                     .toList();
