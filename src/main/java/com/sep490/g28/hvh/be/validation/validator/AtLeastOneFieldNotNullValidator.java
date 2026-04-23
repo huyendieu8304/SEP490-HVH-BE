@@ -59,7 +59,6 @@ public class AtLeastOneFieldNotNullValidator implements ConstraintValidator<AtLe
 
             }
         } catch (IllegalAccessException e) {
-            //todo xử  lí
             throw new RuntimeException(e);
         }
 

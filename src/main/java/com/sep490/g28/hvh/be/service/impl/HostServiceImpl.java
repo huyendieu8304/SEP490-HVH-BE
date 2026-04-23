@@ -141,6 +141,7 @@ public class HostServiceImpl implements HostService {
         response.setGender(host.getGender());
         response.setDob(host.getDob());
 
+        //todo sửa lại code chox nay
         try {
             String avatarUrl = storageService.getSignedUrl(host.getAvatarUrl());
             response.setAvatarUrl(avatarUrl);

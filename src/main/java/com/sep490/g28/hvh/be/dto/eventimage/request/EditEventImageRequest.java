@@ -22,5 +22,4 @@ public class EditEventImageRequest {
 
     @ImageFileExtension(fieldName = "Ảnh sự kiện")
     String fileExtension;
-    //todo, nếu action là add thì cái extension này không được null
 }

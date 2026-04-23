@@ -153,7 +153,6 @@ public class EventSessionServiceImpl implements EventSessionService {
         event.setEndDate(endDate);
     }
 
-    //todo unit test for this method
     @Override
     public List<EventSession> findConflictSessionDateOfHost(UUID hostId, UUID checkedEventId, List<EventSession> checkedSessions) {
         if (checkedSessions == null || checkedSessions.isEmpty()) {

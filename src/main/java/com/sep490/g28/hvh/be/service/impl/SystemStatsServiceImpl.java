@@ -81,7 +81,7 @@ public class SystemStatsServiceImpl implements SystemStatsService {
         systemStatsRepository.save(systemStats);
     }
 
-    //todo remove this
+    //todo remove this after finish mock data
     @Override
     public void compileSystemStatsMonthly(int year, int month) {
 //        //re compile verified volunteers, verifiedOrganization, counteventindomain
