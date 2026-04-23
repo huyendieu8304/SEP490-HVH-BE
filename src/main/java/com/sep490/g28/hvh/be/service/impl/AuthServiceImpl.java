@@ -72,16 +72,16 @@ public class AuthServiceImpl implements AuthService {
         authClient.changePassword(currentUserProvider.getId(), request.getNewPassword());
         log.info("Change password for account successful, id={}", currentUserProvider.getId());
     }
-
-    @Override
-    public void changePhoneNumber(ChangePhoneRequest request) {
-
-        //verify otp
-        otpService.verifyVerifyChangePhoneNumberOtp(currentUserProvider.getEmail(), request.getOtp());
-
-        //change phone number
-        UUID currentAccountId = currentUserProvider.getId();
-        authClient.changePhoneNumber(currentAccountId, request.getNewPhoneNumber());
-        log.info("Change phone for account successful, id={}", currentAccountId);
-    }
+//
+//    @Override
+//    public void changePhoneNumber(ChangePhoneRequest request) {
+//
+//        //verify otp
+//        otpService.verifyVerifyChangePhoneNumberOtp(currentUserProvider.getEmail(), request.getOtp());
+//
+//        //change phone number
+//        UUID currentAccountId = currentUserProvider.getId();
+//        authClient.changePhoneNumber(currentAccountId, request.getNewPhoneNumber());
+//        log.info("Change phone for account successful, id={}", currentAccountId);
+//    }
 }

@@ -38,10 +38,10 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAnyRole('SYS_ADMIN', 'ORG_MANAGER','HOST','VOL')")
-    @PutMapping("/auth/change-phone")
-    public ResponseEntity<Void> changePhoneNumber(@RequestBody @Valid ChangePhoneRequest request){
-        authService.changePhoneNumber(request);
-        return ResponseEntity.ok().build();
-    }
+//    @PreAuthorize("hasAnyRole('SYS_ADMIN', 'ORG_MANAGER','HOST','VOL')")
+//    @PutMapping("/auth/change-phone")
+//    public ResponseEntity<Void> changePhoneNumber(@RequestBody @Valid ChangePhoneRequest request){
+//        authService.changePhoneNumber(request);
+//        return ResponseEntity.ok().build();
+//    }
 }

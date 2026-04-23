@@ -14,5 +14,5 @@ public interface AuthService {
 
     void changePassword(ChangePasswordRequest request);
 
-    void changePhoneNumber(ChangePhoneRequest request);
+//    void changePhoneNumber(ChangePhoneRequest request);
 }
