@@ -16,8 +16,8 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.FaceApiErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
-import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
-import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceAuthenticationResponse;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceAuthClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.AuthenticateFaceResponse;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
@@ -55,7 +55,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     CheckInLogRepository checkInLogRepository;
     UserRepository userRepository;
     StorageService storageService;
-    FaceClient faceClient;
+    FaceAuthClient faceAuthClient;
 
     CurrentUserProvider currentUserProvider;
 
@@ -777,7 +777,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         //check-in with face authentication
-        FaceAuthenticationResponse response = faceClient.faceAuthentication(file);
+        AuthenticateFaceResponse response = faceAuthClient.authenticateFace(file);
 
         //check if passed liveness check
         if(!response.liveness_passed()) {

@@ -17,7 +17,7 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
-import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceAuthClient;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
@@ -69,7 +69,7 @@ public class VolunteerServiceImplTest {
     AuthClient authClient;
 
     @Mock
-    FaceClient faceClient;
+    FaceAuthClient faceAuthClient;
 
     @Mock
     EmailService emailService;
@@ -92,7 +92,7 @@ public class VolunteerServiceImplTest {
                 storagePathGenerator,
                 otpService,
                 authClient,
-                faceClient,
+                faceAuthClient,
                 systemAdminRepository,
                 currentUserProvider,
                 emailService

@@ -1,6 +1,6 @@
 package com.sep490.g28.hvh.be.integration.faceServer.dto;
 
-public record FaceRegisterResponse (
+public record RegisterFaceResponse(
         boolean success,
         String message,
         String user_name,

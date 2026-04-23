@@ -4,9 +4,8 @@ import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.integration.authServer.dto.UserResponse;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.faceServer.FaceAuthClient;
-import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
-import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceAuthenticationResponse;
-import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceRegisterResponse;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.AuthenticateFaceResponse;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.RegisterFaceResponse;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ import java.util.concurrent.CompletionException;
 public class TestSupabaseController {
 
     private final AuthClient authClient;
-    private final FaceClient faceClient;
+    private final FaceAuthClient faceAuthClient;
     private final StorageService storageService;
 
 //    public TestSupabaseController(SupabaseAuthClient authClient, SupabaseStorageService storageService) {
@@ -146,13 +145,13 @@ public class TestSupabaseController {
     }
 
     @PostMapping("/face-authentication")
-    public ResponseEntity<FaceAuthenticationResponse> upload(@RequestPart("file") MultipartFile file) {
-        FaceAuthenticationResponse result = faceClient.faceAuthentication(file);
+    public ResponseEntity<AuthenticateFaceResponse> upload(@RequestPart("file") MultipartFile file) {
+        AuthenticateFaceResponse result = faceAuthClient.authenticateFace(file);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/face-register/{userName}/{userId}")
-    public ResponseEntity<FaceRegisterResponse> register(
+    public ResponseEntity<RegisterFaceResponse> register(
             @PathVariable("userName")
             String userName,
 
@@ -161,7 +160,7 @@ public class TestSupabaseController {
 
             @RequestPart("file")
             MultipartFile file) {
-        FaceRegisterResponse result = faceClient.faceRegister(userName, userId, file);
+        RegisterFaceResponse result = faceAuthClient.registerFaceBiometric(userName, userId, file);
         return ResponseEntity.ok(result);
     }
 

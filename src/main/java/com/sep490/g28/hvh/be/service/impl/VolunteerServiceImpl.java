@@ -15,8 +15,8 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
-import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
-import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceRegisterResponse;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceAuthClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.RegisterFaceResponse;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
@@ -55,7 +55,7 @@ public class VolunteerServiceImpl implements VolunteerService {
     StoragePathGenerator storagePathGenerator;
     OtpService otpService;
     AuthClient authClient;
-    FaceClient faceClient;
+    FaceAuthClient faceAuthClient;
     SystemAdminRepository systemAdminRepository;
     CurrentUserProvider currentUserProvider;
     EmailService emailService;
@@ -485,8 +485,8 @@ public class VolunteerServiceImpl implements VolunteerService {
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
         //call face api server to register face
-        FaceRegisterResponse response = faceClient
-                .faceRegister(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
+        RegisterFaceResponse response = faceAuthClient
+                .registerFaceBiometric(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
 
         //check if response success
         if(response.success()) {
