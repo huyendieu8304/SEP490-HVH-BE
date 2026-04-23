@@ -774,7 +774,6 @@ public class EventServiceImpl implements EventService {
 
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForManager> getPendingEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -801,7 +800,6 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForManager);
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForManager> getApprovedEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -831,7 +829,6 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForManager);
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForAdmin> getPendingEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -852,7 +849,6 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForAdmin);
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForAdmin> getRunningEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(

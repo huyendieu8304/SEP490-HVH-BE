@@ -13,6 +13,7 @@ import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
+import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,8 +65,16 @@ public class EventServiceImplTest {
     @Mock
     NotificationService notificationService;
 
+    @Mock
+    EventMapper eventMapper;
+
+    @Mock
+    OrganizationManagerRepository organizationManagerRepository;
+
     @InjectMocks
     EventServiceImpl eventService;
+
+
 
     UUID volunteerId;
     UUID eventId;
@@ -942,4 +951,225 @@ public class EventServiceImplTest {
 
         verifyNoInteractions(notificationService);
     }
+
+    // ==== getPendingEventsByManager ===================================
+    private OrganizationManager manager(UUID orgId) {
+        Organization org = new Organization();
+        org.setId(orgId);
+
+        OrganizationManager m = new OrganizationManager();
+        m.setOrganization(org);
+        return m;
+    }
+
+    private Event mockEventWithOnlyUUID() {
+        Event e = new Event();
+        e.setId(UUID.randomUUID());
+        return e;
+    }
+
+    private EventSimpleResponseForManager res() {
+        return new EventSimpleResponseForManager();
+    }
+
+    @Test
+    void getPendingEvents_normal() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        Event e = mockEventWithOnlyUUID();
+
+        Page<Event> page = new PageImpl<>(List.of(e));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(page);
+
+        when(eventMapper.toEventSimpleResponseForManager(e))
+                .thenReturn(res());
+
+        Page<EventSimpleResponseForManager> result =
+                eventService.getPendingEventsByManager(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByOrganizationIdAnd(
+                eq(orgId),
+                argThat(list -> list.contains("SUBMITTED")),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getPendingEvents_empty() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                any(), anyList(), any(), any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getPendingEventsByManager(0, 10, "x");
+
+        assertTrue(result.isEmpty());
+    }
+
+    // ==== getApprovedEventsByManager ===================================
+    @Test
+    void getApprovedEvents_normal() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        Event e = mockEventWithOnlyUUID();
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(e)));
+
+        when(eventMapper.toEventSimpleResponseForManager(e))
+                .thenReturn(res());
+
+        Page<?> result = eventService.getApprovedEventsByManager(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByOrganizationIdAnd(
+                eq(orgId),
+                argThat(list -> list.contains("RECRUITING")),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getApprovedEvents_empty() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                any(), anyList(), any(), any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getApprovedEventsByManager(0, 10, "abc");
+
+        assertTrue(result.isEmpty());
+    }
+    // ==== getPendingEventsByAdmin ===================================
+    private EventSimpleResponseForAdmin eventSimpleResponseForAdmin() {
+        return new EventSimpleResponseForAdmin();
+    }
+
+    @Test
+    void getPendingEventsByAdmin_normal() {
+
+        Event e = mockEventWithOnlyUUID();
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(e)));
+
+        when(eventMapper.toEventSimpleResponseForAdmin(e))
+                .thenReturn(eventSimpleResponseForAdmin());
+
+        Page<?> result = eventService.getPendingEventsByAdmin(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByAdminAnd(
+                argThat(list ->
+                        list.contains("APPROVED_BY_MNG") &&
+                                list.contains("REJECTED_BY_AD")
+                ),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getPendingEventsByAdmin_empty() {
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                any(),
+                any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getPendingEventsByAdmin(0, 10, "x");
+
+        assertTrue(result.isEmpty());
+    }
+
+    // ==== getRunningEventsByAdmin ===================================
+
+    @Test
+    void getRunningEventsByAdmin_normal() {
+
+        Event e = mockEventWithOnlyUUID();
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(e)));
+
+        when(eventMapper.toEventSimpleResponseForAdmin(e))
+                .thenReturn(eventSimpleResponseForAdmin());
+
+        Page<?> result = eventService.getRunningEventsByAdmin(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByAdminAnd(
+                argThat(list ->
+                        list.contains("RECRUITING") &&
+                                list.contains("ONGOING")
+                ),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getRunningEventsByAdmin_empty() {
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                any(),
+                any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getRunningEventsByAdmin(0, 10, "abc");
+
+        assertTrue(result.isEmpty());
+    }
+
 }
