@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
@@ -28,5 +29,7 @@ public interface VolunteerService {
 
     void registerVolunteerFace(String deviceId, MultipartFile file);
 
-    void updateVolunteerProfile(UpdateVolunteerProfileRequest request);
+    UpdateVolunteerProfileResponse updateVolunteerProfile(UpdateVolunteerProfileRequest request);
+
+    UpdateVolunteerProfileResponse updateVolunteerProfileBySystemAdmin(UUID volunteerId, UpdateVolunteerProfileBySystemAdminRequest request);
 }

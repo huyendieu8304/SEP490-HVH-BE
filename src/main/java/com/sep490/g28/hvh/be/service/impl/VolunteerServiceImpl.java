@@ -1,9 +1,9 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
-import com.sep490.g28.hvh.be.constant.ERole;
-import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
+import com.sep490.g28.hvh.be.constant.*;
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -498,19 +499,40 @@ public class VolunteerServiceImpl implements VolunteerService {
     }
 
     @Override
-    public void updateVolunteerProfile(UpdateVolunteerProfileRequest request) {
+    public UpdateVolunteerProfileResponse updateVolunteerProfile(UpdateVolunteerProfileRequest request) {
         UUID volunteerId = currentUserProvider.getId();
 
         Volunteer volunteer = volunteerRepository.findById(volunteerId)
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
-        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
-            //delete exist avatar image
-            CompletableFuture<Void> avatarFuture =
-                    storageService.deleteFileAsync(volunteer.getAvatarUrl());
+        String newAvatarUploadUrl = null;
+        if(request.getAvatarExtension() != null) {
+            if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+                //delete exist avatar image
+                CompletableFuture<Void> avatarFuture =
+                        storageService.deleteFileAsync(volunteer.getAvatarUrl());
+
+                try {
+                    CompletableFuture.allOf(avatarFuture).join();
+                } catch (CompletionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                    } else {
+                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                    }
+                }
+            }
+
+            //get signed URL of file
+            String newAvatarPath = storagePathGenerator.volunteerAvatar(volunteerId, request.getAvatarExtension());
+
+            CompletableFuture<String> newAvatarFuture =
+                    storageService.getUploadUrlAsync(newAvatarPath);
 
             try {
-                CompletableFuture.allOf(avatarFuture).join();
+                CompletableFuture.allOf(newAvatarFuture).join();
+                newAvatarUploadUrl = newAvatarFuture.join();
             } catch (CompletionException e) {
                 Throwable cause = e.getCause();
                 if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
@@ -520,7 +542,116 @@ public class VolunteerServiceImpl implements VolunteerService {
                 }
             }
 
+            volunteer.setAvatarUrl(newAvatarPath);
         }
+
+        EEmployStatus employStatus =
+                (request.getEmployStatus() == null || request.getEmployStatus().isBlank())
+                        ? null
+                        : EEmployStatus.valueOf(request.getEmployStatus());
+
+        EEducationLevel educationLevel =
+                (request.getEducationLevel() == null || request.getEducationLevel().isBlank())
+                        ? null
+                        : EEducationLevel.valueOf(request.getEducationLevel());
+
+        volunteer.setNickname(request.getNickName());
+        volunteer.setFullName(request.getFullName());
+        volunteer.setBio(request.getBio());
+        volunteer.setGender(request.isGender());
+        volunteer.setDob(request.getDob());
+        volunteer.setAddress(request.getAddress());
+        volunteer.setDetailAddress(request.getDetailAddress());
+        volunteer.setEmployStatus(employStatus);
+        volunteer.setWorkAddress(request.getWorkAddress());
+        volunteer.setEducationLevel(educationLevel);
+        volunteer.setSid(request.getSid());
+        volunteer.setDeviceId(request.getDeviceId());
+        volunteer.setUpdatedAt(OffsetDateTime.now());
+
+        volunteerRepository.save(volunteer);
+
+        return UpdateVolunteerProfileResponse.builder()
+                .avatarUploadUrl(newAvatarUploadUrl)
+                .build();
+    }
+
+    @Override
+    public UpdateVolunteerProfileResponse updateVolunteerProfileBySystemAdmin(UUID volunteerId, UpdateVolunteerProfileBySystemAdminRequest request) {
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        String newAvatarUploadUrl = null;
+        if(request.getAvatarExtension() != null) {
+            if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+                //delete exist avatar image
+                CompletableFuture<Void> avatarFuture =
+                        storageService.deleteFileAsync(volunteer.getAvatarUrl());
+
+                try {
+                    CompletableFuture.allOf(avatarFuture).join();
+                } catch (CompletionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                    } else {
+                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                    }
+                }
+            }
+
+            //get signed URL of file
+            String newAvatarPath = storagePathGenerator.volunteerAvatar(volunteerId, request.getAvatarExtension());
+
+            CompletableFuture<String> newAvatarFuture =
+                    storageService.getUploadUrlAsync(newAvatarPath);
+
+            try {
+                CompletableFuture.allOf(newAvatarFuture).join();
+                newAvatarUploadUrl = newAvatarFuture.join();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                } else {
+                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                }
+            }
+
+            volunteer.setAvatarUrl(newAvatarPath);
+        }
+
+        EEmployStatus employStatus =
+                (request.getEmployStatus() == null || request.getEmployStatus().isBlank())
+                        ? null
+                        : EEmployStatus.valueOf(request.getEmployStatus());
+
+        EEducationLevel educationLevel =
+                (request.getEducationLevel() == null || request.getEducationLevel().isBlank())
+                        ? null
+                        : EEducationLevel.valueOf(request.getEducationLevel());
+
+        volunteer.setEmail(request.getEmail());
+        volunteer.setPhone(request.getPhone());
+        volunteer.setCid(request.getCid());
+        volunteer.setNickname(request.getNickName());
+        volunteer.setFullName(request.getFullName());
+        volunteer.setBio(request.getBio());
+        volunteer.setGender(request.isGender());
+        volunteer.setDob(request.getDob());
+        volunteer.setAddress(request.getAddress());
+        volunteer.setDetailAddress(request.getDetailAddress());
+        volunteer.setEmployStatus(employStatus);
+        volunteer.setWorkAddress(request.getWorkAddress());
+        volunteer.setEducationLevel(educationLevel);
+        volunteer.setSid(request.getSid());
+        volunteer.setDeviceId(request.getDeviceId());
+        volunteer.setUpdatedAt(OffsetDateTime.now());
+
+        return UpdateVolunteerProfileResponse.builder()
+                .avatarUploadUrl(newAvatarUploadUrl)
+                .build();
     }
 
     //convert name to valid username
