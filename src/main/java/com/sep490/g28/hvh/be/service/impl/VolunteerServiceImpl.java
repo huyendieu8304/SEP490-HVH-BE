@@ -21,6 +21,7 @@ import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.VolunteerService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import com.sep490.g28.hvh.be.util.StringNormalizeUtil;
 import lombok.AccessLevel;
@@ -283,12 +284,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         try {
             CompletableFuture.allOf(f1, f2, f3).join();
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-            } else {
-                throw (RuntimeException) e.getCause(); // propagate, transaction fail
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
         identityVerification.setCidFront("");
         identityVerification.setCidBack("");
@@ -309,30 +305,23 @@ public class VolunteerServiceImpl implements VolunteerService {
         Page<VolunteerSimpleResponseForAdmin> page =
                 volunteerRepository.findVolunteersByAdmin(pageable, email);
 
-        //get avatar signed urls
-        List<CompletableFuture<VolunteerSimpleResponseForAdmin>> futures =
+        List<VolunteerSimpleResponseForAdmin> content =
                 page.getContent().stream()
-                        .map(v -> {
-                            if (v.getAvatarUrl() == null) {
-                                return CompletableFuture.completedFuture(v);
+                        .map(volunteer -> {
+                            if (volunteer.getAvatarUrl() == null) return volunteer;
+                            //get signed url for volunteer avatar
+                            String path = volunteer.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                volunteer.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                volunteer.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
                             }
-                            return storageService.getSignedUrlAsync(v.getAvatarUrl())
-                                    .thenApply(url -> {
-                                        v.setAvatarUrl(url);
-                                        return v;
-                                    })
-                                    //todo this might be put into some todos
-                                    .exceptionally(ex -> {
-                                        log.warn("Failed to get signed url for path: {}", v.getAvatarUrl(), ex);
-                                        v.setAvatarUrl(null);
-                                        return v;
-                                    });
+                            return volunteer;
                         })
                         .toList();
-
-        List<VolunteerSimpleResponseForAdmin> content =
-                futures.stream().map(CompletableFuture::join).toList();
-
         return new PageImpl<>(content, pageable, page.getTotalElements());
 
     }
@@ -357,8 +346,6 @@ public class VolunteerServiceImpl implements VolunteerService {
         Volunteer volunteer = volunteerRepository.findById(volunteerId)
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
-
-
         //get certificates of volunteer
         List<Certificate> certificateList = certificateRepository.findByVolunteerId(volunteerId);
 
@@ -380,6 +367,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         }
 
         List<String> certificatesUrls = new ArrayList<>();
+        //todo ủa sao lại là avatarFuture thees Kien oi
         try {
             if (avatarFuture != null) {
                 CompletableFuture.allOf(avatarFuture).join();
