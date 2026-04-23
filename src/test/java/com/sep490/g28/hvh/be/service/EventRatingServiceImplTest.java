@@ -7,6 +7,8 @@ import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventRating;
 import com.sep490.g28.hvh.be.entity.EventSession;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.RateAndReviewErrorCode;
 import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventRatingRepository;
 import com.sep490.g28.hvh.be.repository.EventRepository;
@@ -25,7 +27,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -85,8 +86,9 @@ public class EventRatingServiceImplTest {
         when(eventApplicationRepository.findById(request.getEventApplicationId()))
                 .thenReturn(Optional.empty());
 
-        assertThrows(AppException.class,
+        AppException ex = assertThrows(AppException.class,
                 () -> service.rateEvent(request));
+        assertThat(ex.getCode()).isEqualTo(EventErrorCode.EVENT_APPLICATION_NOT_EXISTED.getCode());
     }
 
     @Test
@@ -102,8 +104,9 @@ public class EventRatingServiceImplTest {
         when(eventApplicationRepository.findById(request.getEventApplicationId()))
                 .thenReturn(Optional.of(app));
 
-        assertThrows(AppException.class,
+        AppException ex = assertThrows(AppException.class,
                 () -> service.rateEvent(request));
+        assertThat(ex.getCode()).isEqualTo(RateAndReviewErrorCode.NOT_RECORDED_AS_PARTICIPANT.getCode());
     }
 
     @Test
@@ -120,8 +123,9 @@ public class EventRatingServiceImplTest {
         when(eventRatingRepository.findByEventApplication_Id(request.getEventApplicationId()))
                 .thenReturn(Optional.of(new EventRating()));
 
-        assertThrows(AppException.class,
+        AppException ex = assertThrows(AppException.class,
                 () -> service.rateEvent(request));
+        assertThat(ex.getCode()).isEqualTo(RateAndReviewErrorCode.ALREADY_RATED_EVENT.getCode());
     }
 
     @Test
@@ -140,8 +144,9 @@ public class EventRatingServiceImplTest {
         when(eventRatingRepository.findByEventApplication_Id(request.getEventApplicationId()))
                 .thenReturn(Optional.empty());
 
-        assertThrows(AppException.class,
+        AppException ex = assertThrows(AppException.class,
                 () -> service.rateEvent(request));
+        assertThat(ex.getCode()).isEqualTo(RateAndReviewErrorCode.RATE_EVENT_NOT_IN_ALLOWED_TIME.getCode());
     }
 
     @Test
