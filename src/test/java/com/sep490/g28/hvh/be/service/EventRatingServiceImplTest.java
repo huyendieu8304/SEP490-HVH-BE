@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -78,9 +79,10 @@ public class EventRatingServiceImplTest {
 
     // ===== rateEvent
     @Test
-    void rateEvent_application_not_found_should_throw() {
+    void rateEvent_applicationNotFound_shouldThrow() {
         RateEventRequest request = mockRateEventRequest();
-        when(eventApplicationRepository.findById(any()))
+
+        when(eventApplicationRepository.findById(request.getEventApplicationId()))
                 .thenReturn(Optional.empty());
 
         assertThrows(AppException.class,
@@ -88,133 +90,98 @@ public class EventRatingServiceImplTest {
     }
 
     @Test
-    void rateEvent_not_completed_should_throw() {
+    void rateEvent_notCompleted_shouldThrow() {
         RateEventRequest request = mockRateEventRequest();
-        EventSession session = new EventSession();
-        EventApplication application = mockEventApplication(session, request);
-        application.setStatus(EEventApplicationStatus.PENDING);
 
-        when(eventApplicationRepository.findById(any()))
-                .thenReturn(Optional.of(application));
+        Event event = mockEventForRating();
+        EventSession session = event.getSessions().get(0);
+
+        EventApplication app = mockEventApplication(session, request);
+        app.setStatus(EEventApplicationStatus.PENDING); // khác COMPLETED
+
+        when(eventApplicationRepository.findById(request.getEventApplicationId()))
+                .thenReturn(Optional.of(app));
 
         assertThrows(AppException.class,
                 () -> service.rateEvent(request));
     }
 
     @Test
-    void rateEvent_already_rated_should_throw() {
+    void rateEvent_alreadyRated_shouldThrow() {
         RateEventRequest request = mockRateEventRequest();
-        EventSession session = new EventSession();
-        EventApplication application = mockEventApplication(session, request);
-        when(eventApplicationRepository.findById(any()))
-                .thenReturn(Optional.of(application));
 
-        when(eventRatingRepository.findByEventApplication_Id(any()))
+        Event event = mockEventForRating();
+        EventSession session = event.getSessions().get(0);
+        EventApplication app = mockEventApplication(session, request);
+
+        when(eventApplicationRepository.findById(request.getEventApplicationId()))
+                .thenReturn(Optional.of(app));
+
+        when(eventRatingRepository.findByEventApplication_Id(request.getEventApplicationId()))
                 .thenReturn(Optional.of(new EventRating()));
 
         assertThrows(AppException.class,
                 () -> service.rateEvent(request));
     }
 
-//    @Test
-//    void rateEvent_before_event_end_should_throw() {
-//        Event event = mockEventForRating();
-//        RateEventRequest request = mockRateEventRequest();
-//        EventApplication application = mockEventApplication(event.getSessions().get(0), request);
-//        event.setEndDate(LocalDate.now().plusDays(1));
-//
-//        when(eventApplicationRepository.findById(any()))
-//                .thenReturn(Optional.of(application));
-//
-//        when(eventRatingRepository.findByEventApplication_Id(any()))
-//                .thenReturn(Optional.empty());
-//
-//        assertThrows(AppException.class,
-//                () -> service.rateEvent(request));
-//    }
-//
-//    @Test
-//    void rateEvent_after_7_days_should_throw() {
-//        Event event = mockEventForRating();
-//        RateEventRequest request = mockRateEventRequest();
-//        EventApplication application = mockEventApplication(event.getSessions().get(0), request);
-//
-//        event.setEndDate(LocalDate.now().minusDays(10));
-//
-//        when(eventApplicationRepository.findById(any()))
-//                .thenReturn(Optional.of(application));
-//
-//        when(eventRatingRepository.findByEventApplication_Id(any()))
-//                .thenReturn(Optional.empty());
-//
-//        assertThrows(AppException.class,
-//                () -> service.rateEvent(request));
-//    }
-//
-//    @Test
-//    void rateEvent_success() {
-//        Event event = mockEventForRating();
-//        RateEventRequest request = mockRateEventRequest();
-//        EventApplication application = mockEventApplication(event.getSessions().get(0), request);
-//
-//        when(eventApplicationRepository.findById(any()))
-//                .thenReturn(Optional.of(application));
-//
-//        when(eventRatingRepository.findByEventApplication_Id(any()))
-//                .thenReturn(Optional.empty());
-//
-//        when(eventRatingRepository.save(any()))
-//                .thenAnswer(inv -> {
-//                    EventRating r = inv.getArgument(0);
-//                    // giả lập avgRating của rating
-//                    r.setAvgRating((short) 4);
-//                    return r;
-//                });
-//
-//        service.rateEvent(request);
-//
-//        // verify save rating
-//        verify(eventRatingRepository).save(argThat(r ->
-//                r.getEventApplication() == application &&
-//                        r.getOrganizationQualityRating() == 4
-//        ));
-//
-//        // verify update event
-//        verify(eventRepository).save(argThat(e -> {
-//            // old: avg=4, count=2
-//            // new: (4*2 + 4) / 3 = 4
-//            return e.getRatingCount() == 3 &&
-//                    e.getAvgRating() == 4;
-//        }));
-//    }
-//
-//    @Test
-//    void rateEvent_recalculate_avg_correctly() {
-//        Event event = mockEventForRating();
-//        RateEventRequest request = mockRateEventRequest();
-//        EventApplication application = mockEventApplication(event.getSessions().get(0), request);
-//        event.setAvgRating((short) 5);
-//        event.setRatingCount(1L);
-//
-//        when(eventApplicationRepository.findById(any()))
-//                .thenReturn(Optional.of(application));
-//
-//        when(eventRatingRepository.findByEventApplication_Id(any()))
-//                .thenReturn(Optional.empty());
-//
-//        // rating mới = 3
-//        when(eventRatingRepository.save(any()))
-//                .thenAnswer(inv -> {
-//                    EventRating r = inv.getArgument(0);
-//                    r.setAvgRating((short) 3);
-//                    return r;
-//                });
-//
-//        service.rateEvent(request);
-//
-//        verify(eventRepository).save(argThat(e ->
-//                e.getRatingCount() == 2 &&
-//                        e.getAvgRating() == 4   // (5*1 + 3)/2 = 4
-//        ));
-//    }
+    @Test
+    void rateEvent_outOfAllowedTime_shouldThrow() {
+        RateEventRequest request = mockRateEventRequest();
+
+        Event event = mockEventForRating();
+        EventSession session = event.getSessions().get(0);
+
+        EventApplication app = mockEventApplication(session, request);
+        app.setSessionDate(LocalDate.now().minusDays(8)); // quá 7 ngày
+
+        when(eventApplicationRepository.findById(request.getEventApplicationId()))
+                .thenReturn(Optional.of(app));
+
+        when(eventRatingRepository.findByEventApplication_Id(request.getEventApplicationId()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.rateEvent(request));
+    }
+
+    @Test
+    void rateEvent_valid_shouldSaveRatingAndUpdateEvent() {
+        RateEventRequest request = mockRateEventRequest();
+
+        Event event = mockEventForRating(); // avg=4, count=2
+        EventSession session = event.getSessions().get(0);
+
+        EventApplication app = mockEventApplication(session, request);
+        app.setSessionDate(LocalDate.now());
+
+        when(eventApplicationRepository.findById(request.getEventApplicationId()))
+                .thenReturn(Optional.of(app));
+
+        when(eventRatingRepository.findByEventApplication_Id(request.getEventApplicationId()))
+                .thenReturn(Optional.empty());
+
+        // mock save rating (rating avg = 4)
+        EventRating savedRating = new EventRating();
+        savedRating.setOrganizationQualityRating((short)4);
+        savedRating.setProfessionalismRating((short)4);
+        savedRating.setWorkEnvironmentRating((short)4);
+        savedRating.setValueImpactRating((short)4);
+        savedRating.setSupportConnectionRating((short)4);
+        savedRating.setAvgRating((short)4);
+
+        when(eventRatingRepository.save(any())).thenReturn(savedRating);
+
+        service.rateEvent(request);
+
+        // verify save rating
+        verify(eventRatingRepository).save(any());
+
+        // verify event updated
+        verify(eventRepository).save(event);
+
+        // optional: verify logic tính toán
+        // newAvg = (4*2 + 4) / 3 = 4
+        assertThat(event.getAvgRating()).isEqualTo((short) 4);
+        assertThat(event.getRatingCount()).isEqualTo(3);
+    }
 }
