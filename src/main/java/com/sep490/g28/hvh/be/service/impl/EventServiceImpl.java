@@ -19,6 +19,7 @@ import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.*;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.GeoUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -124,19 +125,11 @@ public class EventServiceImpl implements EventService {
 
                                         List<EventImage> eventImageList = e.getImages();
 
-                                        CompletableFuture<String> firstEventImageFuture =
-                                                storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
-
                                         try {
-                                            CompletableFuture.allOf(firstEventImageFuture).join();
-                                            firstEventImageUrl = firstEventImageFuture.join();
+                                            firstEventImageUrl =
+                                                    storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath()).join();
                                         } catch (CompletionException ex) {
-                                            Throwable cause = ex.getCause();
-                                            if (cause instanceof AppException ae) {
-                                                //todo: handle app exception in viewEventFeeds
-                                            } else {
-                                                throw cause instanceof RuntimeException re ? re : ex;
-                                            }
+                                            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                                         }
                                     }
 
@@ -180,7 +173,6 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(request.getEventId()).orElseThrow(
                     () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
             );
-            //todo check host of event
             return editEvent(request, event, EEventStatus.EDITING);
         } else {
             return createEvent(request, EEventStatus.EDITING);
@@ -195,7 +187,6 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(request.getEventId()).orElseThrow(
                     () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
             );
-            //todo check host of event
             return editEvent(request, event, EEventStatus.SUBMITTED);
         } else {
             return createEvent(request, EEventStatus.SUBMITTED);
@@ -328,12 +319,7 @@ public class EventServiceImpl implements EventService {
             }
 
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
         String hostPhone = "";
@@ -393,7 +379,6 @@ public class EventServiceImpl implements EventService {
                 .build();
     }
 
-    //todo
     @Override
     public void saveEvent(SaveEventRequest request) {
 
@@ -897,19 +882,12 @@ public class EventServiceImpl implements EventService {
 
         List<String> imagesUrls = new ArrayList<>();
         try {
-
             CompletableFuture.allOf(imagesFutures.toArray(new CompletableFuture[0])).join();
             for (CompletableFuture<String> imageFuture : imagesFutures) {
                 imagesUrls.add(imageFuture.join());
             }
-
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
         UUID hostId = null;
@@ -1048,12 +1026,7 @@ public class EventServiceImpl implements EventService {
             }
 
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
 
@@ -1098,7 +1071,7 @@ public class EventServiceImpl implements EventService {
                                 es.getExpectedSerAmount(),
                                 es.getCheckInCode(),
                                 es.getApprovedApplicationCount()
-                        )).toList()).orElse(Collections.emptyList());;
+                        )).toList()).orElse(Collections.emptyList());
 
         if (!conflictSession.isEmpty()) {
             note.append(EventErrorCode.DUPLICATE_HOSTED_DATE.getMessage()).append("\n");
@@ -1184,12 +1157,7 @@ public class EventServiceImpl implements EventService {
                     CompletableFuture.allOf(firstEventImageFuture).join();
                     firstEventImageUrl = firstEventImageFuture.join();
                 } catch (CompletionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (cause instanceof AppException ae) {
-                        //todo: handle app exception in viewEventFeeds
-                    } else {
-                        throw cause instanceof RuntimeException re ? re : ex;
-                    }
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -1213,8 +1181,7 @@ public class EventServiceImpl implements EventService {
                 () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
         );
 
-        //todo check if event belongs to host
-
+        //todo cái note này có tác dụng gì v Kien? t thấy có khai báo, nhưng ko có set cho nó, nhưng lại có trả về
         StringBuilder note = new StringBuilder();
 
         //get regular information of event
@@ -1240,12 +1207,7 @@ public class EventServiceImpl implements EventService {
             }
 
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
         String activitySubDomainName = "";
@@ -1781,19 +1743,14 @@ public class EventServiceImpl implements EventService {
 
                 List<EventImage> eventImageList = e.getImages();
 
+                //todo đây là xử lí cho lấy nhiều file async nè, cái này nếu không có file tồn tại, nó sẽ ko làm gì cả
                 CompletableFuture<String> firstEventImageFuture =
                         storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
-
                 try {
                     CompletableFuture.allOf(firstEventImageFuture).join();
                     firstEventImageUrl = firstEventImageFuture.join();
                 } catch (CompletionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (cause instanceof AppException ae) {
-                        //todo: handle app exception in viewEventFeeds
-                    } else {
-                        throw cause instanceof RuntimeException re ? re : ex;
-                    }
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -1838,26 +1795,17 @@ public class EventServiceImpl implements EventService {
 
             //get signed URL of event images
             if (e.getImages() != null && !e.getImages().isEmpty()) {
-
+                //todo đây là async cho 1 file nè, cái này lúc xử lí exception ko cần trả về fallback vì Kien đã set null ở trên rồi
                 List<EventImage> eventImageList = e.getImages();
-
-                CompletableFuture<String> firstEventImageFuture =
-                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
-
                 try {
-                    CompletableFuture.allOf(firstEventImageFuture).join();
-                    firstEventImageUrl = firstEventImageFuture.join();
+                    firstEventImageUrl =
+                            storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath()).join();
                 } catch (CompletionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (cause instanceof AppException ae) {
-                        //todo: handle app exception in viewEventFeeds
-                    } else {
-                        throw cause instanceof RuntimeException re ? re : ex;
-                    }
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
-            return new EventSimpleResponse(
+        return new EventSimpleResponse(
                     e.getId(),
                     e.getOrganization().getName(),
                     e.getName(),
