@@ -18,6 +18,7 @@ import com.sep490.g28.hvh.be.repository.HostRepository;
 import com.sep490.g28.hvh.be.repository.OrganizationManagerRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.HostService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -88,7 +89,6 @@ public class HostServiceImpl implements HostService {
         );
     }
 
-    //todo unit test
     @Override
     public Page<HostSimpleResponseForManager> getHostsByManager(int pageNumber, int pageSize, String email) {
         Pageable pageable = PageRequest.of(
@@ -100,31 +100,26 @@ public class HostServiceImpl implements HostService {
         Page<HostSimpleResponseForManager> page =
                 hostRepository.getHostsByManager(currentUserProvider.getId(), pageable, email);
         //get avatar signed urls
-        List<CompletableFuture<HostSimpleResponseForManager>> futures =
+        List<HostSimpleResponseForManager> content =
                 page.getContent().stream()
-                        .map(h -> {
-                            if (h.getAvatarUrl() == null) {
-                                return CompletableFuture.completedFuture(h);
+                        .map(host -> {
+                            if (host.getAvatarUrl() == null) return host;
+                            //get signed url for volunteer avatar
+                            String path = host.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                host.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                host.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
                             }
-                            return storageService.getSignedUrlAsync(h.getAvatarUrl())
-                                    .thenApply(url -> {
-                                        h.setAvatarUrl(url);
-                                        return h;
-                                    })
-                                    //todo this might be put into some todos
-                                    .exceptionally(ex -> {
-                                        log.warn("Failed to get signed url for path: {}", h.getAvatarUrl(), ex);
-                                        h.setAvatarUrl(null);
-                                        return h;
-                                    });
+                            return host;
                         })
                         .toList();
-        List<HostSimpleResponseForManager> content =
-                futures.stream().map(CompletableFuture::join).toList();
         return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
-    //todo unit test
     @Override
     public HostInfoResponseForManager getHostInfoByManager(UUID hostId) {
 
@@ -141,12 +136,11 @@ public class HostServiceImpl implements HostService {
         response.setGender(host.getGender());
         response.setDob(host.getDob());
 
-        //todo sửa lại code chox nay
         try {
             String avatarUrl = storageService.getSignedUrl(host.getAvatarUrl());
             response.setAvatarUrl(avatarUrl);
-        } catch (AppException e) {
-            response.setAvatarUrl(null);
+        } catch (CompletionException e) {
+            response.setAvatarUrl(AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null));
         }
 
         response.setAddress(host.getAddress());
@@ -156,7 +150,6 @@ public class HostServiceImpl implements HostService {
         return response;
     }
 
-    //todo unit test
     @Override
     public Page<HostActivitiesResponseForManager> getHostActivitiesByManager(
             UUID hostId,

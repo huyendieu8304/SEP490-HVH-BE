@@ -294,7 +294,6 @@ public class VolunteerServiceImpl implements VolunteerService {
         identityVerificationRepository.save(identityVerification);
     }
 
-    //todo unit test
     @Override
     public Page<VolunteerSimpleResponseForAdmin> getVolunteersByAdmin(int pageNumber, int pageSize, String email) {
         Pageable pageable = PageRequest.of(
