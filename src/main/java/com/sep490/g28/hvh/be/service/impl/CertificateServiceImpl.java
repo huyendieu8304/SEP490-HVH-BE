@@ -19,6 +19,7 @@ import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.CertificateRepository;
 import com.sep490.g28.hvh.be.service.CertificateService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -42,6 +43,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 @Slf4j
 @Service
@@ -75,28 +77,26 @@ public class CertificateServiceImpl implements CertificateService {
                 eventName
         );
 
-        //get signed urls of certificates
-        List<CompletableFuture<VolunteerCertificateResponse>> futures =
+        List<VolunteerCertificateResponse> content =
                 page.getContent().stream()
                         .map(cert -> {
                             if (cert.getCertSignedUrl() == null){
-                                return CompletableFuture.completedFuture(cert);
+                                return cert;
                             }
-                            return storageService.getSignedUrlAsync(cert.getCertSignedUrl())
-                                    .thenApply(url -> {
-                                        cert.setCertSignedUrl(url);
-                                        return cert;
-                                    })
-                                    .exceptionally(ex -> {
-                                        log.warn("Failed to get signed url for path: {}", cert.getCertSignedUrl(), ex);
-                                        cert.setCertSignedUrl(null);
-                                        return cert;
-                                    });
+                            //get signed Url for certificate
+                            String path = cert.getCertSignedUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                cert.setCertSignedUrl(url);
+                            } catch (CompletionException e) {
+                                cert.setCertSignedUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
+                            }
+                            return cert;
 
                         }).toList();
-
-        List<VolunteerCertificateResponse> responses = futures.stream().map(CompletableFuture::join).toList();
-        return new PageImpl<>(responses, pageable, page.getTotalElements());
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
     @Override
