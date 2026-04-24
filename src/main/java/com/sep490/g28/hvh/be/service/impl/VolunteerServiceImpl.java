@@ -632,6 +632,8 @@ public class VolunteerServiceImpl implements VolunteerService {
         volunteer.setDeviceId(request.getDeviceId());
         volunteer.setUpdatedAt(OffsetDateTime.now());
 
+        volunteerRepository.save(volunteer);
+
         return UpdateVolunteerProfileResponse.builder()
                 .avatarUploadUrl(newAvatarUploadUrl)
                 .build();
