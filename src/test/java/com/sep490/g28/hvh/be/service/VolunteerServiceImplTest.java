@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
+import com.sep490.g28.hvh.be.dto.volunteer.request.CreateVolunteerAccountByAdminRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
@@ -667,6 +668,38 @@ public class VolunteerServiceImplTest {
                 .getVolunteerActivitiesByAdmin(any(Pageable.class), eq(volunteerId));
 
         assertThat(result).isEqualTo(page);
+    }
+    //======= createVolunteerAccountByAdmin =====================
+    @Test
+    void createVolunteerAccountByAdmin_success() {
+        CreateVolunteerAccountByAdminRequest request = new CreateVolunteerAccountByAdminRequest();
+        request.setEmail("test@gmail.com");
+        request.setCid("123456789");
+        request.setPhone("0123456789");
+        request.setFullName("nguyen van a");
+
+        UUID adminId = UUID.randomUUID();
+        UUID volunteerId = UUID.randomUUID();
+
+        SystemAdmin admin = new SystemAdmin();
+        admin.setId(adminId);
+
+        when(currentUserProvider.getId()).thenReturn(adminId);
+        when(systemAdminRepository.getReferenceById(adminId)).thenReturn(admin);
+
+        when(authClient.createAccount(any(), any(), any(), any()))
+                .thenReturn(volunteerId);
+
+        // mock unique check (không throw)
+        when(userRepository.existsByEmail(any())).thenReturn(false);
+        when(volunteerRepository.existsByCid(any())).thenReturn(false);
+        when(volunteerRepository.existsByPhone(any())).thenReturn(false);
+
+        volunteerService.createVolunteerAccountByAdmin(request);
+
+        verify(volunteerRepository).save(any(Volunteer.class));
+        verify(emailService).sendApproveRegisterVolAccountEmail(eq(request.getEmail()), any());
+
     }
 
 }
