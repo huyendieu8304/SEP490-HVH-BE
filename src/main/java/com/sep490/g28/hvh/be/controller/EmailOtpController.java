@@ -40,11 +40,11 @@ public class EmailOtpController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAnyRole('SYS_ADMIN', 'ORG_MANAGER','HOST','VOL')")
-    @PostMapping("/email-otp/verify-change-phone-number")
-    public ResponseEntity<String> sendVerifyChangePhoneNumberOtp() {
-        emailOtpService.sendVerifyChangePhoneNumberOtp();
-        return ResponseEntity.ok().build();
-    }
+//    @PreAuthorize("hasAnyRole('SYS_ADMIN', 'ORG_MANAGER','HOST','VOL')")
+//    @PostMapping("/email-otp/verify-change-phone-number")
+//    public ResponseEntity<String> sendVerifyChangePhoneNumberOtp() {
+//        emailOtpService.sendVerifyChangePhoneNumberOtp();
+//        return ResponseEntity.ok().build();
+//    }
 
 }

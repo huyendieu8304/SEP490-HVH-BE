@@ -63,12 +63,12 @@ public class EmailOtpServiceImpl implements EmailOtpService {
         emailService.sendVerifyForgotPasswordOtp(email, otp);
     }
 
-    @Override
-    public void sendVerifyChangePhoneNumberOtp() {
-
-        String userEmail = currentUserProvider.getEmail();
-
-        String otp = otpService.getVerifyChangePhoneNumberOtp(userEmail);
-        emailService.sendVerifyChangePhoneNumberOtp(userEmail, otp);
-    }
+//    @Override
+//    public void sendVerifyChangePhoneNumberOtp() {
+//
+//        String userEmail = currentUserProvider.getEmail();
+//
+//        String otp = otpService.getVerifyChangePhoneNumberOtp(userEmail);
+//        emailService.sendVerifyChangePhoneNumberOtp(userEmail, otp);
+//    }
 }

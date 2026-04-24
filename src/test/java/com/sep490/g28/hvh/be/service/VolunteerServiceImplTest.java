@@ -2,11 +2,10 @@ package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
+import com.sep490.g28.hvh.be.dto.volunteer.request.CreateVolunteerAccountByAdminRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
 import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.response.RegisterVolunteerAccountResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationDetailsResponse;
-import com.sep490.g28.hvh.be.dto.volunteer.response.VolunteerRegistrationSimpleResponse;
+import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.entity.IdentityVerification;
 import com.sep490.g28.hvh.be.entity.SystemAdmin;
 import com.sep490.g28.hvh.be.entity.Volunteer;
@@ -36,6 +35,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -147,6 +147,13 @@ public class VolunteerServiceImplTest {
         req.setRejectionReason("invalid info");
         return req;
     }
+
+    private VolunteerSimpleResponseForAdmin mockVolunteer(String avatarUrl) {
+        VolunteerSimpleResponseForAdmin v = new VolunteerSimpleResponseForAdmin();
+        v.setAvatarUrl(avatarUrl);
+        return v;
+    }
+
 
     // ==== registerVolAccount ===================================
     // ==== TC01
@@ -595,4 +602,104 @@ public class VolunteerServiceImplTest {
         assertThrows(RuntimeException.class,
                 () -> volunteerService.verifyVolRegistration(id, approveRequest()));
     }
+
+    // ======= getVolunteersByAdmin ================================
+    @Test
+    void getVolunteersByAdmin_avatarNull_shouldNotCallStorage() {
+        VolunteerSimpleResponseForAdmin v = mockVolunteer(null);
+
+        Page<VolunteerSimpleResponseForAdmin> page =
+                new PageImpl<>(List.of(v));
+
+        when(volunteerRepository.findVolunteersByAdmin(any(), any()))
+                .thenReturn(page);
+
+        var result = volunteerService.getVolunteersByAdmin(0, 10, null);
+
+        assertThat(result.getContent().get(0).getAvatarUrl()).isNull();
+        verify(storageService, never()).getSignedUrlAsync(any());
+    }
+
+    @Test
+    void getVolunteersByAdmin_avatarValid_shouldReplaceWithSignedUrl() {
+        VolunteerSimpleResponseForAdmin v = mockVolunteer("path");
+
+        Page<VolunteerSimpleResponseForAdmin> page =
+                new PageImpl<>(List.of(v));
+
+        when(volunteerRepository.findVolunteersByAdmin(any(), any()))
+                .thenReturn(page);
+
+        CompletableFuture<String> future =
+                CompletableFuture.completedFuture("signed-url");
+
+        when(storageService.getSignedUrlAsync("path"))
+                .thenReturn(future);
+
+        var result = volunteerService.getVolunteersByAdmin(0, 10, null);
+
+        assertThat(result.getContent().get(0).getAvatarUrl())
+                .isEqualTo("signed-url");
+    }
+
+    // ================= getVolunteerActivitiesByAdmin =================
+    @Test
+    void getVolunteerActivitiesByAdmin_shouldReturnRepositoryResult() {
+        UUID volunteerId = UUID.randomUUID();
+
+        VolunteerActivitiesResponseForAdmin response =
+                new VolunteerActivitiesResponseForAdmin();
+
+        Page<VolunteerActivitiesResponseForAdmin> page =
+                new PageImpl<>(List.of(response));
+
+        when(volunteerRepository.getVolunteerActivitiesByAdmin(
+                any(Pageable.class),
+                eq(volunteerId)
+        )).thenReturn(page);
+
+        var result = volunteerService.getVolunteerActivitiesByAdmin(
+                volunteerId,
+                0,
+                10
+        );
+
+        verify(volunteerRepository)
+                .getVolunteerActivitiesByAdmin(any(Pageable.class), eq(volunteerId));
+
+        assertThat(result).isEqualTo(page);
+    }
+    //======= createVolunteerAccountByAdmin =====================
+    @Test
+    void createVolunteerAccountByAdmin_success() {
+        CreateVolunteerAccountByAdminRequest request = new CreateVolunteerAccountByAdminRequest();
+        request.setEmail("test@gmail.com");
+        request.setCid("123456789");
+        request.setPhone("0123456789");
+        request.setFullName("nguyen van a");
+
+        UUID adminId = UUID.randomUUID();
+        UUID volunteerId = UUID.randomUUID();
+
+        SystemAdmin admin = new SystemAdmin();
+        admin.setId(adminId);
+
+        when(currentUserProvider.getId()).thenReturn(adminId);
+        when(systemAdminRepository.getReferenceById(adminId)).thenReturn(admin);
+
+        when(authClient.createAccount(any(), any(), any(), any()))
+                .thenReturn(volunteerId);
+
+        // mock unique check (không throw)
+        when(userRepository.existsByEmail(any())).thenReturn(false);
+        when(volunteerRepository.existsByCid(any())).thenReturn(false);
+        when(volunteerRepository.existsByPhone(any())).thenReturn(false);
+
+        volunteerService.createVolunteerAccountByAdmin(request);
+
+        verify(volunteerRepository).save(any(Volunteer.class));
+        verify(emailService).sendApproveRegisterVolAccountEmail(eq(request.getEmail()), any());
+
+    }
+
 }

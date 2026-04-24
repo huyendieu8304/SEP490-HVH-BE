@@ -1,9 +1,6 @@
 package com.sep490.g28.hvh.be.service;
 
-import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileBySystemAdminRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +29,8 @@ public interface VolunteerService {
     UpdateVolunteerProfileResponse updateVolunteerProfile(UpdateVolunteerProfileRequest request);
 
     UpdateVolunteerProfileResponse updateVolunteerProfileBySystemAdmin(UUID volunteerId, UpdateVolunteerProfileBySystemAdminRequest request);
+
+    void createVolunteerAccountByAdmin(CreateVolunteerAccountByAdminRequest request);
 
     VolunteerAccountInformationResponse getVolunteerAccountInformationByAdmin(UUID volunteerId);
 }

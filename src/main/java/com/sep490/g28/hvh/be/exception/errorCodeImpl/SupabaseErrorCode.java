@@ -17,7 +17,7 @@ public enum SupabaseErrorCode implements ErrorCode {
     VALIDATION_FAIL(9001, "Data gửi cho supabase sai, kiểm tra lại log và code", HttpStatus.INTERNAL_SERVER_ERROR),
     UNAUTHORIZED(9002, "Service role để gửi request tới supabse sai, kiểm tra lại api secret key", HttpStatus.INTERNAL_SERVER_ERROR),
     RATE_LIMIT_EXCEEDED(9003, "Vuợt quá rate limit gửi request tới supabase", HttpStatus.INTERNAL_SERVER_ERROR),
-    INTERNAL_SERVER_ERROR(9004, "Supabase sập", HttpStatus.INTERNAL_SERVER_ERROR),
+    INTERNAL_SERVER_ERROR(9004, "Supabase has internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
     UNAUTHENTICATED(9005, "Supabase không xác thực được request", HttpStatus.INTERNAL_SERVER_ERROR),
     STORAGE_UPLOAD_FAIL(9006, "Lỗi xảy ra khi upload file lên Storage", HttpStatus.INTERNAL_SERVER_ERROR),
     STORAGE_FILE_NOT_EXISTED(9007, "File không tồn tại trên hệ thống lưu trữ", HttpStatus.BAD_REQUEST),

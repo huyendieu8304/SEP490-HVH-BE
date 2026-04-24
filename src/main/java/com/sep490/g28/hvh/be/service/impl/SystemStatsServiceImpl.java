@@ -74,14 +74,14 @@ public class SystemStatsServiceImpl implements SystemStatsService {
 
         //count organization verified yesterday
         int countNewOrganization = organizationRepository.countCreatedBetween(start, end);
-        systemStats.setVerifiedVolunteers(systemStats.getVerifiedOrganizations() + countNewOrganization);
+        systemStats.setVerifiedOrganizations(systemStats.getVerifiedOrganizations() + countNewOrganization);
 
         //get
 
         systemStatsRepository.save(systemStats);
     }
 
-    //todo remove this
+    //todo remove this after finish mock data
     @Override
     public void compileSystemStatsMonthly(int year, int month) {
 //        //re compile verified volunteers, verifiedOrganization, counteventindomain
