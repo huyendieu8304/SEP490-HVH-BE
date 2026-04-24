@@ -30,24 +30,19 @@ public class UpdateHostProfileBySystemAdminRequest {
     @Pattern(regexp = "^\\d{12}$", message = "INVALID_CID")
     String cid;
 
-    @Pattern(regexp = "^[A-ZÀ-Ỹ][a-zà-ỹ]*(?:\\s[A-ZÀ-Ỹ][a-zà-ỹ]*)*$", message = "INVALID_FULL_NAME")
     @Length(max = 100, message = "INVALID_FULL_NAME")
     String fullName;
 
-    @RequiredField(fieldName = "Giới tính")
     boolean gender;
 
-    @RequiredField(fieldName = "Ngày sinh")
     LocalDate dob;
 
     @ImageFileExtension(fieldName = "Ảnh đại diện tình nguyện viên")
     String avatarExtension;
 
-    @RequiredField(fieldName = "Địa chỉ")
     @Length(max = 50, message = "INVALID_STRING_LENGTH")
     String address;
 
-    @RequiredField(fieldName = "Địa chỉ chi tiết")
     @Length(max = 100, message = "INVALID_STRING_LENGTH")
     String detailAddress;
 }
