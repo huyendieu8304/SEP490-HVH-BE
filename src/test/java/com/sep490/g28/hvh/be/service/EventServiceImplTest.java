@@ -1172,4 +1172,123 @@ public class EventServiceImplTest {
         assertTrue(result.isEmpty());
     }
 
+    // ==== getSavedEventsByVolunteer ===================================
+    // ===== TC1 =====
+    @Test
+    void getSavedEventsByVolunteer_success() {
+
+        UUID volunteerId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventImage image = new EventImage();
+        image.setImagePath("img-path");
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("Event 1");
+        event.setAddress("addr");
+        event.setStartDate(LocalDate.now());
+        event.setRecruitmentEndDate(LocalDate.now());
+        event.setImages(List.of(image));
+
+        Organization org = new Organization();
+        org.setName("Org");
+        event.setOrganization(org);
+
+        Page<Event> page = new PageImpl<>(List.of(event));
+
+        when(volunteerSavedEventRepository
+                .findAllSavedEventsByVolunteerId(any(), any(), any()))
+                .thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("img-path"))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        Page<EventSimpleResponse> res =
+                eventService.getSavedEventsByVolunteer(0, 10, null);
+
+        assertEquals(1, res.getContent().size());
+        assertEquals("signed-url", res.getContent().getFirst().getImageUrl());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getSavedEventsByVolunteer_empty() {
+
+        UUID volunteerId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Page<Event> page = new PageImpl<>(Collections.emptyList());
+
+        when(volunteerSavedEventRepository
+                .findAllSavedEventsByVolunteerId(any(), any(), any()))
+                .thenReturn(page);
+
+        Page<EventSimpleResponse> res =
+                eventService.getSavedEventsByVolunteer(0, 10, null);
+
+        assertTrue(res.getContent().isEmpty());
+    }
+
+    // ==== getHostedEventsOfOrganization ===================================
+    // ===== TC1 =====
+    @Test
+    void getHostedEventsOfOrganization_success() {
+
+        UUID orgId = UUID.randomUUID();
+
+        EventImage img = new EventImage();
+        img.setImagePath("img-path");
+
+        Organization org = new Organization();
+        org.setName("Org");
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("Event 1");
+        event.setAddress("addr");
+        event.setStartDate(LocalDate.now());
+        event.setRecruitmentEndDate(LocalDate.now());
+        event.setImages(List.of(img));
+        event.setOrganization(org);
+
+        Page<Event> page = new PageImpl<>(List.of(event));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                any(),
+                any(),
+                any()
+        )).thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("img-path"))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        Page<EventSimpleResponse> res =
+                eventService.getHostedEventsOfOrganization(0, 10, orgId, null);
+
+        assertEquals(1, res.getContent().size());
+        assertEquals("signed-url", res.getContent().getFirst().getImageUrl());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getHostedEventsOfOrganization_empty() {
+
+        UUID orgId = UUID.randomUUID();
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                any(),
+                any(),
+                any()
+        )).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        Page<EventSimpleResponse> res =
+                eventService.getHostedEventsOfOrganization(0, 10, orgId, null);
+
+        assertTrue(res.getContent().isEmpty());
+    }
 }
