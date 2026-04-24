@@ -1,9 +1,6 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileBySystemAdminRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.service.VolunteerService;
 import com.sep490.g28.hvh.be.validation.VolunteerVerificationStatus;
@@ -157,5 +154,14 @@ public class VolunteerController {
             UpdateVolunteerProfileBySystemAdminRequest request
     ) {
         return ResponseEntity.ok(volunteerService.updateVolunteerProfileBySystemAdmin(id, request));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PostMapping("/sys-admin/volunteers")
+    public ResponseEntity<String> createVolunteerAccountByAdmin(
+            @RequestBody @Valid CreateVolunteerAccountByAdminRequest request
+    ) {
+        volunteerService.createVolunteerAccountByAdmin(request);
+        return ResponseEntity.ok().build();
     }
 }

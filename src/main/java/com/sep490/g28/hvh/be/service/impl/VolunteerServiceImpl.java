@@ -2,10 +2,7 @@ package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.*;
-import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileBySystemAdminRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.UpdateVolunteerProfileRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -639,6 +636,41 @@ public class VolunteerServiceImpl implements VolunteerService {
         return UpdateVolunteerProfileResponse.builder()
                 .avatarUploadUrl(newAvatarUploadUrl)
                 .build();
+    }
+
+    @Override
+    public void createVolunteerAccountByAdmin(CreateVolunteerAccountByAdminRequest request) {
+        checkUniqueEmailCidPhone(request.getEmail(), request.getCid(), request.getPhone());
+
+        //get the current admin who make the request
+        SystemAdmin currentAdmin = systemAdminRepository.getReferenceById(currentUserProvider.getId());
+
+        //Create account in auth server
+        String defaultPassword = RandomStringUtil.random8AlphaNumeric();
+        UUID volunteerId = authClient.createAccount(
+                ERole.VOL,
+                request.getEmail(),
+                defaultPassword,
+                request.getPhone()
+        );
+
+        //create volunteer in the db
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setVid(UUID.randomUUID());
+        volunteer.setCid(request.getCid());
+        volunteer.setEmail(request.getEmail());
+        volunteer.setPhone(request.getPhone());
+        if (request.getFullName() != null ) {
+            volunteer.setFullName(normalizeVietnameseName(request.getFullName()));
+        }
+        volunteer.setCreatedBy(currentAdmin);
+
+        volunteerRepository.save(volunteer);
+
+        //send mail to the volunteer
+        emailService.sendApproveRegisterVolAccountEmail(request.getEmail(), defaultPassword);
+        log.info("Admin with id={}, create volunteer account id={}", currentUserProvider.getId(), volunteerId);
     }
 
     //convert name to valid username
