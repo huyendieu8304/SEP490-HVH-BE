@@ -158,4 +158,12 @@ public class VolunteerController {
     ) {
         return ResponseEntity.ok(volunteerService.updateVolunteerProfileBySystemAdmin(id, request));
     }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PutMapping("/sys-admin/volunteers/{id}")
+    public ResponseEntity<VolunteerAccountInformationResponse> getVolunteerAccountInformationByAdmin(
+            @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(volunteerService.getVolunteerAccountInformationByAdmin(id));
+    }
 }
