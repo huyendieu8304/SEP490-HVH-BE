@@ -13,8 +13,10 @@ import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCode
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
+import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.SupabaseErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventApplicationServiceImpl;
@@ -2091,5 +2093,52 @@ public class EventApplicationServiceImplTest {
             assertThrows(AppException.class,
                     () -> service.checkOutEvent(request));
         }
+    }
+
+
+    //====== getActualParticipants ==========================
+    @Test
+    void getActualParticipants_mixedCases_shouldHandleCorrectly() {
+
+        ActualParticipantResponse p1 = new ActualParticipantResponse(); // success
+        p1.setAvatarUrl("path1");
+
+        ActualParticipantResponse p2 = new ActualParticipantResponse(); // null
+        p2.setAvatarUrl(null);
+
+        ActualParticipantResponse p3 = new ActualParticipantResponse(); // fail
+        p3.setAvatarUrl("path2");
+
+        when(eventApplicationRepository.findCheckedInVolunteer(eq(sessionId), any()))
+                .thenReturn(new PageImpl<>(List.of(p1, p2, p3)));
+
+        when(storageService.getSignedUrlAsync("path1"))
+                .thenReturn(CompletableFuture.completedFuture("signed1"));
+
+        CompletableFuture<String> failed = new CompletableFuture<>();
+        failed.completeExceptionally(new AppException(SupabaseErrorCode.STORAGE_FILE_NOT_EXISTED));
+
+        when(storageService.getSignedUrlAsync("path2")).thenReturn(failed);
+
+        Page<ActualParticipantResponse> result =
+                service.getActualParticipants(sessionId, 0, 10);
+
+        List<ActualParticipantResponse> content = result.getContent();
+
+        assertEquals("signed1", content.get(0).getAvatarUrl());
+        assertNull(content.get(1).getAvatarUrl());
+        assertNull(content.get(2).getAvatarUrl());
+    }
+
+    @Test
+    void getActualParticipants_emptyPage_shouldReturnEmpty() {
+
+        when(eventApplicationRepository.findCheckedInVolunteer(eq(sessionId), any()))
+                .thenReturn(Page.empty());
+
+        Page<ActualParticipantResponse> result =
+                service.getActualParticipants(sessionId, 0, 10);
+
+        assertTrue(result.getContent().isEmpty());
     }
 }

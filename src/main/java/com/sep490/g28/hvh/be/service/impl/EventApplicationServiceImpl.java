@@ -22,6 +22,7 @@ import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
 import com.sep490.g28.hvh.be.service.NotificationService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.GeoUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -694,26 +695,23 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Page<ActualParticipantResponse> page = eventApplicationRepository.findCheckedInVolunteer(sessionId, pageable);
 
         //get avatar signed urls
-        List<CompletableFuture<ActualParticipantResponse>> futures =
-                page.getContent().stream()
-                .map(response -> {
-                    if (response.getAvatarUrl() == null) {
-                        return CompletableFuture.completedFuture(response);
-                    }
-                    return storageService.getSignedUrlAsync(response.getAvatarUrl())
-                            .thenApply(url -> {
-                                response.setAvatarUrl(url);
-                                return response;
-                            })
-                            .exceptionally(ex -> {
-                                log.warn("Failed to get signed url for path: {}", response.getAvatarUrl(), ex);
-                                response.setAvatarUrl(null);
-                                return response;
-                            });
-                })
-                .toList();
         List<ActualParticipantResponse> content =
-                futures.stream().map(CompletableFuture::join).toList();
+                page.getContent().stream()
+                        .map(participantResponse -> {
+                            if (participantResponse.getAvatarUrl() == null) return participantResponse;
+                            //get signed url for volunteer avatar
+                            String path = participantResponse.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                participantResponse.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                participantResponse.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
+                            }
+                            return participantResponse;
+                        })
+                        .toList();
         return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
