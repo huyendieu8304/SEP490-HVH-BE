@@ -166,7 +166,7 @@ public class VolunteerController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @PutMapping("/sys-admin/volunteers/{id}")
+    @GetMapping("/sys-admin/volunteers/{id}")
     public ResponseEntity<VolunteerAccountInformationResponse> getVolunteerAccountInformationByAdmin(
             @PathVariable UUID id
     ) {
