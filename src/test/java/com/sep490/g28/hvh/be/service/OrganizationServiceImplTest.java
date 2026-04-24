@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EOrgRegistrationStatus;
 import com.sep490.g28.hvh.be.constant.EOrgType;
+import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.*;
@@ -25,9 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -829,5 +828,115 @@ public class OrganizationServiceImplTest {
         assertEquals(3, response.getTotalHonorHours());
         assertNull(response.getAvatarImageUrl());
         assertNull(response.getCoverImageUrl());
+    }
+
+    // ===== getOrganizationsBySystemAdmin ============================================
+    // ===== TC1 =====
+    @Test
+    void getOrganizationsBySystemAdmin_withoutOrgTypes_success() {
+
+        int pageNumber = 0;
+        int pageSize = 10;
+        String name = "Org";
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        UUID orgId = UUID.randomUUID();
+
+        Organization org = new Organization();
+        org.setId(orgId);
+        org.setName("Org A");
+        org.setOrgType(EOrgType.SOCIAL_ORGANIZATION);
+        org.setHostedEventCount(5);
+        org.setCreditHour(100);
+        org.setAvgRating((short) 4);
+        org.setStatus(EOrganizationStatus.ACTIVE);
+
+        Event event1 = new Event();
+        ActivitySubDomain sub1 = new ActivitySubDomain();
+        sub1.setName("Education");
+        event1.setActivitySubDomain(sub1);
+
+        Event event2 = new Event();
+        ActivitySubDomain sub2 = new ActivitySubDomain();
+        sub2.setName("Health");
+        event2.setActivitySubDomain(sub2);
+
+        List<Event> events = List.of(event1, event2);
+
+        Page<Organization> page = new PageImpl<>(List.of(org), pageable, 1);
+
+        when(organizationRepository.searchByAdminWithoutOrgType(name, pageable))
+                .thenReturn(page);
+
+        when(eventRepository.findAllByOrganizationId(orgId))
+                .thenReturn(events);
+
+        Page<OrganizationSimpleResponseForSystemAdmin> result =
+                organizationService.getOrganizationsBySystemAdmin(pageNumber, pageSize, name, null);
+
+        assertEquals(1, result.getContent().size());
+
+        OrganizationSimpleResponseForSystemAdmin res = result.getContent().getFirst();
+
+        assertEquals(orgId, res.getId());
+        assertEquals("Org A", res.getName());
+        assertEquals(EOrgType.SOCIAL_ORGANIZATION, res.getOrgType());
+        assertEquals(5, res.getHostedEventCount());
+
+        assertTrue(res.getActivitySubDomains().contains("Education"));
+        assertTrue(res.getActivitySubDomains().contains("Health"));
+
+        verify(organizationRepository).searchByAdminWithoutOrgType(name, pageable);
+        verify(eventRepository).findAllByOrganizationId(orgId);
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getOrganizationsBySystemAdmin_withOrgTypes_success() {
+
+        int pageNumber = 0;
+        int pageSize = 10;
+        String name = "Org";
+
+        List<String> orgTypes = List.of("SOCIAL_ORGANIZATION", "GOVERNMENT_AGENCY_BASED");
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        UUID orgId = UUID.randomUUID();
+
+        Organization org = new Organization();
+        org.setId(orgId);
+        org.setName("Org B");
+        org.setOrgType(EOrgType.SOCIAL_ORGANIZATION);
+        org.setHostedEventCount(3);
+        org.setCreditHour(50);
+        org.setAvgRating((short) 4);
+        org.setStatus(EOrganizationStatus.ACTIVE);
+
+        Event event = new Event();
+        ActivitySubDomain sub = new ActivitySubDomain();
+        sub.setName("Environment");
+        event.setActivitySubDomain(sub);
+
+        Page<Organization> page = new PageImpl<>(List.of(org), pageable, 1);
+
+        when(organizationRepository.searchByAdmin(name, orgTypes, pageable))
+                .thenReturn(page);
+
+        when(eventRepository.findAllByOrganizationId(orgId))
+                .thenReturn(List.of(event));
+
+        Page<OrganizationSimpleResponseForSystemAdmin> result =
+                organizationService.getOrganizationsBySystemAdmin(pageNumber, pageSize, name, orgTypes);
+
+        assertEquals(1, result.getContent().size());
+
+        OrganizationSimpleResponseForSystemAdmin res = result.getContent().get(0);
+
+        assertEquals("Environment", res.getActivitySubDomains().iterator().next());
+
+        verify(organizationRepository).searchByAdmin(name, orgTypes, pageable);
+        verify(eventRepository).findAllByOrganizationId(orgId);
     }
 }
