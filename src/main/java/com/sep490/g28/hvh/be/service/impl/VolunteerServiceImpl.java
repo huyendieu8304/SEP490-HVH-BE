@@ -550,7 +550,6 @@ public class VolunteerServiceImpl implements VolunteerService {
         volunteer.setWorkAddress(request.getWorkAddress());
         volunteer.setEducationLevel(educationLevel);
         volunteer.setSid(request.getSid());
-        volunteer.setDeviceId(request.getDeviceId());
         volunteer.setUpdatedAt(OffsetDateTime.now());
 
         volunteerRepository.save(volunteer);

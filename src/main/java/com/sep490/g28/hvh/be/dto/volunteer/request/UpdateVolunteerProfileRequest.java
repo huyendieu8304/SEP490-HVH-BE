@@ -51,6 +51,4 @@ public class UpdateVolunteerProfileRequest {
 
     @Length(max = 50, message = "INVALID_STRING_LENGTH")
     String sid;
-
-    String deviceId;
 }
