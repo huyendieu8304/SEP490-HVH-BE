@@ -750,7 +750,7 @@ public class NotificationServiceImpl implements NotificationService {
         ));
         notiNewHost.setType(ENotificationType.HOST_EVENT_ASSIGNED);
 
-        notiNewHost = saveNotificationForUser(notiNewHost, oldHostId);
+        notiNewHost = saveNotificationForUser(notiNewHost, newHostId);
 
         notificationPublisher.enqueueNotification(notiOldHost, oldHostId);
         notificationPublisher.enqueueNotification(notiNewHost, newHostId);

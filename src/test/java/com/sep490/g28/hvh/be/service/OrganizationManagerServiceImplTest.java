@@ -4,7 +4,6 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.dto.orgmanager.request.UpdateOrgManagerProfileRequest;
 import com.sep490.g28.hvh.be.dto.orgmanager.response.OrgManagerAccountInformationResponse;
 import com.sep490.g28.hvh.be.dto.orgmanager.response.UpdateOrgManagerProfileResponse;
-import com.sep490.g28.hvh.be.entity.Organization;
 import com.sep490.g28.hvh.be.entity.OrganizationManager;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
