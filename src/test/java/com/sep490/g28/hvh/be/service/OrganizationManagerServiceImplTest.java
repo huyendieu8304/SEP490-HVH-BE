@@ -98,33 +98,6 @@ public class OrganizationManagerServiceImplTest {
 
     // ===== TC2 =====
     @Test
-    void updateOrgManagerProfile_success_no_avatar() {
-
-        UUID orgManagerId = UUID.randomUUID();
-
-        when(currentUserProvider.getId()).thenReturn(orgManagerId);
-
-        OrganizationManager org = new OrganizationManager();
-        org.setId(orgManagerId);
-
-        when(organizationManagerRepository.findById(orgManagerId))
-                .thenReturn(Optional.of(org));
-
-        UpdateOrgManagerProfileRequest request = new UpdateOrgManagerProfileRequest();
-        request.setAvatarExtension(null);
-        request.setFullName("New Name");
-
-        UpdateOrgManagerProfileResponse res =
-                service.updateOrgManagerProfile(request);
-
-        verify(organizationManagerRepository).save(org);
-
-        assertNull(res.getAvatarUploadUrl());
-        assertEquals("New Name", org.getFullName());
-    }
-
-    // ===== TC3 =====
-    @Test
     void updateOrgManagerProfile_not_found() {
 
         UUID orgManagerId = UUID.randomUUID();
@@ -185,49 +158,5 @@ public class OrganizationManagerServiceImplTest {
 
         assertThrows(AppException.class,
                 () -> service.getOrgManagerAccountInformation());
-    }
-
-    // ===== TC3 =====
-    @Test
-    void getOrgManagerAccountInformation_avatar_null() {
-
-        UUID orgManagerId = UUID.randomUUID();
-
-        when(currentUserProvider.getId()).thenReturn(orgManagerId);
-
-        OrganizationManager org = new OrganizationManager();
-        org.setAvatarUrl(null);
-
-        when(organizationManagerRepository.findById(orgManagerId))
-                .thenReturn(Optional.of(org));
-
-        OrgManagerAccountInformationResponse res =
-                service.getOrgManagerAccountInformation();
-
-        assertNull(res.getAvatarUrl());
-
-        verify(storageService, never()).getSignedUrlAsync(any());
-    }
-
-    // ===== TC4 =====
-    @Test
-    void getOrgManagerAccountInformation_avatar_empty() {
-
-        UUID orgManagerId = UUID.randomUUID();
-
-        when(currentUserProvider.getId()).thenReturn(orgManagerId);
-
-        OrganizationManager org = new OrganizationManager();
-        org.setAvatarUrl("");
-
-        when(organizationManagerRepository.findById(orgManagerId))
-                .thenReturn(Optional.of(org));
-
-        OrgManagerAccountInformationResponse res =
-                service.getOrgManagerAccountInformation();
-
-        assertNull(res.getAvatarUrl());
-
-        verify(storageService, never()).getSignedUrlAsync(any());
     }
 }

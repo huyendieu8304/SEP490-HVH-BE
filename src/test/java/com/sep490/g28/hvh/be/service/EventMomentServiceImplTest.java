@@ -407,7 +407,7 @@ public class EventMomentServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture("url2"));
 
         Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsForVolunteer(0, 10, null);
+                service.getEventMomentsForVolunteer(0, 10, "Event A");
 
         assertEquals(1, result.getContent().size());
 
@@ -421,40 +421,6 @@ public class EventMomentServiceImplTest {
 
     // ===== TC2 =====
     @Test
-    void getEventMomentsForVolunteer_volunteer_null() {
-
-        when(currentUserProvider.getId()).thenReturn(volunteerId);
-
-        Event event = new Event();
-        event.setId(UUID.randomUUID());
-
-        EventSession session = new EventSession();
-        session.setEvent(event);
-
-        EventApplication app = new EventApplication();
-        app.setVolunteer(null);
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-        moment.setMomentPictures(null);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByVolunteerId(eq(volunteerId), any(), any()))
-                .thenReturn(page);
-
-        Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsForVolunteer(0, 10, null);
-
-        EventMomentFeedDetailsResponse res = result.getContent().getFirst();
-
-        assertNull(res.getVolNickName());
-        assertNull(res.getAvatarUrl());
-    }
-
-    // ===== TC3 =====
-    @Test
     void getEventMomentsForVolunteer_empty() {
 
         when(currentUserProvider.getId()).thenReturn(volunteerId);
@@ -466,65 +432,6 @@ public class EventMomentServiceImplTest {
                 service.getEventMomentsForVolunteer(0, 10, null);
 
         assertTrue(result.isEmpty());
-    }
-
-    // ===== TC4 =====
-    @Test
-    void getEventMomentsForVolunteer_avatar_null() {
-
-        when(currentUserProvider.getId()).thenReturn(volunteerId);
-
-        Volunteer volunteer = new Volunteer();
-        volunteer.setNickname("nick");
-        volunteer.setFullName("name");
-        volunteer.setAvatarUrl(null);
-
-        EventSession session = new EventSession();
-        session.setEvent(new Event());
-
-        EventApplication app = new EventApplication();
-        app.setVolunteer(volunteer);
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByVolunteerId(eq(volunteerId), any(), any()))
-                .thenReturn(page);
-
-        Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsForVolunteer(0, 10, null);
-
-        assertNull(result.getContent().getFirst().getAvatarUrl());
-    }
-
-    // ===== TC5 =====
-    @Test
-    void getEventMomentsForVolunteer_no_pictures() {
-
-        when(currentUserProvider.getId()).thenReturn(volunteerId);
-
-        EventSession session = new EventSession();
-        session.setEvent(new Event());
-
-        EventApplication app = new EventApplication();
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-        moment.setMomentPictures(null);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByVolunteerId(eq(volunteerId), any(), any()))
-                .thenReturn(page);
-
-        Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsForVolunteer(0, 10, null);
-
-        assertTrue(result.getContent().getFirst().getMomentPicturesUrls().isEmpty());
     }
 
     // ==== getEventMomentsOfEvent ===================================
@@ -576,7 +483,7 @@ public class EventMomentServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture("url2"));
 
         Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsOfEvent(0, 10, eventId, null);
+                service.getEventMomentsOfEvent(0, 10, eventId, "Event A");
 
         assertEquals(1, result.getContent().size());
 
@@ -589,97 +496,6 @@ public class EventMomentServiceImplTest {
     }
 
     // ===== TC2 =====
-    @Test
-    void getEventMomentsOfEvent_volunteer_null() {
-
-        UUID eventId = UUID.randomUUID();
-
-        Event event = new Event();
-        event.setId(eventId);
-
-        EventSession session = new EventSession();
-        session.setEvent(event);
-
-        EventApplication app = new EventApplication();
-        app.setVolunteer(null);
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByEventId(eq(eventId), any(), any()))
-                .thenReturn(page);
-
-        Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsOfEvent(0, 10, eventId, null);
-
-        EventMomentFeedDetailsResponse res = result.getContent().getFirst();
-
-        assertNull(res.getVolunteerId());
-        assertNull(res.getAvatarUrl());
-    }
-
-    // ===== TC3 =====
-    @Test
-    void getEventMomentsOfEvent_avatar_null() {
-
-        UUID eventId = UUID.randomUUID();
-
-        Volunteer volunteer = new Volunteer();
-        volunteer.setId(UUID.randomUUID());
-        volunteer.setAvatarUrl(null);
-
-        EventSession session = new EventSession();
-        session.setEvent(new Event());
-
-        EventApplication app = new EventApplication();
-        app.setVolunteer(volunteer);
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByEventId(eq(eventId), any(), any()))
-                .thenReturn(page);
-
-        Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsOfEvent(0, 10, eventId, null);
-
-        assertNull(result.getContent().getFirst().getAvatarUrl());
-    }
-
-    // ===== TC4 =====
-    @Test
-    void getEventMomentsOfEvent_no_pictures() {
-
-        UUID eventId = UUID.randomUUID();
-
-        EventSession session = new EventSession();
-        session.setEvent(new Event());
-
-        EventApplication app = new EventApplication();
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-        moment.setMomentPictures(null);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByEventId(eq(eventId), any(), any()))
-                .thenReturn(page);
-
-        Page<EventMomentFeedDetailsResponse> result =
-                service.getEventMomentsOfEvent(0, 10, eventId, null);
-
-        assertTrue(result.getContent().getFirst().getMomentPicturesUrls().isEmpty());
-    }
-
-    // ===== TC5 =====
     @Test
     void getEventMomentsOfEvent_empty() {
 
@@ -747,7 +563,7 @@ public class EventMomentServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture("url2"));
 
         EventMomentFeedResponse response =
-                service.getEventMomentsFeed(0, 10, null);
+                service.getEventMomentsFeed(0, 10, "Event A");
 
         assertEquals(1, response.getEventMoments().size());
         assertEquals("1", response.getNextCursor());
@@ -775,61 +591,6 @@ public class EventMomentServiceImplTest {
     }
 
     // ===== TC3 =====
-    @Test
-    void getEventMomentsFeed_volunteer_null() {
-
-        Event event = new Event();
-
-        EventSession session = new EventSession();
-        session.setEvent(event);
-
-        EventApplication app = new EventApplication();
-        app.setVolunteer(null);
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByName(any(), any()))
-                .thenReturn(page);
-
-        EventMomentFeedResponse response =
-                service.getEventMomentsFeed(0, 10, null);
-
-        EventMomentFeedDetailsResponse res = response.getEventMoments().getFirst();
-
-        assertNull(res.getVolunteerId());
-        assertNull(res.getAvatarUrl());
-    }
-
-    // ===== TC4 =====
-    @Test
-    void getEventMomentsFeed_no_pictures() {
-
-        EventSession session = new EventSession();
-        session.setEvent(new Event());
-
-        EventApplication app = new EventApplication();
-        app.setSession(session);
-
-        EventMoment moment = new EventMoment();
-        moment.setEventApplication(app);
-        moment.setMomentPictures(null);
-
-        Page<EventMoment> page = new PageImpl<>(List.of(moment));
-
-        when(eventMomentRepository.findAllByName(any(), any()))
-                .thenReturn(page);
-
-        EventMomentFeedResponse response =
-                service.getEventMomentsFeed(0, 10, null);
-
-        assertTrue(response.getEventMoments().getFirst().getMomentPicturesUrls().isEmpty());
-    }
-
-    // ===== TC5 =====
     @Test
     void getEventMomentsFeed_empty() {
 

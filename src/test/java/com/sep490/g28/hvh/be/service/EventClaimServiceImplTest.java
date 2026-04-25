@@ -509,12 +509,12 @@ public class EventClaimServiceImplTest {
 
         Page<EventClaim> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
-        when(eventClaimRepository.findByEventIdAndSessionId(eventId, sessionId, pageable))
+        when(eventClaimRepository.findByEventIdAndSessionId(eventId, null, pageable))
                 .thenReturn(emptyPage);
 
         // act
         Page<EventClaimSimpleResponse> result =
-                service.getEventClaims(0, 10, eventId, sessionId);
+                service.getEventClaims(0, 10, eventId, null);
 
         // assert
         assertTrue(result.getContent().isEmpty());

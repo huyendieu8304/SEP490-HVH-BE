@@ -341,6 +341,7 @@ public class HostServiceImplTest {
     }
 
     // ================= updateHostProfile =================
+    // ===== TC1 =====
     @Test
     void updateHostProfile_success_with_avatar() {
 
@@ -373,7 +374,21 @@ public class HostServiceImplTest {
         verify(hostRepository).save(host);
     }
 
+    // ===== TC2 =====
+    @Test
+    void updateHostProfile_not_found() {
+
+        when(currentUserProvider.getId()).thenReturn(hostId);
+
+        when(hostRepository.findById(hostId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> hostService.updateHostProfile(validUpdateHostRequest()));
+    }
+
     // ================= getHostAccountInformation =================
+    // ===== TC1 =====
     @Test
     void getHostAccountInformation_success_full_data() {
 
@@ -402,6 +417,19 @@ public class HostServiceImplTest {
         assertEquals(hostId, res.getId());
         assertEquals("avatar-url", res.getAvatarUrl());
         assertEquals("CID123", res.getCid());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getHostAccountInformation_not_found() {
+
+        when(currentUserProvider.getId()).thenReturn(hostId);
+
+        when(hostRepository.findById(hostId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> hostService.getHostAccountInformation());
     }
 
     // ================= getHostsOfOrganizationBySystemAdmin =================
@@ -452,6 +480,7 @@ public class HostServiceImplTest {
     }
 
     // ================= getHostInfoBySystemAdmin =================
+    // ===== TC1 =====
     @Test
     void getHostInfoBySystemAdmin_success() {
 
@@ -482,6 +511,19 @@ public class HostServiceImplTest {
         assertEquals(hostId, res.getId());
         assertEquals("signed-url", res.getAvatarUrl());
         assertEquals("CID123", res.getCid());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getHostInfoBySystemAdmin_not_found() {
+
+        UUID hostId = UUID.randomUUID();
+
+        when(hostRepository.findById(hostId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> hostService.getHostInfoBySystemAdmin(hostId));
     }
 
     // ================= getHostActivitiesBySystemAdmin =================
@@ -524,6 +566,7 @@ public class HostServiceImplTest {
     }
 
     // ================= updateHostProfileBySystemAdmin =================
+    // ===== TC1 =====
     @Test
     void updateHostProfileBySystemAdmin_success_with_avatar() {
 
@@ -555,5 +598,18 @@ public class HostServiceImplTest {
         assertEquals("new-path", host.getAvatarUrl());
 
         verify(hostRepository).save(host);
+    }
+
+    // ===== TC2 =====
+    @Test
+    void updateHostProfileBySystemAdmin_not_found() {
+
+        UUID hostId = UUID.randomUUID();
+
+        when(hostRepository.findById(hostId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> hostService.updateHostProfileBySystemAdmin(hostId, validUpdateHostProfileBySystemAdminRequest()));
     }
 }

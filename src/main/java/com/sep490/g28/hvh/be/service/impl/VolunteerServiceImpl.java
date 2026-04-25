@@ -479,6 +479,8 @@ public class VolunteerServiceImpl implements VolunteerService {
 
             volunteer.setDeviceId(deviceId);
             volunteerRepository.save(volunteer);
+        } else {
+            throw new AppException(FaceApiErrorCode.FACE_REGISTER_FAILED);
         }
     }
 

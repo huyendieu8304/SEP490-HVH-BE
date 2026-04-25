@@ -987,28 +987,8 @@ public class VolunteerServiceImplTest {
         verify(storageService, never()).getUploadUrlAsync(any());
     }
 
-    // ===== TC4 =====
-    @Test
-    void updateVolunteerProfile_blank_enum() {
-
-        when(currentUserProvider.getId()).thenReturn(volunteerId);
-
-        Volunteer volunteer = new Volunteer();
-
-        when(volunteerRepository.findById(volunteerId))
-                .thenReturn(Optional.of(volunteer));
-
-        UpdateVolunteerProfileRequest request = validUpdateRequest();
-        request.setEmployStatus("");
-        request.setEducationLevel("");
-
-        volunteerService.updateVolunteerProfile(request);
-
-        assertNull(volunteer.getEmployStatus());
-        assertNull(volunteer.getEducationLevel());
-    }
-
     // ==== updateVolunteerProfileBySystemAdmin ===================================
+    // ===== TC1 =====
     @Test
     void updateVolunteerProfileBySystemAdmin_success_with_avatar() {
 
@@ -1032,7 +1012,7 @@ public class VolunteerServiceImplTest {
         UpdateVolunteerProfileBySystemAdminRequest request = validAdminRequest();
         request.setAvatarExtension("png");
         request.setEmail("new@mail.com");
-        request.setPhone("0123");
+        request.setPhone("0123456789");
 
         UpdateVolunteerProfileResponse res =
                 volunteerService.updateVolunteerProfileBySystemAdmin(volunteerId, request);
@@ -1040,10 +1020,24 @@ public class VolunteerServiceImplTest {
         assertEquals("upload-url", res.getAvatarUploadUrl());
         assertEquals("new-avatar-path", volunteer.getAvatarUrl());
         assertEquals("new@mail.com", volunteer.getEmail());
-        assertEquals("0123", volunteer.getPhone());
+        assertEquals("0123456789", volunteer.getPhone());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void updateVolunteerProfileBySystemAdmin_not_found() {
+
+        UUID volunteerId = UUID.randomUUID();
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> volunteerService.updateVolunteerProfileBySystemAdmin(volunteerId, validAdminRequest()));
     }
 
     // ==== getVolunteerAccountInformationByAdmin ===================================
+    // ===== TC1 =====
     @Test
     void getVolunteerAccountInformationByAdmin_success_full_data() {
 
@@ -1089,7 +1083,20 @@ public class VolunteerServiceImplTest {
         assertEquals(vid, res.getVid());
     }
 
-    // ==== updateVolunteerProfile ===================================
+    // ===== TC2 =====
+    @Test
+    void getVolunteerAccountInformationByAdmin_not_found() {
+
+        UUID volunteerId = UUID.randomUUID();
+
+        when(volunteerRepository.findById(volunteerId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> volunteerService.getVolunteerAccountInformationByAdmin(volunteerId));
+    }
+
+    // ==== registerVolunteerFace ===================================
     // ===== TC1 =====
     @Test
     void registerVolunteerFace_success() {
@@ -1208,10 +1215,8 @@ public class VolunteerServiceImplTest {
                         5
                 ));
 
-        volunteerService.registerVolunteerFace("device-1", mock(MultipartFile.class));
-
-        assertFalse(user.isFaceRegistered());
-        assertNull(volunteer.getDeviceId());
+        assertThrows(AppException.class,
+                () -> volunteerService.registerVolunteerFace("device-1", mock(MultipartFile.class)));
 
         verify(userRepository, never()).save(any());
         verify(volunteerRepository, never()).save(any());

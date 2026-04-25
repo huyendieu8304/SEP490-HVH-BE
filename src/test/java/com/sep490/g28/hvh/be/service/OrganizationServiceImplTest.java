@@ -897,7 +897,6 @@ public class OrganizationServiceImplTest {
 
         int pageNumber = 0;
         int pageSize = 10;
-        String name = "Org";
 
         List<String> orgTypes = List.of("SOCIAL_ORGANIZATION", "GOVERNMENT_AGENCY_BASED");
 
@@ -921,14 +920,14 @@ public class OrganizationServiceImplTest {
 
         Page<Organization> page = new PageImpl<>(List.of(org), pageable, 1);
 
-        when(organizationRepository.searchByAdmin(name, orgTypes, pageable))
+        when(organizationRepository.searchByAdmin(null, orgTypes, pageable))
                 .thenReturn(page);
 
         when(eventRepository.findAllByOrganizationId(orgId))
                 .thenReturn(List.of(event));
 
         Page<OrganizationSimpleResponseForSystemAdmin> result =
-                organizationService.getOrganizationsBySystemAdmin(pageNumber, pageSize, name, orgTypes);
+                organizationService.getOrganizationsBySystemAdmin(pageNumber, pageSize, null, orgTypes);
 
         assertEquals(1, result.getContent().size());
 
@@ -936,7 +935,7 @@ public class OrganizationServiceImplTest {
 
         assertEquals("Environment", res.getActivitySubDomains().iterator().next());
 
-        verify(organizationRepository).searchByAdmin(name, orgTypes, pageable);
+        verify(organizationRepository).searchByAdmin(null, orgTypes, pageable);
         verify(eventRepository).findAllByOrganizationId(orgId);
     }
 }

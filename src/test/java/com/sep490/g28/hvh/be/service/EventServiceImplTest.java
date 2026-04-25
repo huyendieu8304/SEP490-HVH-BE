@@ -1206,7 +1206,7 @@ public class EventServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture("signed-url"));
 
         Page<EventSimpleResponse> res =
-                eventService.getSavedEventsByVolunteer(0, 10, null);
+                eventService.getSavedEventsByVolunteer(0, 10, "Event 1");
 
         assertEquals(1, res.getContent().size());
         assertEquals("signed-url", res.getContent().getFirst().getImageUrl());
@@ -1267,7 +1267,7 @@ public class EventServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture("signed-url"));
 
         Page<EventSimpleResponse> res =
-                eventService.getHostedEventsOfOrganization(0, 10, orgId, null);
+                eventService.getHostedEventsOfOrganization(0, 10, orgId, "Event 1");
 
         assertEquals(1, res.getContent().size());
         assertEquals("signed-url", res.getContent().getFirst().getImageUrl());

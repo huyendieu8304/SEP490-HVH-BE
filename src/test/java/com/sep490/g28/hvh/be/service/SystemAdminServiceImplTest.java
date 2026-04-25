@@ -1,10 +1,12 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
+import com.sep490.g28.hvh.be.dto.orgmanager.request.UpdateOrgManagerProfileRequest;
 import com.sep490.g28.hvh.be.dto.systemadmin.request.UpdateSystemAdminProfileRequest;
 import com.sep490.g28.hvh.be.dto.systemadmin.response.SystemAdminAccountInformationResponse;
 import com.sep490.g28.hvh.be.dto.systemadmin.response.UpdateSystemAdminProfileResponse;
 import com.sep490.g28.hvh.be.entity.SystemAdmin;
+import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.SystemAdminRepository;
@@ -59,28 +61,25 @@ public class SystemAdminServiceImplTest {
     @Test
     void updateSystemAdminProfile_success_with_avatar() {
 
-        UUID adminId = UUID.randomUUID();
-
-        when(currentUserProvider.getId()).thenReturn(adminId);
+        when(currentUserProvider.getId()).thenReturn(systemAdminId);
 
         SystemAdmin admin = new SystemAdmin();
-        admin.setId(adminId);
+        admin.setId(systemAdminId);
         admin.setAvatarUrl("old-avatar");
 
-        when(systemAdminRepository.findById(adminId))
+        when(systemAdminRepository.findById(systemAdminId))
                 .thenReturn(Optional.of(admin));
 
         when(storageService.deleteFileAsync("old-avatar"))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        when(storagePathGenerator.sysAdminAvatar(eq(adminId), any()))
+        when(storagePathGenerator.sysAdminAvatar(eq(systemAdminId), any()))
                 .thenReturn("new-avatar-path");
 
         when(storageService.getUploadUrlAsync("new-avatar-path"))
                 .thenReturn(CompletableFuture.completedFuture("upload-url"));
 
-        UpdateSystemAdminProfileRequest request = new UpdateSystemAdminProfileRequest();
-        request.setAvatarExtension("png");
+        UpdateSystemAdminProfileRequest request = validUpdateSystemAdminProfileRequest();
         request.setFullName("New Name");
 
         UpdateSystemAdminProfileResponse res =
@@ -92,13 +91,24 @@ public class SystemAdminServiceImplTest {
         verify(systemAdminRepository).save(admin);
     }
 
+    // ===== TC2 =====
+    @Test
+    void updateSystemAdminProfile_not_found() {
+
+        when(currentUserProvider.getId()).thenReturn(systemAdminId);
+
+        when(systemAdminRepository.findById(systemAdminId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.updateSystemAdminProfile(validUpdateSystemAdminProfileRequest()));
+    }
+
     // ================= getSystemAdminAccountInformation =================
     @Test
     void getSystemAdminAccountInformation_success_full() {
 
-        UUID adminId = UUID.randomUUID();
-
-        when(currentUserProvider.getId()).thenReturn(adminId);
+        when(currentUserProvider.getId()).thenReturn(systemAdminId);
 
         SystemAdmin admin = new SystemAdmin();
         admin.setCid("CID123");
@@ -111,7 +121,7 @@ public class SystemAdminServiceImplTest {
         admin.setAddress("addr");
         admin.setDetailAddress("detail");
 
-        when(systemAdminRepository.findById(adminId))
+        when(systemAdminRepository.findById(systemAdminId))
                 .thenReturn(Optional.of(admin));
 
         when(storageService.getSignedUrlAsync("avatar-path"))
@@ -120,8 +130,21 @@ public class SystemAdminServiceImplTest {
         SystemAdminAccountInformationResponse res =
                 service.getSystemAdminAccountInformation();
 
-        assertEquals(adminId, res.getId());
+        assertEquals(systemAdminId, res.getId());
         assertEquals("signed-url", res.getAvatarUrl());
         assertEquals("CID123", res.getCid());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getSystemAdminAccountInformation_not_found() {
+
+        when(currentUserProvider.getId()).thenReturn(systemAdminId);
+
+        when(systemAdminRepository.findById(systemAdminId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.getSystemAdminAccountInformation());
     }
 }
