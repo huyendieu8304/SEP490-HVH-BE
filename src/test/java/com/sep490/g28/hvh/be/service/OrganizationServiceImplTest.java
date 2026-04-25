@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EOrgRegistrationStatus;
 import com.sep490.g28.hvh.be.constant.EOrgType;
 import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
+import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.*;
@@ -937,5 +938,152 @@ public class OrganizationServiceImplTest {
 
         verify(organizationRepository).searchByAdmin(null, orgTypes, pageable);
         verify(eventRepository).findAllByOrganizationId(orgId);
+    }
+
+    // ======= deductCreditHourOfOrganization ================
+    @Test
+    void deductCreditHour_success() {
+        Organization org = new Organization();
+        org.setId(UUID.randomUUID());
+        org.setCreditHour(10);
+
+        organizationService.deductCreditHourOfOrganization(org, 3);
+
+        assertEquals(7, org.getCreditHour());
+        verify(organizationRepository).save(org);
+    }
+
+    @Test
+    void deductCreditHour_negativeResult() {
+        Organization org = new Organization();
+        org.setId(UUID.randomUUID());
+        org.setCreditHour(2);
+
+        organizationService.deductCreditHourOfOrganization(org, 5);
+
+        assertEquals(-3, org.getCreditHour()); // no validation → still allowed
+        verify(organizationRepository).save(org);
+    }
+
+    //======== calculateOrganizationsAvgRating =======
+    private EventOrganizationProjection projection(Organization org, Event event) {
+        EventOrganizationProjection p = mock(EventOrganizationProjection.class);
+        when(p.getOrganization()).thenReturn(org);
+        when(p.getEvent()).thenReturn(event);
+        return p;
+    }
+
+    @Test
+    void calculateOrganizationsAvgRating_empty() {
+        when(eventRepository.findCompletedEventsAndEndDateAt(any()))
+                .thenReturn(List.of());
+
+        organizationService.calculateOrganizationsAvgRating();
+
+        verify(organizationRepository).saveAll(Collections.emptySet());
+    }
+
+    @Test
+    void calculateOrganizationsAvgRating_singleOrg_singleEvent() {
+        Organization org = new Organization();
+        org.setId(UUID.randomUUID());
+        org.setAvgRating((short)4);
+        org.setHostedEventCount(1);
+
+        Event event = new Event();
+        event.setAvgRating((short)5);
+
+        EventOrganizationProjection p = projection(org, event);
+
+        when(eventRepository.findCompletedEventsAndEndDateAt(any()))
+                .thenReturn(List.of(p));
+
+        organizationService.calculateOrganizationsAvgRating();
+
+        // (4*1 + 5) / 2 = 4
+        assertEquals((short) 4, org.getAvgRating());
+        assertEquals(2, org.getHostedEventCount());
+
+        verify(organizationRepository).saveAll(any());
+    }
+
+    @Test
+    void calculateOrganizationsAvgRating_singleOrg_multipleEvents() {
+        Organization org = new Organization();
+        org.setAvgRating((short)3);
+        org.setHostedEventCount(2); // totalRating = 6
+
+        Event e1 = new Event(); e1.setAvgRating((short)5);
+        Event e2 = new Event(); e2.setAvgRating((short)1);
+
+
+        EventOrganizationProjection p1 = projection(org, e1);
+        EventOrganizationProjection p2 = projection(org, e2);
+
+        when(eventRepository.findCompletedEventsAndEndDateAt(any()))
+                .thenReturn(List.of(p1, p2));
+
+        organizationService.calculateOrganizationsAvgRating();
+
+        // (6 + 5 + 1) / 4 = 3
+        assertEquals((short) 3, org.getAvgRating());
+        assertEquals(4, org.getHostedEventCount());
+    }
+
+    @Test
+    void calculateOrganizationsAvgRating_multipleOrganizations() {
+        Organization org1 = new Organization();
+        org1.setAvgRating((short)4);
+        org1.setHostedEventCount(1);
+
+        Organization org2 = new Organization();
+        org2.setAvgRating((short)2);
+        org2.setHostedEventCount(1);
+
+        Event e1 = new Event(); e1.setAvgRating((short)5);
+        Event e2 = new Event(); e2.setAvgRating((short)3);
+
+        EventOrganizationProjection p1 = projection(org1, e1);
+        EventOrganizationProjection p2 = projection(org2, e2);
+
+        when(eventRepository.findCompletedEventsAndEndDateAt(any()))
+                .thenReturn(List.of(p1, p2));
+
+
+        organizationService.calculateOrganizationsAvgRating();
+
+        // org1: (4 + 5)/2 = 4
+        assertEquals((short) 4, org1.getAvgRating());
+        assertEquals(2, org1.getHostedEventCount());
+
+        // org2: (2 + 3)/2 = 2
+        assertEquals((short) 2, org2.getAvgRating());
+        assertEquals(2, org2.getHostedEventCount());
+
+        verify(organizationRepository).saveAll(argThat(iterable -> {
+            int count = 0;
+            for (Object o : iterable) count++;
+            return count == 2;
+        }));
+    }
+
+    @Test
+    void calculateOrganizationsAvgRating_zeroInitialCount() {
+        Organization org = new Organization();
+        org.setAvgRating((short)0);
+        org.setHostedEventCount(0);
+
+        Event event = new Event();
+        event.setAvgRating((short)5);
+
+        EventOrganizationProjection p = projection(org, event);
+
+        when(eventRepository.findCompletedEventsAndEndDateAt(any()))
+                .thenReturn(List.of(p));
+
+        organizationService.calculateOrganizationsAvgRating();
+
+        assertEquals((short) 5, org.getAvgRating());
+        assertEquals(1, org.getHostedEventCount());
     }
 }
