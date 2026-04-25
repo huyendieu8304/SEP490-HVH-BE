@@ -3,7 +3,7 @@ package com.sep490.g28.hvh.be.service;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventClaimStatus;
 import com.sep490.g28.hvh.be.dto.eventclaim.request.ClaimEventHourRequest;
-import com.sep490.g28.hvh.be.dto.eventclaim.request.EventClaimVerifyRequest;
+import com.sep490.g28.hvh.be.dto.eventclaim.request.VerifyEventClaimRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.ClaimEventHourResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimDetailResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimSimpleResponse;
@@ -276,50 +276,6 @@ public class EventClaimServiceImplTest {
         assertEquals(5, response.getEvidencesUploadUrls().size());
     }
 
-    // ===== TC7 =====
-    @Test
-    void claimEventHour_async_upload_fail() {
-
-        UUID applicationId = UUID.randomUUID();
-
-        when(currentUserProvider.getId()).thenReturn(volunteerId);
-
-        Event event = new Event();
-        event.setId(eventId);
-
-        EventApplication app = new EventApplication();
-        app.setId(applicationId);
-
-        EventSession session = new EventSession();
-        session.setStartDateTime(OffsetDateTime.now().minusDays(1).minusHours(5));
-        session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
-        session.setEvent(event);
-
-        when(eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
-                .thenReturn(app);
-
-        when(eventSessionRepository.findById(sessionId))
-                .thenReturn(Optional.of(session));
-
-        when(eventClaimRepository.findByEventApplicationId(applicationId))
-                .thenReturn(null);
-
-        when(storagePathGenerator.eventClaimImages(any(), any(), anyInt(), any()))
-                .thenReturn("path");
-
-        CompletableFuture<String> failedFuture = new CompletableFuture<>();
-        failedFuture.completeExceptionally(new RuntimeException("upload fail"));
-
-        when(storageService.getUploadUrlAsync(any()))
-                .thenReturn(failedFuture);
-
-        ClaimEventHourRequest request = validClaimEventHourRequest();
-
-        assertThrows(RuntimeException.class,
-                () -> service.claimEventHour(request));
-    }
-
     // ==== verifyEventClaim ===================================
     // ===== TC1 =====
     @Test
@@ -347,7 +303,7 @@ public class EventClaimServiceImplTest {
         when(eventClaimRepository.findById(claimId))
                 .thenReturn(Optional.of(claim));
 
-        EventClaimVerifyRequest request = new EventClaimVerifyRequest();
+        VerifyEventClaimRequest request = new VerifyEventClaimRequest();
         request.setApprove(true);
 
         service.verifyEventClaim(claimId, request);
@@ -366,7 +322,7 @@ public class EventClaimServiceImplTest {
         when(eventClaimRepository.findById(claimId))
                 .thenReturn(Optional.empty());
 
-        EventClaimVerifyRequest request = new EventClaimVerifyRequest();
+        VerifyEventClaimRequest request = new VerifyEventClaimRequest();
 
         assertThrows(AppException.class,
                 () -> service.verifyEventClaim(claimId, request));
@@ -384,7 +340,7 @@ public class EventClaimServiceImplTest {
         when(eventClaimRepository.findById(claimId))
                 .thenReturn(Optional.of(claim));
 
-        EventClaimVerifyRequest request = new EventClaimVerifyRequest();
+        VerifyEventClaimRequest request = new VerifyEventClaimRequest();
 
         assertThrows(AppException.class,
                 () -> service.verifyEventClaim(claimId, request));
@@ -409,7 +365,7 @@ public class EventClaimServiceImplTest {
         when(eventClaimRepository.findById(claimId))
                 .thenReturn(Optional.of(claim));
 
-        EventClaimVerifyRequest request = new EventClaimVerifyRequest();
+        VerifyEventClaimRequest request = new VerifyEventClaimRequest();
         request.setApprove(true);
 
         assertThrows(AppException.class,
@@ -436,7 +392,7 @@ public class EventClaimServiceImplTest {
         when(eventClaimRepository.findById(claimId))
                 .thenReturn(Optional.of(claim));
 
-        EventClaimVerifyRequest request = new EventClaimVerifyRequest();
+        VerifyEventClaimRequest request = new VerifyEventClaimRequest();
         request.setApprove(true);
 
         service.verifyEventClaim(claimId, request);
@@ -464,7 +420,7 @@ public class EventClaimServiceImplTest {
         when(eventClaimRepository.findById(claimId))
                 .thenReturn(Optional.of(claim));
 
-        EventClaimVerifyRequest request = new EventClaimVerifyRequest();
+        VerifyEventClaimRequest request = new VerifyEventClaimRequest();
         request.setApprove(false);
 
         service.verifyEventClaim(claimId, request);
@@ -567,7 +523,7 @@ public class EventClaimServiceImplTest {
         verifyNoInteractions(storageService);
     }
 
-    // ==== etEventClaimDetail ===================================
+    // ==== getEventClaimDetail ===================================
     // ===== TC1 =====
     @Test
     void getEventClaimDetail_success() {

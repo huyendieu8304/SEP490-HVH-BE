@@ -3,9 +3,8 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventClaimStatus;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.request.ClaimEventHourRequest;
-import com.sep490.g28.hvh.be.dto.eventclaim.request.EventClaimVerifyRequest;
+import com.sep490.g28.hvh.be.dto.eventclaim.request.VerifyEventClaimRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.ClaimEventHourResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimDetailResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimSimpleResponse;
@@ -320,7 +319,7 @@ public class EventClaimServiceImpl implements EventClaimService {
     }
 
     @Override
-    public void verifyEventClaim(UUID claimId, EventClaimVerifyRequest request) {
+    public void verifyEventClaim(UUID claimId, VerifyEventClaimRequest request) {
         OffsetDateTime verifyTime = OffsetDateTime.now();
 
         EventClaim eventClaim = eventClaimRepository.findById(claimId)
