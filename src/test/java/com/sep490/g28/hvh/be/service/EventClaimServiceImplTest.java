@@ -5,6 +5,8 @@ import com.sep490.g28.hvh.be.constant.EEventClaimStatus;
 import com.sep490.g28.hvh.be.dto.eventclaim.request.ClaimEventHourRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.request.EventClaimVerifyRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.ClaimEventHourResponse;
+import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimDetailResponse;
+import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimSimpleResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
@@ -20,8 +22,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -468,5 +473,178 @@ public class EventClaimServiceImplTest {
         verify(eventApplicationRepository, never()).save(any());
 
         verify(eventClaimRepository, atLeastOnce()).save(any(EventClaim.class));
+    }
+
+    // ==== getEventClaims ===================================
+    // ===== TC1 =====
+    @Test
+    void getEventClaims_success() {
+
+        int pageNumber = 0;
+        int pageSize = 10;
+
+        UUID eventId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID claimId = UUID.randomUUID();
+        UUID volunteerId = UUID.randomUUID();
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        // mock volunteer
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setNickname("nick");
+        volunteer.setFullName("full name");
+        volunteer.setCreditScore(100);
+        volunteer.setHonorScore(50);
+        volunteer.setAvatarUrl("avatar/path");
+
+        // mock event application
+        EventApplication app = new EventApplication();
+        app.setVolunteer(volunteer);
+
+        // mock claim
+        EventClaim claim = new EventClaim();
+        claim.setId(claimId);
+        claim.setEventApplication(app);
+        claim.setHonorHour((short)5);
+        claim.setReason("reason");
+        claim.setCreatedAt(OffsetDateTime.now());
+
+        Page<EventClaim> page = new PageImpl<>(List.of(claim), pageable, 1);
+
+        when(eventClaimRepository.findByEventIdAndSessionId(eventId, sessionId, pageable))
+                .thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("avatar/path"))
+                .thenReturn(CompletableFuture.completedFuture("signed-avatar-url"));
+
+        // act
+        Page<EventClaimSimpleResponse> result =
+                service.getEventClaims(pageNumber, pageSize, eventId, sessionId);
+
+        // assert
+        assertEquals(1, result.getContent().size());
+
+        EventClaimSimpleResponse res = result.getContent().get(0);
+
+        assertEquals(claimId, res.getId());
+        assertEquals(volunteerId, res.getVolunteerId());
+        assertEquals("nick", res.getNickName());
+        assertEquals("full name", res.getName());
+        assertEquals("signed-avatar-url", res.getAvatarUrl());
+        assertEquals(100, res.getCreditScore());
+        assertEquals(50, res.getHonorScore());
+        assertEquals((short) 5, res.getHonorHours());
+        assertEquals("reason", res.getReason());
+
+        verify(storageService).getSignedUrlAsync("avatar/path");
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getEventClaims_emptyPage() {
+
+        Pageable pageable = PageRequest.of(
+                0,
+                10,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<EventClaim> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(eventClaimRepository.findByEventIdAndSessionId(eventId, sessionId, pageable))
+                .thenReturn(emptyPage);
+
+        // act
+        Page<EventClaimSimpleResponse> result =
+                service.getEventClaims(0, 10, eventId, sessionId);
+
+        // assert
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+
+        verifyNoInteractions(storageService);
+    }
+
+    // ==== etEventClaimDetail ===================================
+    // ===== TC1 =====
+    @Test
+    void getEventClaimDetail_success() {
+
+        UUID claimId = UUID.randomUUID();
+        UUID volunteerId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+
+        // volunteer
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setEmail("test@mail.com");
+        volunteer.setPhone("123");
+        volunteer.setNickname("nick");
+        volunteer.setFullName("full name");
+        volunteer.setAddress("HN");
+        volunteer.setCreditScore(100);
+        volunteer.setHonorScore(50);
+        volunteer.setAvatarUrl("avatar/path");
+
+        // session
+        EventSession session = new EventSession();
+        session.setId(sessionId);
+
+        // application
+        EventApplication app = new EventApplication();
+        app.setVolunteer(volunteer);
+        app.setSession(session);
+
+        // claim
+        EventClaim claim = new EventClaim();
+        claim.setId(claimId);
+        claim.setEventApplication(app);
+        claim.setHonorHour((short) 5);
+        claim.setReason("reason");
+        claim.setDetailReason("detail");
+        claim.setEvidences("e1 e2");
+        claim.setCreatedAt(OffsetDateTime.now());
+
+        when(eventClaimRepository.findById(claimId))
+                .thenReturn(Optional.of(claim));
+
+        when(storageService.getSignedUrlAsync("avatar/path"))
+                .thenReturn(CompletableFuture.completedFuture("avatar-url"));
+
+        when(storageService.getSignedUrlAsync("e1"))
+                .thenReturn(CompletableFuture.completedFuture("url1"));
+        when(storageService.getSignedUrlAsync("e2"))
+                .thenReturn(CompletableFuture.completedFuture("url2"));
+
+        // act
+        EventClaimDetailResponse res = service.getEventClaimDetail(claimId);
+
+        // assert
+        assertEquals(claimId, res.getId());
+        assertEquals(volunteerId, res.getVolunteerId());
+        assertEquals("test@mail.com", res.getEmail());
+        assertEquals("avatar-url", res.getAvatarUrl());
+        assertEquals(2, res.getEvidencesUrls().size());
+        assertTrue(res.getEvidencesUrls().contains("url1"));
+        assertTrue(res.getEvidencesUrls().contains("url2"));
+
+        verify(storageService).getSignedUrlAsync("avatar/path");
+        verify(storageService).getSignedUrlAsync("e1");
+        verify(storageService).getSignedUrlAsync("e2");
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getEventClaimDetail_notFound() {
+
+        UUID claimId = UUID.randomUUID();
+
+        when(eventClaimRepository.findById(claimId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AppException.class,
+                () -> service.getEventClaimDetail(claimId));
     }
 }
