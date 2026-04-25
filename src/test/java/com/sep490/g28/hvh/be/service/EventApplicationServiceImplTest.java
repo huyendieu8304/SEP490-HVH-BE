@@ -2584,4 +2584,49 @@ public class EventApplicationServiceImplTest {
 
         assertTrue(result.getContent().isEmpty());
     }
+
+    // ========= cancelAllApplicationsOfEvent =========
+    @Test
+    void cancelAllApplications_success() {
+        Event event = new Event();
+
+        EventSession s1 = new EventSession(); s1.setId(UUID.randomUUID());
+        EventSession s2 = new EventSession(); s2.setId(UUID.randomUUID());
+
+        event.setSessions(List.of(s1, s2));
+
+        List<EventApplication> mockedResult = List.of(new EventApplication());
+
+        when(eventApplicationRepository.cancelApplicationsBySessions(any()))
+                .thenReturn(mockedResult);
+
+        List<EventApplication> result =
+                service.cancelAllApplicationsOfEvent(event);
+
+        assertEquals(mockedResult, result);
+
+        verify(eventApplicationRepository).cancelApplicationsBySessions(
+                argThat(ids -> ids.size() == 2 &&
+                        ids.containsAll(List.of(s1.getId(), s2.getId())))
+        );
+    }
+
+
+    @Test
+    void cancelAllApplications_repoReturnEmpty() {
+        EventSession s = new EventSession();
+        s.setId(UUID.randomUUID());
+
+        Event event = new Event();
+        event.setSessions(List.of(s));
+
+        when(eventApplicationRepository.cancelApplicationsBySessions(any()))
+                .thenReturn(Collections.emptyList());
+
+        List<EventApplication> result =
+                service.cancelAllApplicationsOfEvent(event);
+
+        assertTrue(result.isEmpty());
+    }
+
 }
