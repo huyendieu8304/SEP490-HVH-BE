@@ -19,7 +19,7 @@ public interface OrganizationStatsService {
     void compileOrganizationsMonthlyStatistics();
 
     //todo remove this after finish mock data
-    void compileOrganizationsMonthlyStatistics(int year, int month);
+//    void compileOrganizationsMonthlyStatistics(int year, int month);
 
     List<OrganizationStatsResponseForManager> getOrganizations6MonthsStatistics();
 

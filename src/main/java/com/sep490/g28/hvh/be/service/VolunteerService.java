@@ -31,4 +31,6 @@ public interface VolunteerService {
     UpdateVolunteerProfileResponse updateVolunteerProfileBySystemAdmin(UUID volunteerId, UpdateVolunteerProfileBySystemAdminRequest request);
 
     void createVolunteerAccountByAdmin(CreateVolunteerAccountByAdminRequest request);
+
+    VolunteerAccountInformationResponse getVolunteerAccountInformationByAdmin(UUID volunteerId);
 }

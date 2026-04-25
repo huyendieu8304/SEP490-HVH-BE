@@ -12,8 +12,8 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
-import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
-import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceRegisterResponse;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceAuthClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.RegisterFaceResponse;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
@@ -53,7 +53,7 @@ public class VolunteerServiceImpl implements VolunteerService {
     StoragePathGenerator storagePathGenerator;
     OtpService otpService;
     AuthClient authClient;
-    FaceClient faceClient;
+    FaceAuthClient faceAuthClient;
     SystemAdminRepository systemAdminRepository;
     CurrentUserProvider currentUserProvider;
     EmailService emailService;
@@ -469,8 +469,8 @@ public class VolunteerServiceImpl implements VolunteerService {
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
         //call face api server to register face
-        FaceRegisterResponse response = faceClient
-                .faceRegister(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
+        RegisterFaceResponse response = faceAuthClient
+                .registerFaceBiometric(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
 
         //check if response success
         if(response.success()) {
@@ -479,6 +479,8 @@ public class VolunteerServiceImpl implements VolunteerService {
 
             volunteer.setDeviceId(deviceId);
             volunteerRepository.save(volunteer);
+        } else {
+            throw new AppException(FaceApiErrorCode.FACE_REGISTER_FAILED);
         }
     }
 
@@ -550,7 +552,6 @@ public class VolunteerServiceImpl implements VolunteerService {
         volunteer.setWorkAddress(request.getWorkAddress());
         volunteer.setEducationLevel(educationLevel);
         volunteer.setSid(request.getSid());
-        volunteer.setDeviceId(request.getDeviceId());
         volunteer.setUpdatedAt(OffsetDateTime.now());
 
         volunteerRepository.save(volunteer);
@@ -633,6 +634,8 @@ public class VolunteerServiceImpl implements VolunteerService {
         volunteer.setDeviceId(request.getDeviceId());
         volunteer.setUpdatedAt(OffsetDateTime.now());
 
+        volunteerRepository.save(volunteer);
+
         return UpdateVolunteerProfileResponse.builder()
                 .avatarUploadUrl(newAvatarUploadUrl)
                 .build();
@@ -671,6 +674,59 @@ public class VolunteerServiceImpl implements VolunteerService {
         //send mail to the volunteer
         emailService.sendApproveRegisterVolAccountEmail(request.getEmail(), defaultPassword);
         log.info("Admin with id={}, create volunteer account id={}", currentUserProvider.getId(), volunteerId);
+    }
+
+    @Override
+    public VolunteerAccountInformationResponse getVolunteerAccountInformationByAdmin(UUID volunteerId) {
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        //get signed URL of volunteer avatar
+        String avatarUrl = null;
+        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+
+            CompletableFuture<String> avatarFuture =
+                    storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
+
+            try {
+                CompletableFuture.allOf(avatarFuture).join();
+                avatarUrl = avatarFuture.join();
+            } catch (CompletionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof AppException ae) {
+                    //todo: handle app exception in viewEventFeeds
+                } else {
+                    throw cause instanceof RuntimeException re ? re : ex;
+                }
+            }
+        }
+
+        return new VolunteerAccountInformationResponse(
+                volunteerId,
+                volunteer.getVid(),
+                volunteer.getCid(),
+                volunteer.getEmail(),
+                volunteer.getPhone(),
+                volunteer.isPhoneVerified(),
+                volunteer.getNickname(),
+                volunteer.getFullName(),
+                volunteer.getBio(),
+                volunteer.isGender(),
+                volunteer.getDob(),
+                volunteer.getLevel(),
+                avatarUrl,
+                volunteer.getAddress(),
+                volunteer.getDetailAddress(),
+                volunteer.getEmployStatus(),
+                volunteer.getWorkAddress(),
+                volunteer.getEducationLevel(),
+                volunteer.getSid(),
+                volunteer.getCreditScore(),
+                volunteer.getHonorScore(),
+                volunteer.getAvgRating(),
+                volunteer.getActivityCount()
+        );
     }
 
     //convert name to valid username

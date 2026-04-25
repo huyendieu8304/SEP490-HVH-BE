@@ -82,57 +82,57 @@ public class SystemStatsServiceImpl implements SystemStatsService {
     }
 
     //todo remove this after finish mock data
-    @Override
-    public void compileSystemStatsMonthly(int year, int month) {
-//        //re compile verified volunteers, verifiedOrganization, counteventindomain
-//        YearMonth prev = YearMonth.now().minusMonths(1);
-//        OffsetDateTime startTimeOfMonth = prev.atDay(1).atStartOfDay(zone).toOffsetDateTime();
-//        OffsetDateTime endTimeOfMonth = prev.atEndOfMonth().plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+//    @Override
+//    public void compileSystemStatsMonthly(int year, int month) {
+////        //re compile verified volunteers, verifiedOrganization, counteventindomain
+////        YearMonth prev = YearMonth.now().minusMonths(1);
+////        OffsetDateTime startTimeOfMonth = prev.atDay(1).atStartOfDay(zone).toOffsetDateTime();
+////        OffsetDateTime endTimeOfMonth = prev.atEndOfMonth().plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+////
+////        //count volunteer verified in last month
+////        int countNewVolunteer = volunteerRepository.countCreatedBetween(startTimeOfMonth, endTimeOfMonth);
+////        int countNewOrganization = organizationRepository.countCreatedBetween(startTimeOfMonth, endTimeOfMonth);
 //
-//        //count volunteer verified in last month
+//        YearMonth yearMonth = YearMonth.of(year, month);
+//
+//        List<OrganizationStats> organizationStats = organizationStatsRepository.findStatsBy(year, month);
+//
+//        SystemStats systemStats = systemStatsRepository.findByYearAndMonth(year, month).orElseGet(() -> {
+//            SystemStats systemStat = new SystemStats();
+//            systemStat.setYear(year);
+//            systemStat.setMonth(month);
+//            return systemStat;
+//        });
+//
+//        int completedEvents = 0;
+//        int creditHours = 0;
+//        int approvedApplications = 0;
+//        int attendedApplications = 0;
+//        for (OrganizationStats organizationStat : organizationStats) {
+//            completedEvents += organizationStat.getCompletedEvents();
+//            creditHours += organizationStat.getCreditHours();
+//            approvedApplications += organizationStat.getApprovedApplications();
+//            attendedApplications += organizationStat.getAttendedApplications();
+//        }
+//        systemStats.setCompletedEvents(completedEvents);
+//        systemStats.setCreditHours(creditHours);
+//        systemStats.setApprovedApplications(approvedApplications);
+//        systemStats.setAttendedApplications(attendedApplications);
+//
+//
+//        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+//        OffsetDateTime startTimeOfMonth = yearMonth.atDay(1).atStartOfDay(zone).toOffsetDateTime();
+//        OffsetDateTime endTimeOfMonth = yearMonth.atEndOfMonth().plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+//
+//        //count volunteer, organization verified in last month
 //        int countNewVolunteer = volunteerRepository.countCreatedBetween(startTimeOfMonth, endTimeOfMonth);
 //        int countNewOrganization = organizationRepository.countCreatedBetween(startTimeOfMonth, endTimeOfMonth);
-
-        YearMonth yearMonth = YearMonth.of(year, month);
-
-        List<OrganizationStats> organizationStats = organizationStatsRepository.findStatsBy(year, month);
-
-        SystemStats systemStats = systemStatsRepository.findByYearAndMonth(year, month).orElseGet(() -> {
-            SystemStats systemStat = new SystemStats();
-            systemStat.setYear(year);
-            systemStat.setMonth(month);
-            return systemStat;
-        });
-
-        int completedEvents = 0;
-        int creditHours = 0;
-        int approvedApplications = 0;
-        int attendedApplications = 0;
-        for (OrganizationStats organizationStat : organizationStats) {
-            completedEvents += organizationStat.getCompletedEvents();
-            creditHours += organizationStat.getCreditHours();
-            approvedApplications += organizationStat.getApprovedApplications();
-            attendedApplications += organizationStat.getAttendedApplications();
-        }
-        systemStats.setCompletedEvents(completedEvents);
-        systemStats.setCreditHours(creditHours);
-        systemStats.setApprovedApplications(approvedApplications);
-        systemStats.setAttendedApplications(attendedApplications);
-
-
-        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
-        OffsetDateTime startTimeOfMonth = yearMonth.atDay(1).atStartOfDay(zone).toOffsetDateTime();
-        OffsetDateTime endTimeOfMonth = yearMonth.atEndOfMonth().plusDays(1).atStartOfDay(zone).toOffsetDateTime();
-
-        //count volunteer, organization verified in last month
-        int countNewVolunteer = volunteerRepository.countCreatedBetween(startTimeOfMonth, endTimeOfMonth);
-        int countNewOrganization = organizationRepository.countCreatedBetween(startTimeOfMonth, endTimeOfMonth);
-
-        systemStats.setVerifiedVolunteers(systemStats.getVerifiedVolunteers() + countNewVolunteer);
-        systemStats.setVerifiedOrganizations(systemStats.getVerifiedOrganizations() + countNewOrganization);
-
-        systemStatsRepository.save(systemStats);
-    }
+//
+//        systemStats.setVerifiedVolunteers(systemStats.getVerifiedVolunteers() + countNewVolunteer);
+//        systemStats.setVerifiedOrganizations(systemStats.getVerifiedOrganizations() + countNewOrganization);
+//
+//        systemStatsRepository.save(systemStats);
+//    }
 
     @Override
     @Transactional

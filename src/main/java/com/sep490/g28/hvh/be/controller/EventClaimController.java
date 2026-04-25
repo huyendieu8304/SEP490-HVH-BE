@@ -1,7 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.eventclaim.request.ClaimEventHourRequest;
-import com.sep490.g28.hvh.be.dto.eventclaim.request.EventClaimVerifyRequest;
+import com.sep490.g28.hvh.be.dto.eventclaim.request.VerifyEventClaimRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.ClaimEventHourResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimDetailResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimSimpleResponse;
@@ -79,7 +79,7 @@ public class EventClaimController {
 
             @RequestBody
             @Valid
-            EventClaimVerifyRequest request) {
+            VerifyEventClaimRequest request) {
         java.util.UUID id = java.util.UUID.fromString(claimId);
         eventClaimService.verifyEventClaim(id, request);
         return ResponseEntity.ok().build();

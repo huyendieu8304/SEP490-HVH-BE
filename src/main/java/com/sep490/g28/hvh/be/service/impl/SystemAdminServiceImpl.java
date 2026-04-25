@@ -83,6 +83,8 @@ public class SystemAdminServiceImpl implements SystemAdminService {
             systemAdmin.setAvatarUrl(newAvatarPath);
         }
 
+        systemAdmin.setPhone(request.getPhone());
+        systemAdmin.setCid(request.getCid());
         systemAdmin.setFullName(request.getFullName());
         systemAdmin.setGender(request.isGender());
         systemAdmin.setDob(request.getDob());

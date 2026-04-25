@@ -164,4 +164,12 @@ public class VolunteerController {
         volunteerService.createVolunteerAccountByAdmin(request);
         return ResponseEntity.ok().build();
     }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/volunteers/{id}")
+    public ResponseEntity<VolunteerAccountInformationResponse> getVolunteerAccountInformationByAdmin(
+            @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(volunteerService.getVolunteerAccountInformationByAdmin(id));
+    }
 }

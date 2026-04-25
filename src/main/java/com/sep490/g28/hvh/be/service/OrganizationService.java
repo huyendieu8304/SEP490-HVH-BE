@@ -32,7 +32,7 @@ public interface OrganizationService {
 
     void calculateOrganizationsAvgRating();
     //todo delete this
-    void calculateOrganizationsAvgRatingForMockData();
+//    void calculateOrganizationsAvgRatingForMockData();
 
     Page<OrganizationSimpleResponseForSystemAdmin> getOrganizationsBySystemAdmin(
             int pageNumber, int pageSize, String name, List<String> orgTypeLists);

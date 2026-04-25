@@ -77,4 +77,26 @@ public class EventMomentController {
     ) {
         return ResponseEntity.ok(eventMomentService.getEventMomentsForVolunteer(pageNumber, pageSize, eventName));
     }
+
+    @PreAuthorize("hasAnyRole('SYS_ADMIN', 'ORG_MANAGER','HOST')")
+    @GetMapping("/event-moments/{eventId}")
+    public ResponseEntity<Page<EventMomentFeedDetailsResponse>> getEventMomentsOfEvent(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @RequestParam(required = false)
+            String eventName,
+
+            @PathVariable(name = "eventId")
+            @UUID(message = "INVALID_UUID") String inputId
+    ) {
+        java.util.UUID id = java.util.UUID.fromString(inputId);
+        return ResponseEntity.ok(eventMomentService.getEventMomentsOfEvent(pageNumber, pageSize, id, eventName));
+    }
 }
