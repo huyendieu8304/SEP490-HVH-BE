@@ -9,7 +9,7 @@ public interface SystemStatsService {
     void compileSystemStatsDaily();
 
     //todo remove this after mock data
-    void compileSystemStatsMonthly(int year, int month);
+//    void compileSystemStatsMonthly(int year, int month);
 
     List<SystemStatsResponse> getSystem6MonthsStatistics();
 }

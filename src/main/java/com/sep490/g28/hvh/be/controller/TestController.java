@@ -159,11 +159,11 @@ public class TestController {
     }
 
 
-    @PostMapping("/calc-org-rating")
-    public ResponseEntity<Void> calculateOrganizationsAvgRating(){
-        organizationService.calculateOrganizationsAvgRatingForMockData();
-        return ResponseEntity.ok().build();
-    }
+//    @PostMapping("/calc-org-rating")
+//    public ResponseEntity<Void> calculateOrganizationsAvgRating(){
+//        organizationService.calculateOrganizationsAvgRatingForMockData();
+//        return ResponseEntity.ok().build();
+//    }
 
     EventSessionService eventSessionService;
     @PostMapping("/create-check-in-code")
@@ -179,25 +179,25 @@ public class TestController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/org-stat-monthly/mont-year")
-    public ResponseEntity<Void> statOrgMonthlyBy(
-            @RequestParam int month,
-            @RequestParam int year
-    ){
-        organizationStatsService.compileOrganizationsMonthlyStatistics(year, month);
-        return ResponseEntity.ok().build();
-    }
+//    @PutMapping("/org-stat-monthly/mont-year")
+//    public ResponseEntity<Void> statOrgMonthlyBy(
+//            @RequestParam int month,
+//            @RequestParam int year
+//    ){
+//        organizationStatsService.compileOrganizationsMonthlyStatistics(year, month);
+//        return ResponseEntity.ok().build();
+//    }
 
     SystemStatsService systemStatsService;
 
-    @PutMapping("/sys-stats-monthly/mont-year")
-    public ResponseEntity<Void> statSysMonthlyBy(
-            @RequestParam int month,
-            @RequestParam int year
-    ){
-        systemStatsService.compileSystemStatsMonthly(year, month);
-        return ResponseEntity.ok().build();
-    }
+//    @PutMapping("/sys-stats-monthly/mont-year")
+//    public ResponseEntity<Void> statSysMonthlyBy(
+//            @RequestParam int month,
+//            @RequestParam int year
+//    ){
+//        systemStatsService.compileSystemStatsMonthly(year, month);
+//        return ResponseEntity.ok().build();
+//    }
 
 
 }

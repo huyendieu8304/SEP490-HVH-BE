@@ -10,6 +10,7 @@ import com.sep490.g28.hvh.be.entity.Host;
 import com.sep490.g28.hvh.be.entity.OrganizationManager;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.HostErrorCode;
+import com.sep490.g28.hvh.be.exception.errorCodeImpl.SupabaseErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
@@ -139,8 +140,10 @@ public class HostServiceImpl implements HostService {
         try {
             String avatarUrl = storageService.getSignedUrl(host.getAvatarUrl());
             response.setAvatarUrl(avatarUrl);
-        } catch (CompletionException e) {
-            response.setAvatarUrl(AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null));
+        } catch (Exception ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof AppException ae
+                    && ae.getCode() != SupabaseErrorCode.STORAGE_FILE_NOT_EXISTED.getCode()) throw ex;
         }
 
         response.setAddress(host.getAddress());
