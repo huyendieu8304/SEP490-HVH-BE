@@ -222,7 +222,7 @@ public class EventApplicationServiceImplTest {
         request.setApVersion("1.0");
         request.setOsVersion("android");
         request.setCurrentPlaceLat(10.0);
-        request.setCurrentPlaceLng(10.0);
+        request.setCurrentPlaceLng(20.0);
         return request;
     }
 
@@ -233,7 +233,7 @@ public class EventApplicationServiceImplTest {
         request.setApVersion("1.0");
         request.setOsVersion("android");
         request.setCurrentPlaceLat(10.0);
-        request.setCurrentPlaceLng(10.0);
+        request.setCurrentPlaceLng(20.0);
         return request;
     }
 
@@ -244,7 +244,7 @@ public class EventApplicationServiceImplTest {
         request.setApVersion("1.0");
         request.setOsVersion("android");
         request.setCurrentPlaceLat(10.0);
-        request.setCurrentPlaceLng(10.0);
+        request.setCurrentPlaceLng(20.0);
         return request;
     }
 
