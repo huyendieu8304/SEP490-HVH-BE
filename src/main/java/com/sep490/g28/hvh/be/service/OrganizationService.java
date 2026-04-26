@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
+import com.sep490.g28.hvh.be.dto.organization.request.UpdateOrganizationBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.*;
 import com.sep490.g28.hvh.be.entity.Organization;
 import jakarta.validation.Valid;
@@ -36,4 +37,6 @@ public interface OrganizationService {
 
     Page<OrganizationSimpleResponseForSystemAdmin> getOrganizationsBySystemAdmin(
             int pageNumber, int pageSize, String name, List<String> orgTypeLists);
+
+    UpdateOrganizationBySystemAdminResponse updateOrganizationBySystemAdmin(UUID ordId, UpdateOrganizationBySystemAdminRequest request);
 }

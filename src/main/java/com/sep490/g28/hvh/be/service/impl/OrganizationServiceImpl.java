@@ -8,6 +8,7 @@ import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
+import com.sep490.g28.hvh.be.dto.organization.request.UpdateOrganizationBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -774,5 +775,104 @@ public class OrganizationServiceImpl implements OrganizationService {
                             activitySubDomains
                     );
                 });
+    }
+
+    @Override
+    public UpdateOrganizationBySystemAdminResponse updateOrganizationBySystemAdmin(UUID ordId, UpdateOrganizationBySystemAdminRequest request) {
+
+        Organization org = organizationRepository.findById(ordId)
+                .orElseThrow(() -> new AppException(OrganizationErrorCode.ORGANIZATION_NOT_EXISTED));
+
+        String newAvatarUploadUrl = null;
+        if(request.getAvatarImageExtension() != null) {
+            if (org.getAvatarImage() != null && !org.getAvatarImage().isEmpty()) {
+                //delete exist avatar image
+                CompletableFuture<Void> avatarFuture =
+                        storageService.deleteFileAsync(org.getAvatarImage());
+
+                try {
+                    CompletableFuture.allOf(avatarFuture).join();
+                } catch (CompletionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                    } else {
+                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                    }
+                }
+            }
+
+            //get signed URL of file
+            String newAvatarPath = storagePathGenerator.organizationAvatar(ordId, request.getAvatarImageExtension());
+
+            CompletableFuture<String> newAvatarFuture =
+                    storageService.getUploadUrlAsync(newAvatarPath);
+
+            try {
+                CompletableFuture.allOf(newAvatarFuture).join();
+                newAvatarUploadUrl = newAvatarFuture.join();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                } else {
+                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                }
+            }
+
+            org.setAvatarImage(newAvatarPath);
+        }
+
+        String newCoverUploadUrl = null;
+        if(request.getCoverImageExtension() != null) {
+            if (org.getCoverImage() != null && !org.getCoverImage().isEmpty()) {
+                //delete exist avatar image
+                CompletableFuture<Void> coverFuture =
+                        storageService.deleteFileAsync(org.getCoverImage());
+
+                try {
+                    CompletableFuture.allOf(coverFuture).join();
+                } catch (CompletionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                    } else {
+                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                    }
+                }
+            }
+
+            //get signed URL of file
+            String newCoverPath = storagePathGenerator.organizationCover(ordId, request.getCoverImageExtension());
+
+            CompletableFuture<String> newCoverFuture =
+                    storageService.getUploadUrlAsync(newCoverPath);
+
+            try {
+                CompletableFuture.allOf(newCoverFuture).join();
+                newCoverUploadUrl = newCoverFuture.join();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
+                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
+                } else {
+                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
+                }
+            }
+
+            org.setCoverImage(newCoverPath);
+        }
+
+        org.setName(request.getName());
+        org.setDhaRegistered(request.getDhaRegistered());
+        org.setOrgType(EOrgType.valueOf(request.getOrgType()));
+        org.setOrgIntroduction(request.getOrgIntroduction());
+
+        organizationRepository.save(org);
+
+        return UpdateOrganizationBySystemAdminResponse.builder()
+                .avatarUploadUrl(newAvatarUploadUrl)
+                .coverUploadUrl(newCoverUploadUrl)
+                .build();
     }
 }
