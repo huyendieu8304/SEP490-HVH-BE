@@ -802,7 +802,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 }
             }
 
-            //get signed URL of file
+            //get upload URL of new org avatar
             String newAvatarPath = storagePathGenerator.organizationAvatar(ordId, request.getAvatarImageExtension());
 
             CompletableFuture<String> newAvatarFuture =
@@ -826,7 +826,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         String newCoverUploadUrl = null;
         if(request.getCoverImageExtension() != null) {
             if (org.getCoverImage() != null && !org.getCoverImage().isEmpty()) {
-                //delete exist avatar image
+                //delete exist cover image
                 CompletableFuture<Void> coverFuture =
                         storageService.deleteFileAsync(org.getCoverImage());
 
@@ -842,7 +842,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 }
             }
 
-            //get signed URL of file
+            //get upload URL of new org cover
             String newCoverPath = storagePathGenerator.organizationCover(ordId, request.getCoverImageExtension());
 
             CompletableFuture<String> newCoverFuture =
