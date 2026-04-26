@@ -55,11 +55,10 @@ public interface HostRepository extends JpaRepository<Host, UUID> {
                     ON e.host.id = h.id
                     AND e.status = 'COMPLETED'
                 LEFT JOIN User u ON u.id = h.id
-                WHERE h.organization.id = :organizationId
-                    AND (:email IS NULL OR h.email ILIKE CONCAT('%', CAST(:email AS string), '%'))
+                WHERE (:email IS NULL OR h.email ILIKE CONCAT('%', CAST(:email AS string), '%'))
                 GROUP BY h.id, h.fullName, h.address, h.email, h.phone, u.status
             """)
-    Page<HostSimpleResponseForSystemAdmin> getHostsOfOrganizationBySystemAdmin(UUID organizationId, Pageable pageable, String email);
+    Page<HostSimpleResponseForSystemAdmin> getHostsOfOrganizationBySystemAdmin(Pageable pageable, String email);
 
     boolean existsByIdAndCreatedBy_Id(UUID hostId, UUID orgManagerId);
 
