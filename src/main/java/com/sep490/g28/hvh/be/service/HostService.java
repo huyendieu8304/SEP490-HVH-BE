@@ -27,7 +27,7 @@ public interface HostService {
 
     HostAccountInformationResponse getHostAccountInformation();
 
-    Page<HostSimpleResponseForSystemAdmin> getHostsOfOrganizationBySystemAdmin(int pageNumber, int pageSize, UUID organizationId, String email);
+    Page<HostSimpleResponseForSystemAdmin> getHostsOfOrganizationBySystemAdmin(int pageNumber, int pageSize, String email);
 
     HostInfoResponseForSystemAdmin getHostInfoBySystemAdmin(UUID hostId);
 

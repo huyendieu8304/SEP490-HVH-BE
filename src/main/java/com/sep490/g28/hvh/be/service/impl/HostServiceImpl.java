@@ -288,7 +288,7 @@ public class HostServiceImpl implements HostService {
     }
 
     @Override
-    public Page<HostSimpleResponseForSystemAdmin> getHostsOfOrganizationBySystemAdmin(int pageNumber, int pageSize, UUID organizationId, String email) {
+    public Page<HostSimpleResponseForSystemAdmin> getHostsOfOrganizationBySystemAdmin(int pageNumber, int pageSize, String email) {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
@@ -296,7 +296,7 @@ public class HostServiceImpl implements HostService {
         );
 
         Page<HostSimpleResponseForSystemAdmin> page =
-                hostRepository.getHostsOfOrganizationBySystemAdmin(organizationId, pageable, email);
+                hostRepository.getHostsOfOrganizationBySystemAdmin(pageable, email);
         //get avatar signed urls
         List<CompletableFuture<HostSimpleResponseForSystemAdmin>> futures =
                 page.getContent().stream()

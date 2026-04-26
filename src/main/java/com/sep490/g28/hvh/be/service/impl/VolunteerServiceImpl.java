@@ -175,6 +175,7 @@ public class VolunteerServiceImpl implements VolunteerService {
                 .cid(identityVerification.getCid())
                 .email(identityVerification.getEmail())
                 .phone(identityVerification.getPhone())
+                .fullName(identityVerification.getFullName())
                 .status(identityVerification.getStatus())
                 .rejectionReason(identityVerification.getRejectionReason())
                 .createdAt(identityVerification.getCreatedAt())

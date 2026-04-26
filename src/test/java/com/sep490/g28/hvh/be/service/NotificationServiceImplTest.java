@@ -691,4 +691,146 @@ public class NotificationServiceImplTest {
         verify(notificationPublisher).enqueueNotification(any(), eq(volId));
     }
 
+    @Test
+    void sendEventCreateRejectedByAdminNotification_success() {
+        UUID hostId = UUID.randomUUID();
+        UUID mngId = UUID.randomUUID();
+
+        OrganizationManager mng = new OrganizationManager();
+        mng.setId(mngId);
+
+        Host host = new Host();
+        host.setId(hostId);
+        host.setCreatedBy(mng);
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("event");
+        event.setHost(host);
+
+        when(notificationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.getReferenceById(any())).thenReturn(new User());
+
+        service.sendEventCreateRejectedByAdminNotification(event, "reason");
+
+        verify(notificationRepository, times(2)).save(any());
+        verify(userNotificationRepository, times(2)).save(any());
+
+        verify(notificationPublisher).enqueueNotification(any(), eq(hostId));
+        verify(notificationPublisher).enqueueNotification(any(), eq(mngId));
+    }
+
+    @Test
+    void sendEventApplicationRejectedNotification_success() {
+        UUID volId = UUID.randomUUID();
+
+        Event event = new Event();
+        event.setName("event");
+
+        EventApplication app = new EventApplication();
+        app.setId(UUID.randomUUID());
+        app.setSessionDate(LocalDate.now());
+
+        when(notificationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.getReferenceById(volId)).thenReturn(new User());
+
+        service.sendEventApplicationRejectedNotification(volId, event, app, "reason");
+
+        verify(notificationRepository).save(any());
+        verify(userNotificationRepository).save(any());
+        verify(notificationPublisher).enqueueNotification(any(), eq(volId));
+    }
+
+    @Test
+    void sentEventCancelledByAdminNotification_success() {
+        UUID volId = UUID.randomUUID();
+
+        Volunteer vol = new Volunteer();
+        vol.setId(volId);
+
+        EventApplication app = new EventApplication();
+        app.setId(UUID.randomUUID());
+        app.setSessionDate(LocalDate.now());
+        app.setVolunteer(vol);
+
+        when(notificationRepository.saveAll(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.getReferenceById(volId)).thenReturn(new User());
+
+        service.sentEventCancelledByAdminNotification(
+                List.of(app), "event", "reason"
+        );
+
+        verify(notificationRepository).saveAll(any());
+        verify(userNotificationRepository).saveAll(any());
+        verify(notificationPublisher).enqueueNotification(any(), eq(volId));
+    }
+
+    @Test
+    void sentEventUpdatedByHostNotification_success() {
+        UUID mngId = UUID.randomUUID();
+
+        when(notificationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.getReferenceById(mngId)).thenReturn(new User());
+
+        service.sentEventUpdatedByHostNotification(mngId, UUID.randomUUID(), "event");
+
+        verify(notificationRepository).save(any());
+        verify(userNotificationRepository).save(any());
+        verify(notificationPublisher).enqueueNotification(any(), eq(mngId));
+    }
+
+    @Test
+    void sendEventUpdateNonCriticalApprovedByOrgManagerNotification_success() {
+        UUID hostId = UUID.randomUUID();
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("event");
+
+        when(notificationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.getReferenceById(hostId)).thenReturn(new User());
+
+        service.sendEventUpdateNonCriticalApprovedByOrgManagerNotification(hostId, event);
+
+        verify(notificationRepository).save(any());
+        verify(userNotificationRepository).save(any());
+        verify(notificationPublisher).enqueueNotification(any(), eq(hostId));
+    }
+
+    @Test
+    void sendEventUpdateCriticalApprovedByOrgManagerNotification_success() {
+        UUID hostId = UUID.randomUUID();
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("event");
+
+        when(notificationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.getReferenceById(hostId)).thenReturn(new User());
+
+        service.sendEventUpdateCriticalApprovedByOrgManagerNotification(hostId, event);
+
+        verify(notificationRepository).save(any());
+        verify(userNotificationRepository).save(any());
+        verify(notificationPublisher).enqueueNotification(any(), eq(hostId));
+    }
+
+    @Test
+    void sendEventUpdateRejectedByOrgManagerNotification_success() {
+        UUID hostId = UUID.randomUUID();
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("event");
+
+        when(notificationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.getReferenceById(hostId)).thenReturn(new User());
+
+        service.sendEventUpdateRejectedByOrgManagerNotification(hostId, event);
+
+        verify(notificationRepository).save(any());
+        verify(userNotificationRepository).save(any());
+        verify(notificationPublisher).enqueueNotification(any(), eq(hostId));
+    }
+
 }

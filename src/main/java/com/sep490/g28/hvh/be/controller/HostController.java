@@ -102,10 +102,8 @@ public class HostController {
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
-    @GetMapping("/sys-admin/hosts/{organizationId}")
+    @GetMapping("/sys-admin/hosts")
     public ResponseEntity<Page<HostSimpleResponseForSystemAdmin>> getHostsOfOrganizationBySystemAdmin(
-            @PathVariable UUID organizationId,
-
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
             int pageNumber,
@@ -118,7 +116,7 @@ public class HostController {
             @RequestParam(required = false)
             String email
     ) {
-        return ResponseEntity.ok(hostService.getHostsOfOrganizationBySystemAdmin(pageNumber, pageSize, organizationId, email));
+        return ResponseEntity.ok(hostService.getHostsOfOrganizationBySystemAdmin(pageNumber, pageSize, email));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
