@@ -436,8 +436,6 @@ public class HostServiceImplTest {
     @Test
     void getHostsOfOrganizationBySystemAdmin_success() {
 
-        UUID orgId = UUID.randomUUID();
-
         HostSimpleResponseForSystemAdmin h1 = new HostSimpleResponseForSystemAdmin();
         h1.setAvatarUrl(null);
 
@@ -452,7 +450,7 @@ public class HostServiceImplTest {
         Page<HostSimpleResponseForSystemAdmin> page =
                 new PageImpl<>(list);
 
-        when(hostRepository.getHostsOfOrganizationBySystemAdmin(eq(orgId), any(), any()))
+        when(hostRepository.getHostsOfOrganizationBySystemAdmin(any(), any()))
                 .thenReturn(page);
 
         when(storageService.getSignedUrlAsync("path-2"))
@@ -465,7 +463,7 @@ public class HostServiceImplTest {
                 .thenReturn(failedFuture);
 
         Page<HostSimpleResponseForSystemAdmin> result =
-                hostService.getHostsOfOrganizationBySystemAdmin(0, 10, orgId, null);
+                hostService.getHostsOfOrganizationBySystemAdmin(0, 10, null);
 
         List<HostSimpleResponseForSystemAdmin> content = result.getContent();
 
