@@ -7,6 +7,7 @@ import com.sep490.g28.hvh.be.constant.EOrganizationStatus;
 import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
+import com.sep490.g28.hvh.be.dto.organization.request.UpdateOrganizationBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -36,6 +37,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -181,6 +183,8 @@ public class OrganizationServiceImplTest {
         org.setCreatedAt(OffsetDateTime.now());
         org.setLegalDocument(null);
         org.setOtherEvidences(null);
+        org.setAvatarImage("avatar");
+        org.setCoverImage("cover");
 
         return org;
     }
@@ -195,6 +199,16 @@ public class OrganizationServiceImplTest {
         manager.setCid("123456");
 
         return manager;
+    }
+
+    private UpdateOrganizationBySystemAdminRequest validRequest() {
+        UpdateOrganizationBySystemAdminRequest req =
+                new UpdateOrganizationBySystemAdminRequest();
+        req.setName("New Org");
+        req.setDhaRegistered(true);
+        req.setOrgType("GOVERNMENT_AGENCY_BASED");
+        req.setOrgIntroduction("Intro");
+        return req;
     }
 
     // ==== registerOrganization ===================================
@@ -1086,4 +1100,50 @@ public class OrganizationServiceImplTest {
         assertEquals((short) 5, org.getAvgRating());
         assertEquals(1, org.getHostedEventCount());
     }
+
+    // ===== updateOrganizationBySystemAdmin ============================================
+    // ===== TC1 =====
+    @Test
+    void updateOrganizationBySystemAdmin_success() {
+        UpdateOrganizationBySystemAdminRequest req = validRequest();
+        req.setAvatarImageExtension(".jpg");
+        req.setCoverImageExtension(".png");
+
+        when(organizationRepository.findById(orgId))
+                .thenReturn(Optional.of(mockOrganization()));
+
+        when(storageService.deleteFileAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture(null));
+
+        when(storagePathGenerator.organizationAvatar(eq(orgId), eq(".jpg")))
+                .thenReturn("avatar-path");
+
+        when(storagePathGenerator.organizationCover(eq(orgId), eq(".png")))
+                .thenReturn("cover-path");
+
+        when(storageService.getUploadUrlAsync("avatar-path"))
+                .thenReturn(CompletableFuture.completedFuture("avatar-url"));
+
+        when(storageService.getUploadUrlAsync("cover-path"))
+                .thenReturn(CompletableFuture.completedFuture("cover-url"));
+
+        UpdateOrganizationBySystemAdminResponse res =
+                organizationService.updateOrganizationBySystemAdmin(orgId, req);
+
+        assertThat(res.getAvatarUploadUrl()).isEqualTo("avatar-url");
+        assertThat(res.getCoverUploadUrl()).isEqualTo("cover-url");
+    }
+
+    // ===== TC2 =====
+    @Test
+    void updateOrganizationBySystemAdmin_org_not_found() {
+        when(organizationRepository.findById(orgId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                AppException.class,
+                () -> organizationService.updateOrganizationBySystemAdmin(orgId, validRequest())
+        );
+    }
+
 }
