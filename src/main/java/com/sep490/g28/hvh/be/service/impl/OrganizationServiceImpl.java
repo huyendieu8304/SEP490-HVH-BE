@@ -334,11 +334,6 @@ public class OrganizationServiceImpl implements OrganizationService {
             throw new AppException(OrganizationErrorCode.REGISTRATION_VERIFIED);
         }
 
-        //check the unique of email
-        if (userRepository.existsByEmail(organizationRegistration.getManagerEmail())) {
-            throw new AppException(OrganizationErrorCode.EMAIL_USED);
-        }
-
         SystemAdmin currentAdmin = systemAdminRepository.getReferenceById(currentUserProvider.getId());
         organizationRegistration.setReviewedBy(currentAdmin);
 
@@ -366,7 +361,10 @@ public class OrganizationServiceImpl implements OrganizationService {
         organizationRegistration.setManagerCidHolding("");
 
         if (Boolean.TRUE.equals(request.getApprove())) {
-            //APPROVE
+            //check the unique of email
+            if (userRepository.existsByEmail(organizationRegistration.getManagerEmail())) {
+                throw new AppException(OrganizationErrorCode.EMAIL_USED);
+            }
 
             //Create organization in the db
             Organization organization = new Organization();

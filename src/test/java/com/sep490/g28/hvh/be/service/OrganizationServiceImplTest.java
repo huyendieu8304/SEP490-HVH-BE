@@ -539,6 +539,9 @@ public class OrganizationServiceImplTest {
         when(organizationRegistrationRepository.findById(id))
                 .thenReturn(Optional.of(organizationRegistration));
 
+        when(storageService.deleteFileAsync(any()))
+                .thenReturn(CompletableFuture.completedFuture(null));
+
         when(userRepository.existsByEmail(any())).thenReturn(true);
 
         AppException ex = assertThrows(
