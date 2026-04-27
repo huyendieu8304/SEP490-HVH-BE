@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum OrganizationManagerErrorCode implements ErrorCode {
 
-    ORGANIZATION_MANAGER_NOT_EXISTED(11001, "Không tìm thấy người quản lý tổ chức", HttpStatus.NOT_FOUND),
+    ORGANIZATION_MANAGER_NOT_EXISTED(12001, "Không tìm thấy người quản lý tổ chức", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;
