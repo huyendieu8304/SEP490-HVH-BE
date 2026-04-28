@@ -530,9 +530,13 @@ public class OrganizationServiceImpl implements OrganizationService {
 
             CompletableFuture.allOf(otherEvidencesFutures.toArray(new CompletableFuture[0])).join();
 
-            if(avatarImageFuture != null && coverImageFuture != null) {
-                CompletableFuture.allOf(avatarImageFuture, coverImageFuture).join();
+            if(avatarImageFuture != null) {
+                CompletableFuture.allOf(avatarImageFuture).join();
                 avatarImageUrl = avatarImageFuture.join();
+            }
+
+            if(coverImageFuture != null) {
+                CompletableFuture.allOf(coverImageFuture).join();
                 coverImageUrl = coverImageFuture.join();
             }
 
