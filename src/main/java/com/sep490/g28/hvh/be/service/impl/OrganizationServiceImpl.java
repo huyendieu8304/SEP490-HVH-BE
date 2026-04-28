@@ -490,8 +490,11 @@ public class OrganizationServiceImpl implements OrganizationService {
         //get signed urls
         CompletableFuture<String> avatarImageFuture = null;
         CompletableFuture<String> coverImageFuture = null;
-        if(organization.getAvatarImage() != null && organization.getCoverImage() != null) {
+        if(organization.getAvatarImage() != null) {
             avatarImageFuture = storageService.getSignedUrlAsync(organization.getAvatarImage());
+        }
+
+        if(organization.getCoverImage() != null) {
             coverImageFuture = storageService.getSignedUrlAsync(organization.getCoverImage());
         }
 
