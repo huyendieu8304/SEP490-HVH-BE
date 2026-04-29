@@ -35,6 +35,9 @@ public class EventServiceImplUpdateEventStatusTest {
     EventApplicationRepository eventApplicationRepository;
 
     @Mock
+    EventApplicationService eventApplicationService;
+
+    @Mock
     VolunteerReviewService volunteerReviewService;
 
     @Mock

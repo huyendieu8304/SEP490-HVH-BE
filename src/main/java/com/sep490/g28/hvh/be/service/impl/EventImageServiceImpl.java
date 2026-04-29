@@ -150,7 +150,6 @@ public class EventImageServiceImpl implements EventImageService {
         return Collections.emptyList();
     }
 
-    //todo unit test for this method
     /**
      * @return list of upload image url
      */
@@ -252,7 +251,6 @@ public class EventImageServiceImpl implements EventImageService {
         return uploadUrls;
     }
 
-    //todo unit test for this method
     @Override
     public List<EventImage> resolveUpdatedEventImages(
             Event event,
