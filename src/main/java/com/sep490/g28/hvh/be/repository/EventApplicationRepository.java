@@ -196,4 +196,16 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
                 AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.COMPLETED
             """)
     Page<CompletedApplicationResponse> findCompletedApplications(UUID sessionId, Pageable pageable);
+
+    @Modifying
+    @Query(value = """
+            UPDATE event_applications
+            SET status = 'REJECTED'
+            WHERE session_id IN (:sessionIds)
+              AND status  = 'PENDING'
+            RETURNING *
+            """, nativeQuery = true)
+    List<EventApplication> rejectApplicationsBySessions(
+            List<UUID> sessionIds
+    );
 }

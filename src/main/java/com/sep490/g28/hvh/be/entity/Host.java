@@ -40,7 +40,6 @@ public class Host {
 
     private LocalDate dob;
 
-    //todo đổi tên cột này thành avatar_path, à có khi phải đổi cả những bảng khác, vol, orgMng, event image
     @Column(name = "avatar_url")
     private String avatarUrl;
 

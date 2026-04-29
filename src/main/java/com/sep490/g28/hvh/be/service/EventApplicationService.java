@@ -40,4 +40,6 @@ public interface EventApplicationService {
     void faceCheckInEvent(FaceCheckInEventRequest request, MultipartFile file);
 
     Page<CompletedApplicationResponse> getCompletedApplications(UUID sessionId, int pageNumber, int pageSize);
+
+    List<EventApplication> rejectAllPendingApplicationsOfEvent(Event event);
 }

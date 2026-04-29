@@ -35,6 +35,9 @@ public class EventServiceImplUpdateEventStatusTest {
     EventApplicationRepository eventApplicationRepository;
 
     @Mock
+    EventApplicationService eventApplicationService;
+
+    @Mock
     VolunteerReviewService volunteerReviewService;
 
     @Mock
@@ -72,6 +75,7 @@ public class EventServiceImplUpdateEventStatusTest {
         event.setId(UUID.randomUUID());
         event.setOrganization(org);
         event.setHost(host);
+        event.setServingActivity(true);
         event.setEndDate(LocalDate.now().minusDays(3));
 
         EventSession session = new EventSession();

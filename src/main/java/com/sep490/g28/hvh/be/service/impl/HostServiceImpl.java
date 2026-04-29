@@ -298,27 +298,23 @@ public class HostServiceImpl implements HostService {
         Page<HostSimpleResponseForSystemAdmin> page =
                 hostRepository.getHostsOfOrganizationBySystemAdmin(pageable, email);
         //get avatar signed urls
-        List<CompletableFuture<HostSimpleResponseForSystemAdmin>> futures =
+        List<HostSimpleResponseForSystemAdmin> content =
                 page.getContent().stream()
-                        .map(h -> {
-                            if (h.getAvatarUrl() == null) {
-                                return CompletableFuture.completedFuture(h);
+                        .map(host -> {
+                            if (host.getAvatarUrl() == null) return host;
+                            //get signed url for host avatar
+                            String path = host.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                host.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                host.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
                             }
-                            return storageService.getSignedUrlAsync(h.getAvatarUrl())
-                                    .thenApply(url -> {
-                                        h.setAvatarUrl(url);
-                                        return h;
-                                    })
-                                    //todo this might be put into some todos
-                                    .exceptionally(ex -> {
-                                        log.warn("Failed to get signed url for path: {}", h.getAvatarUrl(), ex);
-                                        h.setAvatarUrl(null);
-                                        return h;
-                                    });
+                            return host;
                         })
                         .toList();
-        List<HostSimpleResponseForSystemAdmin> content =
-                futures.stream().map(CompletableFuture::join).toList();
         return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
