@@ -1772,6 +1772,12 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findUpcomingEventsAndStartDateToday(targetDate);
 
         for (Event event : events){
+            //reject all PENDING applications of event
+            List<EventApplication> applications = eventApplicationService.rejectAllPendingApplicationsOfEvent(event);
+
+            //send notification to all the volunteer that has PENDING applications
+            notificationService.sendEventApplicationRejectedNotification(applications, event.getName());
+
             //update event status to ONGOING
             event.setStatus(EEventStatus.ONGOING);
             eventRepository.save(event);

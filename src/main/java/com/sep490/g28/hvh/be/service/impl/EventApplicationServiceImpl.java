@@ -185,8 +185,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
         }
 
-        //todo liệu có cần kiểm tra thông tin status của event ở chỗ này không?
-        //todo có khi thêm cron job, khi event chuyển status qua ONGOING cái là tự động reject hết đơn đăng kí luôn
         eventApplication.setStatus(EEventApplicationStatus.REJECTED);
         eventApplicationRepository.save(eventApplication);
         log.info("Reject event application eventApplicationId={}", eventApplication.getId());
@@ -834,5 +832,15 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                         })
                         .toList();
         return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public List<EventApplication> rejectAllPendingApplicationsOfEvent(Event event) {
+        //update all the applications of the volunteer to CANCELLED status
+        List<EventSession> eventSessions = event.getSessions();
+        List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
+        List<EventApplication> eventApplications =  eventApplicationRepository.rejectApplicationsBySessions(sessionIds);
+        log.info("All the applications of volunteer has been cancelled");
+        return eventApplications;
     }
 }

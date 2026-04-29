@@ -365,6 +365,31 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public void sendEventApplicationRejectedNotification(List<EventApplication> eventApplications, String eventName) {
+        List<Notification> notifications = new ArrayList<>();
+
+        for (EventApplication app : eventApplications) {
+            Notification notification = new Notification();
+            notification.setTitle("Đơn đăng kí tham gia sự kiện tự động bị từ chối");
+            notification.setBody(String.format(
+                    "Sự kiện %s đã bắt đầu và người tổ chức chưa phê duyệt đơn đăng kí của bạn, nên đơn đăng kí sẽ được tự động chuyển về trạng thái từ chối.",
+                    eventName
+            ));
+            notification.setData(Map.of(
+                    DATA_NOTIFICATION_TYPE, ENotificationType.VOL_APPLICATION_REJECTED.name(),
+                    DATA_REF_ID_KEY, app.getId().toString(),
+                    DATA_ACTION, ENotificationDataAction.VOL_APPLICATION_DETAILS.name()
+            ));
+            notification.setType(ENotificationType.VOL_APPLICATION_REJECTED);
+
+            notifications.add(notification);
+        }
+
+        notifications = notificationRepository.saveAll(notifications);
+        pushNotificationsToMessageQueue(eventApplications, notifications);
+    }
+
+    @Override
     public void sendEventApplicationCancelledSuccessfullyNotification(UUID volunteerId, Event event, EventApplication application, boolean isMinusScore) {
         //send notification to volunteer
         Notification notification = new Notification();

@@ -23,7 +23,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "events")
-//todo, có khi thêm index tren satus nua, search cho nhanh
 @Getter
 @Setter
 @NoArgsConstructor
