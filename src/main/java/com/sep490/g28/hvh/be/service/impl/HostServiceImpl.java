@@ -7,6 +7,7 @@ import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileBySystemAdminRequ
 import com.sep490.g28.hvh.be.dto.host.request.UpdateHostProfileRequest;
 import com.sep490.g28.hvh.be.dto.host.response.*;
 import com.sep490.g28.hvh.be.entity.Host;
+import com.sep490.g28.hvh.be.entity.Organization;
 import com.sep490.g28.hvh.be.entity.OrganizationManager;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.HostErrorCode;
@@ -347,6 +348,22 @@ public class HostServiceImpl implements HostService {
         response.setAddress(host.getAddress());
         response.setDetailAddress(host.getDetailAddress());
         response.setCreatedAt(host.getCreatedAt());
+
+        Organization organization = host.getOrganization();
+
+        if(organization != null) {
+            try {
+                String orgAvatarUrl = storageService.getSignedUrl(organization.getAvatarImage());
+                response.setOrgAvatarUrl(orgAvatarUrl);
+            } catch (AppException e) {
+                response.setOrgAvatarUrl(null);
+            }
+
+            response.setOrgId(organization.getId());
+            response.setOrgName(organization.getName());
+            response.setOrgAvgRating(organization.getAvgRating());
+            response.setOrgHostedEventCount(organization.getHostedEventCount());
+        }
 
         return response;
     }
