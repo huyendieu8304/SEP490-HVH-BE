@@ -5,6 +5,7 @@ import com.sep490.g28.hvh.be.constant.ENotificationDataAction;
 import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.constant.ERole;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
+import com.sep490.g28.hvh.be.dto.notification.response.NotificationResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.notification.entity.Notification;
 import com.sep490.g28.hvh.be.notification.entity.NotificationTopicSubscription;
@@ -17,11 +18,13 @@ import com.sep490.g28.hvh.be.notification.repository.NotificationTokenRepository
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.notification.repository.NotificationTopicSubscriptionRepository;
 import com.sep490.g28.hvh.be.notification.service.NotificationTokenTxService;
-import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +40,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationTopicSubscriptionRepository notificationTopicSubscriptionRepository;
     private final UserNotificationRepository userNotificationRepository;
-    private final EventApplicationRepository eventApplicationRepository;
 
 
     private final CurrentUserProvider currentUserProvider;
@@ -151,18 +153,6 @@ public class NotificationServiceImpl implements NotificationService {
         notificationPublisher.enqueueUnsubscribeUserFromTopic(userId, topicName);
         log.info("Unsubscribed user from topic of event, userId={} evenId={} topic={}", userId, eventId, topicName);
     }
-
-    //    @Override
-//    public List<UserNotification> getLatestNotification(OffsetDateTime cursor) {
-//        UUID currentUserId = currentUserProvider.getId();
-//        Pageable pageable = PageRequest.of(0, 20);
-//
-//        if (cursor == null) {
-//            return userNotificationRepository.findFirstPage(currentUserId, pageable);
-//        }
-//
-//        return userNotificationRepository.findNextPage(currentUserId, cursor, pageable);
-//    }
 
     //only used for send notification to user
     private Notification saveNotificationForUser(Notification notification, UUID userId) {
@@ -959,5 +949,42 @@ public class NotificationServiceImpl implements NotificationService {
         notification = saveNotificationForUser(notification, volunteerId);
 
         notificationPublisher.enqueueNotification(notification, volunteerId);
+    }
+
+    @Override
+    public Page<NotificationResponse> getLatestNotificationOfUser(int pageSize, int pageNumber) {
+        Pageable pageable = PageRequest.of(
+                pageNumber,
+                pageSize
+        );
+
+        UUID userId = currentUserProvider.getId();
+
+        Page<Notification> page = userNotificationRepository.findUserNotificationByUserId(userId, pageable);
+
+        return page.map(n -> new NotificationResponse(
+                n.getId(),
+                n.getTitle(),
+                n.getBody(),
+                n.getData(),
+                n.getCreatedAt()
+        ));
+    }
+
+    @Override
+    public Page<NotificationResponse> getLatestNotificationOfUserTopic(int pageSize, int pageNumber) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        UUID userId = currentUserProvider.getId();
+
+        Page<Notification> page = notificationRepository
+                .findNotificationsByUserTopics(userId, pageable);
+
+        return page.map(n -> new NotificationResponse(
+                n.getId(),
+                n.getTitle(),
+                n.getBody(),
+                n.getData(),
+                n.getCreatedAt()
+        ));
     }
 }

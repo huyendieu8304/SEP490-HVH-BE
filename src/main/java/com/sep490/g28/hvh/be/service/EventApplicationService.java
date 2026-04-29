@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
@@ -38,4 +39,5 @@ public interface EventApplicationService {
 
     void faceCheckInEvent(FaceCheckInEventRequest request, MultipartFile file);
 
+    Page<CompletedApplicationResponse> getCompletedApplications(UUID sessionId, int pageNumber, int pageSize);
 }

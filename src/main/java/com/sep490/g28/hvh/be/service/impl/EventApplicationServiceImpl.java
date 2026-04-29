@@ -5,10 +5,7 @@ import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.event.response.EventSessionDetailsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -810,5 +807,32 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         } else {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_NOT_MATCH);
         }
+    }
+
+    @Override
+    public Page<CompletedApplicationResponse> getCompletedApplications(UUID sessionId, int pageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        Page<CompletedApplicationResponse> page = eventApplicationRepository.findCompletedApplications(sessionId, pageable);
+
+        //get avatar signed urls
+        List<CompletedApplicationResponse> content =
+                page.getContent().stream()
+                        .map(participantResponse -> {
+                            if (participantResponse.getAvatarUrl() == null) return participantResponse;
+                            //get signed url for volunteer avatar
+                            String path = participantResponse.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                participantResponse.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                participantResponse.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
+                            }
+                            return participantResponse;
+                        })
+                        .toList();
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 }

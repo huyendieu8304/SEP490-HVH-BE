@@ -1,8 +1,10 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
+import com.sep490.g28.hvh.be.dto.notification.response.NotificationResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,9 +18,6 @@ public interface NotificationService {
     void subscribeUserToTopicOfEvent(UUID userId, UUID eventId);
 
     void unsubscribeUserFromTopicOfEvent(UUID userId, UUID eventId);
-
-//todo
-//    List<UserNotification> getLatestNotification(OffsetDateTime cursor);
 
     void sendEventCreatedNotification(Event event, Host host);
     void sendEventCreateApprovedByOrgManagerNotification(Event event);
@@ -66,4 +65,8 @@ public interface NotificationService {
 
     void sendClaimApprovedByHostNotification(UUID volunteerId, Event event, EventApplication application);
     void sendClaimRejectedByHostNotification(UUID volunteerId, Event event, EventApplication application);
+
+    Page<NotificationResponse> getLatestNotificationOfUser(int pageSize, int pageNumber);
+
+    Page<NotificationResponse> getLatestNotificationOfUserTopic(int pageSize, int pageNumber);
 }
