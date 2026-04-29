@@ -769,16 +769,24 @@ public class OrganizationServiceImpl implements OrganizationService {
                         activitySubDomains.add(e.getActivitySubDomain().getName());
                     }
 
-                    return new OrganizationSimpleResponseForSystemAdmin(
-                            o.getId(),
-                            o.getName(),
-                            o.getOrgType(),
-                            o.getHostedEventCount(),
-                            o.getCreditHour(),
-                            o.getAvgRating(),
-                            o.getStatus(),
-                            activitySubDomains
-                    );
+                    OrganizationSimpleResponseForSystemAdmin response = new OrganizationSimpleResponseForSystemAdmin();
+                    response.setId(o.getId());
+                    response.setName(o.getName());
+                    response.setOrgType(o.getOrgType());
+                    response.setHostedEventCount(o.getHostedEventCount());
+                    response.setCreditHour(o.getCreditHour());
+                    response.setAvgRating(o.getAvgRating());
+                    response.setStatus(o.getStatus());
+                    response.setActivitySubDomains(activitySubDomains);
+
+                    try {
+                        String orgAvatarUrl = storageService.getSignedUrl(o.getAvatarImage());
+                        response.setAvatarUrl(orgAvatarUrl);
+                    } catch (AppException e) {
+                        response.setAvatarUrl(null);
+                    }
+
+                    return response;
                 });
     }
 
