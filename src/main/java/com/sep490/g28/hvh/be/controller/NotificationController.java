@@ -1,13 +1,18 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
+import com.sep490.g28.hvh.be.dto.notification.response.NotificationResponse;
 import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -65,5 +70,37 @@ public class NotificationController {
 //        notificationPublisher.enqueueNotification(notification, userId);
 //        return ResponseEntity.ok().build();
 //    }
+
+    //get the notification of a specific user
+    @GetMapping("/notifications/user")
+    @PreAuthorize("hasAnyRole('SYS_ADMIN', 'ORG_MANAGER','HOST','VOL')")
+    public ResponseEntity<Page<NotificationResponse>> getLatestNotificationsOfUser(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 50, message = "INVALID_PAGE_SIZE")
+            int pageSize
+    ){
+        return ResponseEntity.ok(notificationService.getLatestNotificationOfUser(pageSize, pageNumber));
+    }
+
+
+    @GetMapping("/notifications/user-topics")
+    public ResponseEntity<Page<NotificationResponse>> getNotificationsOfUserTopic(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 50, message = "INVALID_PAGE_SIZE")
+            int pageSize
+    ) {
+        return ResponseEntity.ok(notificationService.getLatestNotificationOfUserTopic(pageSize, pageNumber));
+
+    }
 
 }
