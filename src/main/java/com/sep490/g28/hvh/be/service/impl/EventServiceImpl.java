@@ -1904,5 +1904,17 @@ public class EventServiceImpl implements EventService {
             );
         });
     }
+
+    @Override
+    public void unSaveEvent(UnSaveEventRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+        UUID eventId = UUID.fromString(request.getEventId());
+
+        VolunteerSavedEvent volunteerSavedEvent = volunteerSavedEventRepository.findByVolunteerIdAndEventId(volunteerId, eventId);
+
+        if (volunteerSavedEvent != null) {
+            volunteerSavedEventRepository.delete(volunteerSavedEvent);
+        }
+    }
 }
 

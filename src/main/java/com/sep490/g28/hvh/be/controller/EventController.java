@@ -343,4 +343,11 @@ public class EventController {
     ) {
         return ResponseEntity.ok(eventService.getHostedEventsOfOrganization(pageNumber, pageSize, orgId, name));
     }
+
+    @PreAuthorize("hasRole('VOL')")
+    @DeleteMapping("/vol/events/un-save-event")
+    public ResponseEntity<Void> unSaveEvent(@Valid @RequestBody UnSaveEventRequest request) {
+        eventService.unSaveEvent(request);
+        return ResponseEntity.ok().build();
+    }
 }
