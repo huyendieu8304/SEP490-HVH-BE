@@ -171,6 +171,6 @@ public class EventApplicationController {
 
             @PathVariable UUID sessionId
     ){
-        return ResponseEntity.ok(eventApplicationService.getCompletedApplications(sessionId, pageSize, pageNumber));
+        return ResponseEntity.ok(eventApplicationService.getCompletedApplications(sessionId, pageNumber, pageSize));
     }
 }
