@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.AccountCheckInStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
@@ -38,4 +39,5 @@ public interface EventApplicationService {
 
     void faceCheckInEvent(FaceCheckInEventRequest request, MultipartFile file);
 
+    AccountCheckInStatusResponse getAccountCheckInStatus();
 }

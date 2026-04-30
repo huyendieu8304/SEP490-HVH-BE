@@ -5,10 +5,7 @@ import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.event.response.EventSessionDetailsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -810,5 +807,38 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         } else {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_NOT_MATCH);
         }
+    }
+
+    @Override
+    public AccountCheckInStatusResponse getAccountCheckInStatus() {
+        UUID volunteerId = currentUserProvider.getId();
+
+        EventApplication eventApplication = eventApplicationRepository
+                .findByVolunteerIdAndSessionDate(volunteerId, LocalDate.now(), OffsetDateTime.now());
+
+        UUID applicationId = null;
+        String eventName = null;
+        OffsetDateTime sessionEndDateTime = null;
+        UUID sessionId = null;
+
+        if(eventApplication != null) {
+
+            CheckInLog checkInLog = checkInLogRepository
+                    .findByEventApplicationId(eventApplication.getId());
+
+            if(checkInLog != null) {
+                applicationId = eventApplication.getId();
+                eventName = eventApplication.getSession().getEvent().getName();
+                sessionEndDateTime = eventApplication.getSession().getEndDateTime();
+                sessionId = eventApplication.getSession().getId();
+            }
+        }
+
+        return AccountCheckInStatusResponse.builder()
+                .applicationId(applicationId)
+                .eventName(eventName)
+                .sessionEndDateTime(sessionEndDateTime)
+                .sessionId(sessionId)
+                .build();
     }
 }

@@ -103,6 +103,18 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
                 FROM EventApplication e
                 WHERE e.volunteer.id = :volunteerId
                 AND e.sessionDate = :sessionDate
+                And e.session.startDateTime <= :current
+                And e.session.endDateTime >= :current
+            """)
+    EventApplication findByVolunteerIdAndSessionDate(UUID volunteerId,
+                                                     LocalDate sessionDate,
+                                                     OffsetDateTime current);
+
+    @Query("""
+                SELECT e
+                FROM EventApplication e
+                WHERE e.volunteer.id = :volunteerId
+                AND e.sessionDate = :sessionDate
             """)
     List<EventApplication> findAllByVolunteerIdAndSessionDate(UUID volunteerId, LocalDate sessionDate);
 

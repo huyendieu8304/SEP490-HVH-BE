@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.AccountCheckInStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
@@ -153,5 +154,11 @@ public class EventApplicationController {
     ) {
         eventApplicationService.faceCheckInEvent(request, file);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @GetMapping("/vol/event-applications/check-in-status")
+    public ResponseEntity<AccountCheckInStatusResponse> getAccountCheckInStatus() {
+        return ResponseEntity.ok(eventApplicationService.getAccountCheckInStatus());
     }
 }
