@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.AccountCheckInStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
@@ -42,4 +43,6 @@ public interface EventApplicationService {
     Page<CompletedApplicationResponse> getCompletedApplications(UUID sessionId, int pageNumber, int pageSize);
 
     List<EventApplication> rejectAllPendingApplicationsOfEvent(Event event);
+
+    AccountCheckInStatusResponse getAccountCheckInStatus();
 }

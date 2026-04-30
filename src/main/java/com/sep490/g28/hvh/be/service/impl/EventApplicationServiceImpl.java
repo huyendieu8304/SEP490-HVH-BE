@@ -843,4 +843,37 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         log.info("All the applications of volunteer has been cancelled");
         return eventApplications;
     }
+
+    @Override
+    public AccountCheckInStatusResponse getAccountCheckInStatus() {
+        UUID volunteerId = currentUserProvider.getId();
+
+        EventApplication eventApplication = eventApplicationRepository
+                .findByVolunteerIdAndSessionDate(volunteerId, LocalDate.now(), OffsetDateTime.now());
+
+        UUID applicationId = null;
+        String eventName = null;
+        OffsetDateTime sessionEndDateTime = null;
+        UUID sessionId = null;
+
+        if(eventApplication != null) {
+
+            CheckInLog checkInLog = checkInLogRepository
+                    .findByEventApplicationId(eventApplication.getId());
+
+            if(checkInLog != null) {
+                applicationId = eventApplication.getId();
+                eventName = eventApplication.getSession().getEvent().getName();
+                sessionEndDateTime = eventApplication.getSession().getEndDateTime();
+                sessionId = eventApplication.getSession().getId();
+            }
+        }
+
+        return AccountCheckInStatusResponse.builder()
+                .applicationId(applicationId)
+                .eventName(eventName)
+                .sessionEndDateTime(sessionEndDateTime)
+                .sessionId(sessionId)
+                .build();
+    }
 }

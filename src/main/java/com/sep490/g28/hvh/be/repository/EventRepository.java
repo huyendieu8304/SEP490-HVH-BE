@@ -36,8 +36,8 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     @Query("""
             SELECT e
             FROM Event e
-            WHERE (:name IS NULL OR e.name ILIKE CONCAT('%', :name, '%'))
-            AND (:address IS NULL OR e.address ILIKE CONCAT('%', :address, '%'))
+            WHERE (:name IS NULL OR e.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+            AND (:address IS NULL OR e.address ILIKE CONCAT('%', CAST(:address AS string), '%'))
             AND (CAST(:startDate AS DATE) IS NULL OR e.startDate >= :startDate)
             AND (CAST(:endDate AS DATE) IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
@@ -54,8 +54,8 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     @Query("""
             SELECT e
             FROM Event e
-            WHERE (:name IS NULL OR e.name ILIKE CONCAT('%', :name, '%'))
-            AND (:address IS NULL OR e.address ILIKE CONCAT('%', :address, '%'))
+            WHERE (:name IS NULL OR e.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+            AND (:address IS NULL OR e.address ILIKE CONCAT('%', CAST(:address AS string), '%'))
             AND (:startDate IS NULL OR e.startDate >= :startDate)
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND e.status = 'RECRUITING'
@@ -72,8 +72,8 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     @Query("""
             SELECT e
             FROM Event e
-            WHERE (:name IS NULL OR e.name ILIKE CONCAT('%', :name, '%'))
-            AND (:address IS NULL OR e.address ILIKE CONCAT('%', :address, '%'))
+            WHERE (:name IS NULL OR e.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+            AND (:address IS NULL OR e.address ILIKE CONCAT('%', CAST(:address AS string), '%'))
             AND (:startDate IS NULL OR e.startDate >= :startDate)
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))

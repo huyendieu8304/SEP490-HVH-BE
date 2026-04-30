@@ -12,6 +12,7 @@ import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.OrganizationManagerRepository;
 import com.sep490.g28.hvh.be.service.OrganizationManagerService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -51,13 +52,8 @@ public class OrganizationManagerServiceImpl implements OrganizationManagerServic
 
                 try {
                     CompletableFuture.allOf(avatarFuture).join();
-                } catch (CompletionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                    } else {
-                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                    }
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -70,13 +66,8 @@ public class OrganizationManagerServiceImpl implements OrganizationManagerServic
             try {
                 CompletableFuture.allOf(newAvatarFuture).join();
                 newAvatarUploadUrl = newAvatarFuture.join();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                } else {
-                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                }
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             orgManager.setAvatarUrl(newAvatarPath);
@@ -115,12 +106,7 @@ public class OrganizationManagerServiceImpl implements OrganizationManagerServic
                 CompletableFuture.allOf(avatarFuture).join();
                 avatarUrl = avatarFuture.join();
             } catch (CompletionException ex) {
-                Throwable cause = ex.getCause();
-                if (cause instanceof AppException ae) {
-                    //todo: handle app exception in viewEventFeeds
-                } else {
-                    throw cause instanceof RuntimeException re ? re : ex;
-                }
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
         }
 

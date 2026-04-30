@@ -21,6 +21,7 @@ import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.mapper.OrganizationMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.OrganizationService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -334,11 +335,6 @@ public class OrganizationServiceImpl implements OrganizationService {
             throw new AppException(OrganizationErrorCode.REGISTRATION_VERIFIED);
         }
 
-        //check the unique of email
-        if (userRepository.existsByEmail(organizationRegistration.getManagerEmail())) {
-            throw new AppException(OrganizationErrorCode.EMAIL_USED);
-        }
-
         SystemAdmin currentAdmin = systemAdminRepository.getReferenceById(currentUserProvider.getId());
         organizationRegistration.setReviewedBy(currentAdmin);
 
@@ -353,12 +349,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         try {
             CompletableFuture.allOf(f1, f2, f3).join();
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-            } else {
-                throw (RuntimeException) e.getCause(); // propagate, transaction fail
-            }
+            throw (RuntimeException) e.getCause();
         }
 
         organizationRegistration.setManagerCidFront("");
@@ -366,7 +357,10 @@ public class OrganizationServiceImpl implements OrganizationService {
         organizationRegistration.setManagerCidHolding("");
 
         if (Boolean.TRUE.equals(request.getApprove())) {
-            //APPROVE
+            //check the unique of email
+            if (userRepository.existsByEmail(organizationRegistration.getManagerEmail())) {
+                throw new AppException(OrganizationErrorCode.EMAIL_USED);
+            }
 
             //Create organization in the db
             Organization organization = new Organization();
@@ -492,8 +486,11 @@ public class OrganizationServiceImpl implements OrganizationService {
         //get signed urls
         CompletableFuture<String> avatarImageFuture = null;
         CompletableFuture<String> coverImageFuture = null;
-        if(organization.getAvatarImage() != null && organization.getCoverImage() != null) {
+        if(organization.getAvatarImage() != null) {
             avatarImageFuture = storageService.getSignedUrlAsync(organization.getAvatarImage());
+        }
+
+        if(organization.getCoverImage() != null) {
             coverImageFuture = storageService.getSignedUrlAsync(organization.getCoverImage());
         }
 
@@ -529,9 +526,13 @@ public class OrganizationServiceImpl implements OrganizationService {
 
             CompletableFuture.allOf(otherEvidencesFutures.toArray(new CompletableFuture[0])).join();
 
-            if(avatarImageFuture != null && coverImageFuture != null) {
-                CompletableFuture.allOf(avatarImageFuture, coverImageFuture).join();
+            if(avatarImageFuture != null) {
+                CompletableFuture.allOf(avatarImageFuture).join();
                 avatarImageUrl = avatarImageFuture.join();
+            }
+
+            if(coverImageFuture != null) {
+                CompletableFuture.allOf(coverImageFuture).join();
                 coverImageUrl = coverImageFuture.join();
             }
 
@@ -764,16 +765,24 @@ public class OrganizationServiceImpl implements OrganizationService {
                         activitySubDomains.add(e.getActivitySubDomain().getName());
                     }
 
-                    return new OrganizationSimpleResponseForSystemAdmin(
-                            o.getId(),
-                            o.getName(),
-                            o.getOrgType(),
-                            o.getHostedEventCount(),
-                            o.getCreditHour(),
-                            o.getAvgRating(),
-                            o.getStatus(),
-                            activitySubDomains
-                    );
+                    OrganizationSimpleResponseForSystemAdmin response = new OrganizationSimpleResponseForSystemAdmin();
+                    response.setId(o.getId());
+                    response.setName(o.getName());
+                    response.setOrgType(o.getOrgType());
+                    response.setHostedEventCount(o.getHostedEventCount());
+                    response.setCreditHour(o.getCreditHour());
+                    response.setAvgRating(o.getAvgRating());
+                    response.setStatus(o.getStatus());
+                    response.setActivitySubDomains(activitySubDomains);
+
+                    try {
+                        String orgAvatarUrl = storageService.getSignedUrl(o.getAvatarImage());
+                        response.setAvatarUrl(orgAvatarUrl);
+                    } catch (AppException e) {
+                        response.setAvatarUrl(null);
+                    }
+
+                    return response;
                 });
     }
 
@@ -792,13 +801,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 
                 try {
                     CompletableFuture.allOf(avatarFuture).join();
-                } catch (CompletionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                    } else {
-                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                    }
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -811,13 +815,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             try {
                 CompletableFuture.allOf(newAvatarFuture).join();
                 newAvatarUploadUrl = newAvatarFuture.join();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                } else {
-                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                }
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             org.setAvatarImage(newAvatarPath);
@@ -832,13 +831,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 
                 try {
                     CompletableFuture.allOf(coverFuture).join();
-                } catch (CompletionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                    } else {
-                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                    }
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -851,13 +845,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             try {
                 CompletableFuture.allOf(newCoverFuture).join();
                 newCoverUploadUrl = newCoverFuture.join();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                } else {
-                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                }
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             org.setCoverImage(newCoverPath);

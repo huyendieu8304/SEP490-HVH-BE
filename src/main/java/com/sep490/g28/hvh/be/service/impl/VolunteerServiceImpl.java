@@ -347,7 +347,6 @@ public class VolunteerServiceImpl implements VolunteerService {
         List<Certificate> certificateList = certificateRepository.findByVolunteerId(volunteerId);
 
         //get signed URL of certificates and volunteer's avatar
-        String avatarUrl = null;
         CompletableFuture<String> avatarFuture = null;
         //check if volunteer has avatar
         if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
@@ -363,8 +362,8 @@ public class VolunteerServiceImpl implements VolunteerService {
             }
         }
 
+        String avatarUrl = null;
         List<String> certificatesUrls = new ArrayList<>();
-        //todo ủa sao lại là avatarFuture thees Kien oi
         try {
             if (avatarFuture != null) {
                 CompletableFuture.allOf(avatarFuture).join();
@@ -376,13 +375,8 @@ public class VolunteerServiceImpl implements VolunteerService {
                 certificatesUrls.add(certificateFuture.join());
             }
 
-        } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+        } catch (CompletionException ex) {
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
         }
 
         return new VolunteerPublicInformationResponse(
@@ -418,12 +412,7 @@ public class VolunteerServiceImpl implements VolunteerService {
                 CompletableFuture.allOf(avatarFuture).join();
                 avatarUrl = avatarFuture.join();
             } catch (CompletionException ex) {
-                Throwable cause = ex.getCause();
-                if (cause instanceof AppException ae) {
-                    //todo: handle app exception in viewEventFeeds
-                } else {
-                    throw cause instanceof RuntimeException re ? re : ex;
-                }
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
         }
 
@@ -501,13 +490,8 @@ public class VolunteerServiceImpl implements VolunteerService {
 
                 try {
                     CompletableFuture.allOf(avatarFuture).join();
-                } catch (CompletionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                    } else {
-                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                    }
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -520,13 +504,8 @@ public class VolunteerServiceImpl implements VolunteerService {
             try {
                 CompletableFuture.allOf(newAvatarFuture).join();
                 newAvatarUploadUrl = newAvatarFuture.join();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                } else {
-                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                }
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             volunteer.setAvatarUrl(newAvatarPath);
@@ -577,13 +556,8 @@ public class VolunteerServiceImpl implements VolunteerService {
 
                 try {
                     CompletableFuture.allOf(avatarFuture).join();
-                } catch (CompletionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                    } else {
-                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                    }
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -596,13 +570,8 @@ public class VolunteerServiceImpl implements VolunteerService {
             try {
                 CompletableFuture.allOf(newAvatarFuture).join();
                 newAvatarUploadUrl = newAvatarFuture.join();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                } else {
-                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                }
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             volunteer.setAvatarUrl(newAvatarPath);
@@ -694,12 +663,7 @@ public class VolunteerServiceImpl implements VolunteerService {
                 CompletableFuture.allOf(avatarFuture).join();
                 avatarUrl = avatarFuture.join();
             } catch (CompletionException ex) {
-                Throwable cause = ex.getCause();
-                if (cause instanceof AppException ae) {
-                    //todo: handle app exception in viewEventFeeds
-                } else {
-                    throw cause instanceof RuntimeException re ? re : ex;
-                }
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
         }
 

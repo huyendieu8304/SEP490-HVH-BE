@@ -24,4 +24,10 @@ public class HostInfoResponseForSystemAdmin {
     String address;
     String detailAddress;
     OffsetDateTime createdAt;
+
+    UUID orgId;
+    String orgName;
+    String orgAvatarUrl;
+    Short orgAvgRating;
+    int orgHostedEventCount;
 }

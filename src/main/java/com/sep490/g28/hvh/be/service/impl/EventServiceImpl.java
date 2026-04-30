@@ -109,7 +109,6 @@ public class EventServiceImpl implements EventService {
             log.info("CONTENT OF SLICE: {a}" + e.getStatus());
         }
 
-
         //map the slice content (list of events) to EventSimpleResponse
         List<EventSimpleResponse> eventSimpleResponseList = Optional.of(page.getContent())
                 .map(list -> list.stream()
@@ -1833,7 +1832,6 @@ public class EventServiceImpl implements EventService {
 
                 List<EventImage> eventImageList = e.getImages();
 
-                //todo đây là xử lí cho lấy nhiều file async nè, cái này nếu không có file tồn tại, nó sẽ ko làm gì cả
                 CompletableFuture<String> firstEventImageFuture =
                         storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
                 try {
@@ -1885,7 +1883,7 @@ public class EventServiceImpl implements EventService {
 
             //get signed URL of event images
             if (e.getImages() != null && !e.getImages().isEmpty()) {
-                //todo đây là async cho 1 file nè, cái này lúc xử lí exception ko cần trả về fallback vì Kien đã set null ở trên rồi
+
                 List<EventImage> eventImageList = e.getImages();
                 try {
                     firstEventImageUrl =
@@ -1905,6 +1903,18 @@ public class EventServiceImpl implements EventService {
                     e.getRecruitmentEndDate()
             );
         });
+    }
+
+    @Override
+    public void unSaveEvent(UnSaveEventRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+        UUID eventId = UUID.fromString(request.getEventId());
+
+        VolunteerSavedEvent volunteerSavedEvent = volunteerSavedEventRepository.findByVolunteerIdAndEventId(volunteerId, eventId);
+
+        if (volunteerSavedEvent != null) {
+            volunteerSavedEventRepository.delete(volunteerSavedEvent);
+        }
     }
 }
 

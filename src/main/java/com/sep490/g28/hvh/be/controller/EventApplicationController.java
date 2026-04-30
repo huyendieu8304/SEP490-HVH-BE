@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.AccountCheckInStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
@@ -172,5 +173,11 @@ public class EventApplicationController {
             @PathVariable UUID sessionId
     ){
         return ResponseEntity.ok(eventApplicationService.getCompletedApplications(sessionId, pageNumber, pageSize));
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @GetMapping("/vol/event-applications/check-in-status")
+    public ResponseEntity<AccountCheckInStatusResponse> getAccountCheckInStatus() {
+        return ResponseEntity.ok(eventApplicationService.getAccountCheckInStatus());
     }
 }

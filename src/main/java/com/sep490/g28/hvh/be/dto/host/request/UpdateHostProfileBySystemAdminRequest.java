@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.dto.host.request;
 
 import com.sep490.g28.hvh.be.validation.ImageFileExtension;
 import com.sep490.g28.hvh.be.validation.RequiredField;
+import com.sep490.g28.hvh.be.validation.ValidAge;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -35,6 +36,7 @@ public class UpdateHostProfileBySystemAdminRequest {
 
     boolean gender;
 
+    @ValidAge
     LocalDate dob;
 
     @ImageFileExtension(fieldName = "Ảnh đại diện tình nguyện viên")

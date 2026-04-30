@@ -19,4 +19,12 @@ public interface VolunteerSavedEventRepository extends JpaRepository<VolunteerSa
             AND (:name IS NULL OR vse.event.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
             """)
     Page<Event> findAllSavedEventsByVolunteerId(UUID volunteerId, @Param("name") String name, Pageable pageable);
+
+    @Query(""" 
+            SELECT vse
+            FROM VolunteerSavedEvent vse
+            WHERE vse.volunteer.id = :volunteerId
+            AND vse.event.id = :eventId
+            """)
+    VolunteerSavedEvent findByVolunteerIdAndEventId(UUID volunteerId, UUID eventId);
 }

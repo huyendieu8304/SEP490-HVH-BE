@@ -18,6 +18,7 @@ import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventMomentRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.service.EventMomentService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -201,12 +202,7 @@ public class EventMomentServiceImpl implements EventMomentService {
                                 }
 
                             } catch (CompletionException ex) {
-                                Throwable cause = ex.getCause();
-                                if (cause instanceof AppException ae) {
-                                    //todo handle here
-                                } else {
-                                    throw cause instanceof RuntimeException re ? re : ex;
-                                }
+                                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                             }
 
                             return new EventMomentFeedDetailsResponse(
@@ -309,12 +305,7 @@ public class EventMomentServiceImpl implements EventMomentService {
                 }
 
             } catch (CompletionException ex) {
-                Throwable cause = ex.getCause();
-                if (cause instanceof AppException ae) {
-                    //todo handle here
-                } else {
-                    throw cause instanceof RuntimeException re ? re : ex;
-                }
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             return new EventMomentFeedDetailsResponse(
@@ -400,12 +391,7 @@ public class EventMomentServiceImpl implements EventMomentService {
                 }
 
             } catch (CompletionException ex) {
-                Throwable cause = ex.getCause();
-                if (cause instanceof AppException ae) {
-                    //todo handle here
-                } else {
-                    throw cause instanceof RuntimeException re ? re : ex;
-                }
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
 

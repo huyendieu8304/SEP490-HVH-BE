@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum SystemAdminErrorCode implements ErrorCode {
 
-    SYSTEM_ADMIN_NOT_EXISTED(11001, "Không tìm thấy người quản lý tổ chức", HttpStatus.NOT_FOUND),
+    SYSTEM_ADMIN_NOT_EXISTED(13001, "Không tìm thấy người quản lý hệ thống", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;
