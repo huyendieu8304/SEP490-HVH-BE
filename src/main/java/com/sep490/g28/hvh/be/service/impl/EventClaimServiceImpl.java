@@ -21,6 +21,7 @@ import com.sep490.g28.hvh.be.repository.EventClaimRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.EventClaimService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -199,12 +200,7 @@ public class EventClaimServiceImpl implements EventClaimService {
                         CompletableFuture.allOf(avatarFuture).join();
                         avatarUrl = avatarFuture.join();
                     } catch (CompletionException ex) {
-                        Throwable cause = ex.getCause();
-                        if (cause instanceof AppException ae) {
-                            //todo: handle app exception in viewEventFeeds
-                        } else {
-                            throw cause instanceof RuntimeException re ? re : ex;
-                        }
+                        AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                     }
                 }
             }
@@ -289,13 +285,8 @@ public class EventClaimServiceImpl implements EventClaimService {
                 evidencesUrls.add(evidencesFuture.join());
             }
 
-        } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo handle here
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+        } catch (CompletionException ex) {
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
         }
 
         return EventClaimDetailResponse.builder()

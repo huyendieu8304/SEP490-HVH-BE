@@ -21,6 +21,7 @@ import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.mapper.OrganizationMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.OrganizationService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -348,12 +349,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         try {
             CompletableFuture.allOf(f1, f2, f3).join();
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-            } else {
-                throw (RuntimeException) e.getCause(); // propagate, transaction fail
-            }
+            throw (RuntimeException) e.getCause();
         }
 
         organizationRegistration.setManagerCidFront("");
@@ -805,13 +801,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 
                 try {
                     CompletableFuture.allOf(avatarFuture).join();
-                } catch (CompletionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                    } else {
-                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                    }
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -824,13 +815,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             try {
                 CompletableFuture.allOf(newAvatarFuture).join();
                 newAvatarUploadUrl = newAvatarFuture.join();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                } else {
-                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                }
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             org.setAvatarImage(newAvatarPath);
@@ -845,13 +831,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 
                 try {
                     CompletableFuture.allOf(coverFuture).join();
-                } catch (CompletionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                        //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                    } else {
-                        throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                    }
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -864,13 +845,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             try {
                 CompletableFuture.allOf(newCoverFuture).join();
                 newCoverUploadUrl = newCoverFuture.join();
-            } catch (CompletionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                    //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-                } else {
-                    throw (RuntimeException) e.getCause(); // propagate, transaction fail
-                }
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
 
             org.setCoverImage(newCoverPath);
