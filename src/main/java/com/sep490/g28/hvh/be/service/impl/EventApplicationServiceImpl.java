@@ -185,8 +185,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
         }
 
-        //todo liệu có cần kiểm tra thông tin status của event ở chỗ này không?
-        //todo có khi thêm cron job, khi event chuyển status qua ONGOING cái là tự động reject hết đơn đăng kí luôn
         eventApplication.setStatus(EEventApplicationStatus.REJECTED);
         eventApplicationRepository.save(eventApplication);
         log.info("Reject event application eventApplicationId={}", eventApplication.getId());
@@ -807,6 +805,43 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         } else {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_NOT_MATCH);
         }
+    }
+
+    @Override
+    public Page<CompletedApplicationResponse> getCompletedApplications(UUID sessionId, int pageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        Page<CompletedApplicationResponse> page = eventApplicationRepository.findCompletedApplications(sessionId, pageable);
+
+        //get avatar signed urls
+        List<CompletedApplicationResponse> content =
+                page.getContent().stream()
+                        .map(participantResponse -> {
+                            if (participantResponse.getAvatarUrl() == null) return participantResponse;
+                            //get signed url for volunteer avatar
+                            String path = participantResponse.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                participantResponse.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                participantResponse.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
+                            }
+                            return participantResponse;
+                        })
+                        .toList();
+        return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public List<EventApplication> rejectAllPendingApplicationsOfEvent(Event event) {
+        //update all the applications of the volunteer to CANCELLED status
+        List<EventSession> eventSessions = event.getSessions();
+        List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
+        List<EventApplication> eventApplications =  eventApplicationRepository.rejectApplicationsBySessions(sessionIds);
+        log.info("All the applications of volunteer has been cancelled");
+        return eventApplications;
     }
 
     @Override

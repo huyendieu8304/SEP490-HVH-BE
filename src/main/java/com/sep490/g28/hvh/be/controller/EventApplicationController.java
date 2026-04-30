@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.controller;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.AccountCheckInStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
@@ -154,6 +155,24 @@ public class EventApplicationController {
     ) {
         eventApplicationService.faceCheckInEvent(request, file);
         return ResponseEntity.ok().build();
+    }
+
+    //get COMPLETED application
+    @PreAuthorize("hasRole('HOST') and @eventSessionAuthorizer.isHostOfEventSession(#sessionId)")
+    @GetMapping("/host/event-sessions/{sessionId}/completed-applications")
+    public ResponseEntity<Page<CompletedApplicationResponse>> getCompletedApplications(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @PathVariable UUID sessionId
+    ){
+        return ResponseEntity.ok(eventApplicationService.getCompletedApplications(sessionId, pageNumber, pageSize));
     }
 
     @PreAuthorize("hasRole('VOL')")

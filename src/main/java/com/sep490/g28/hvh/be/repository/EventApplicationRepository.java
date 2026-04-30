@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
@@ -183,4 +184,40 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
              AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
             """)
     List<EventApplication> findApprovedApplicationBySessionId(UUID sessionId);
+
+    @Query("""
+            SELECT new com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse (
+            v.id,
+            v.fullName,
+            v.bio,
+            v.avatarUrl,
+            v.address,
+            v.nickname,
+            v.email,
+            v.phone,
+            v.creditScore,
+            v.honorScore,
+            v.avgRating,
+            a.id,
+            c.checkInTime,
+            c.checkOutTime
+            ) FROM EventApplication a
+            LEFT JOIN CheckInLog c ON a.id = c.eventApplication.id
+            LEFT JOIN Volunteer v ON a.volunteer.id = v.id
+            WHERE a.session.id = :sessionId
+                AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.COMPLETED
+            """)
+    Page<CompletedApplicationResponse> findCompletedApplications(UUID sessionId, Pageable pageable);
+
+    @Modifying
+    @Query(value = """
+            UPDATE event_applications
+            SET status = 'REJECTED'
+            WHERE session_id IN (:sessionIds)
+              AND status  = 'PENDING'
+            RETURNING *
+            """, nativeQuery = true)
+    List<EventApplication> rejectApplicationsBySessions(
+            List<UUID> sessionIds
+    );
 }

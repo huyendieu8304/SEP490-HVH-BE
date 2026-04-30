@@ -457,7 +457,7 @@ public class HostServiceImplTest {
                 .thenReturn(CompletableFuture.completedFuture("url-2"));
 
         CompletableFuture<String> failedFuture = new CompletableFuture<>();
-        failedFuture.completeExceptionally(new RuntimeException("fail"));
+        failedFuture.completeExceptionally(new AppException(SupabaseErrorCode.STORAGE_FILE_NOT_EXISTED));
 
         when(storageService.getSignedUrlAsync("path-3"))
                 .thenReturn(failedFuture);

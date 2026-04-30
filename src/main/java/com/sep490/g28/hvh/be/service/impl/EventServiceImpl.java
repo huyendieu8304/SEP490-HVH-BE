@@ -1535,91 +1535,22 @@ public class EventServiceImpl implements EventService {
         Set<Volunteer> receiveCertVolunteerSet = new HashSet<>();
         List<VolunteerReview> newReviews = new ArrayList<>();
         for (Event event : events) {
-            int countEventApprovedApplications = 0;
-            int countEventAttendedApplications = 0;
-
-            List<EventSession> sessions = event.getSessions();
-            for (EventSession session : sessions) {
-                    Duration duration = Duration.between(session.getStartDateTime(), session.getEndDateTime());
-                    double requiredHours = duration.toMinutes() / 60.0 / 3;
-
-                    //get applications that has checked in and checked out info
-                    List<EligibleApplicationProjection> eligibleApplications =
-                            eventApplicationRepository
-                                    .findEligibleApplicationProjection(session.getId());
-
-                    // count APPROVED applications of a session
-                    countEventApprovedApplications += session.getApprovedApplicationCount();
-
-                    //count the application that the volunteer really participated
-                    countEventAttendedApplications += eligibleApplications.size();
-
-                    for (EligibleApplicationProjection projection : eligibleApplications) {
-                        Volunteer volunteer = projection.getVolunteer();
-                        EventApplication application = projection.getApplication();
-
-                        //the application is legit but host has not reviewed it yet
-                        if (projection.getReview() == null){
-                            //auto review 5 stars for all legit participant
-                            VolunteerReview review = volunteerReviewService
-                                    .reviewAutomatically(volunteer, application);
-
-                            //add the new review to the list for batch updating
-                            newReviews.add(review);
-                            projection.setReview(review);
-                        }
-
-                        int creditHour = application.getCreditHour();
-                        double creditScore = (double) (projection.getReview().getAvgRating() * creditHour) /5;
-
-                        //check the vol eligible to get cert
-                        if (creditScore >= requiredHours) {
-                            receiveCertVolunteerSet.add(volunteer);
-                        }
-
-                        //update the credit score of the volunteer
-                        int creditToAdd = (int) Math.round(creditScore);
-                        volunteer.setCreditScore(volunteer.getCreditScore() + creditToAdd);
-                        updateVolunteerSet.add(volunteer);
-
-                    }
-                    //update batch in db of this session
-                    //review for vol
-                    volunteerReviewRepository.saveAll(newReviews);
-                    log.info("Create automatic review for eligible volunteers of session, sessionId={}",session.getId());
-                    newReviews.clear();
+            if (event.isServingActivity()) {
+                completeServingEvent(event, updateVolunteerSet, receiveCertVolunteerSet, newReviews);
+            } else {
+                completeNonServingEvent(event, updateVolunteerSet, receiveCertVolunteerSet, newReviews);
             }
 
-            //update credit score for vol
+            //update batch in db of this session
+            //review for vol
+            volunteerReviewRepository.saveAll(newReviews);
+            log.info("Create automatic review for eligible volunteers of event, eventId={}",event.getId());
+            newReviews.clear();
+
+            //update score for vol
             volunteerRepository.saveAll(updateVolunteerSet);
-            log.info("Add credit score for volunteers of event, eventId={}",event.getId());
+            log.info("Add score for volunteers of event, eventId={}",event.getId());
             updateVolunteerSet.clear();
-
-            //update credit hour for organization
-            Organization organization = event.getOrganization();
-            int eventCreditHour = 0;
-            for (EventSession session : sessions) {
-                eventCreditHour += (int) Math.round(
-                        Duration.between(session.getStartDateTime(), session.getEndDateTime())
-                                .toMinutes() / 60.0
-                );
-            }
-            organization.setCreditHour(organization.getCreditHour() + eventCreditHour);
-            organizationRepository.save(organization);
-
-            LocalDate eventEndedDate = event.getEndDate();
-            int month = eventEndedDate.getMonthValue();
-            int year = eventEndedDate.getYear();
-
-            //update organization stats
-            organizationStatsService.updateOrganizationCreditHoursAndCountApplicationsAndCountCompletedEventStats(
-                    organization.getId(),
-                    month,
-                    year,
-                    countEventApprovedApplications,
-                    countEventAttendedApplications,
-                    eventCreditHour
-            );
 
             //generate certificates for volunteers
             certificateService.generateCertificates(receiveCertVolunteerSet.stream().toList(), event);
@@ -1629,9 +1560,6 @@ public class EventServiceImpl implements EventService {
             receiveCertVolunteerSet.clear();
 
             //update event status after process all the cert and vol score
-            event.setTotalCreditHours(eventCreditHour);
-            event.setTotalApprovedApplications(countEventApprovedApplications);
-            event.setTotalAttendedApplications(countEventAttendedApplications);
             event.setStatus(EEventStatus.COMPLETED);
             eventRepository.save(event);
             log.info("Event completed, eventId={}", event.getId());
@@ -1644,6 +1572,160 @@ public class EventServiceImpl implements EventService {
             );
             log.info("Send event complete notification to org manager and host of event, eventId={}", event.getId());
         }
+    }
+
+    private void completeServingEvent(
+            Event event,
+            Set<Volunteer> updateVolunteerSet,
+            Set<Volunteer> receiveCertVolunteerSet,
+            List<VolunteerReview> newReviews
+    ){
+        int countEventApprovedApplications = 0;
+        int countEventAttendedApplications = 0;
+
+        List<EventSession> sessions = event.getSessions();
+        for (EventSession session : sessions) {
+            Duration duration = Duration.between(session.getStartDateTime(), session.getEndDateTime());
+            double requiredHours = duration.toMinutes() / 60.0 / 3;
+
+            //get applications that has checked in and checked out info
+            List<EligibleApplicationProjection> eligibleApplications =
+                    eventApplicationRepository
+                            .findEligibleApplicationProjection(session.getId());
+
+            // count APPROVED applications of a session
+            countEventApprovedApplications += session.getApprovedApplicationCount();
+
+            //count the application that the volunteer really participated
+            countEventAttendedApplications += eligibleApplications.size();
+
+            for (EligibleApplicationProjection projection : eligibleApplications) {
+                Volunteer volunteer = projection.getVolunteer();
+                EventApplication application = projection.getApplication();
+
+                //the application is legit but host has not reviewed it yet
+                if (projection.getReview() == null){
+                    //auto review 5 stars for all legit participant
+                    VolunteerReview review = volunteerReviewService
+                            .reviewAutomatically(volunteer, application);
+
+                    //add the new review to the list for batch updating
+                    newReviews.add(review);
+                    projection.setReview(review);
+                }
+
+                int creditHour = application.getCreditHour();
+                double creditScore = (double) (projection.getReview().getAvgRating() * creditHour) /5;
+
+                //check the vol eligible to get cert
+                if (creditScore >= requiredHours) {
+                    receiveCertVolunteerSet.add(volunteer);
+                }
+
+                //update the credit score of the volunteer
+                int creditToAdd = (int) Math.round(creditScore);
+                volunteer.setCreditScore(volunteer.getCreditScore() + creditToAdd);
+                updateVolunteerSet.add(volunteer);
+            }
+        }
+
+        //update credit hour for organization
+        Organization organization = event.getOrganization();
+        int eventCreditHour = 0;
+        for (EventSession session : sessions) {
+            eventCreditHour += (int) Math.round(
+                    Duration.between(session.getStartDateTime(), session.getEndDateTime())
+                            .toMinutes() / 60.0
+            );
+        }
+        organization.setCreditHour(organization.getCreditHour() + eventCreditHour);
+        organizationRepository.save(organization);
+
+        LocalDate eventEndedDate = event.getEndDate();
+        int month = eventEndedDate.getMonthValue();
+        int year = eventEndedDate.getYear();
+        //update organization stats
+        organizationStatsService.updateOrganizationCreditHoursAndCountApplicationsAndCountCompletedEventStats(
+                organization.getId(),
+                month,
+                year,
+                countEventApprovedApplications,
+                countEventAttendedApplications,
+                eventCreditHour
+        );
+
+        //update event
+        event.setTotalCreditHours(eventCreditHour);
+        event.setTotalApprovedApplications(countEventApprovedApplications);
+        event.setTotalAttendedApplications(countEventAttendedApplications);
+    }
+
+    private void completeNonServingEvent(
+            Event event,
+            Set<Volunteer> updateVolunteerSet,
+            Set<Volunteer> receiveCertVolunteerSet,
+            List<VolunteerReview> newReviews
+    ){
+        int countEventApprovedApplications = 0;
+        int countEventAttendedApplications = 0;
+
+        List<EventSession> sessions = event.getSessions();
+        for (EventSession session : sessions) {
+
+            //get applications that has checked in and checked out info
+            List<EligibleApplicationProjection> eligibleApplications =
+                    eventApplicationRepository
+                            .findEligibleApplicationProjection(session.getId());
+
+            // count APPROVED applications of a session
+            countEventApprovedApplications += session.getApprovedApplicationCount();
+
+            //count the application that the volunteer really participated
+            countEventAttendedApplications += eligibleApplications.size();
+
+            for (EligibleApplicationProjection projection : eligibleApplications) {
+                Volunteer volunteer = projection.getVolunteer();
+                EventApplication application = projection.getApplication();
+
+                //the application is legit but host has not reviewed it yet
+                if (projection.getReview() == null){
+                    //auto review 5 stars for all legit participant
+                    VolunteerReview review = volunteerReviewService
+                            .reviewAutomatically(volunteer, application);
+
+                    //add the new review to the list for batch updating
+                    newReviews.add(review);
+                    projection.setReview(review);
+                }
+
+                //check the vol eligible to get cert
+                if (((double) (projection.getReview().getAvgRating() * 3) /5) >= 1) {
+                    receiveCertVolunteerSet.add(volunteer);
+                }
+
+                //update the honor score of the volunteer (default add 3 for non serving activity)
+                volunteer.setHonorScore(volunteer.getHonorScore() + 3);
+                updateVolunteerSet.add(volunteer);
+            }
+        }
+
+        LocalDate eventEndedDate = event.getEndDate();
+        int month = eventEndedDate.getMonthValue();
+        int year = eventEndedDate.getYear();
+        //update organization stats
+        organizationStatsService.updateOrganizationCreditHoursAndCountApplicationsAndCountCompletedEventStats(
+                event.getOrganization().getId(),
+                month,
+                year,
+                countEventApprovedApplications,
+                countEventAttendedApplications,
+                0
+        );
+
+        //update event
+        event.setTotalCreditHours(0);
+        event.setTotalApprovedApplications(countEventApprovedApplications);
+        event.setTotalAttendedApplications(countEventAttendedApplications);
     }
 
     @Override
@@ -1690,6 +1772,12 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findUpcomingEventsAndStartDateToday(targetDate);
 
         for (Event event : events){
+            //reject all PENDING applications of event
+            List<EventApplication> applications = eventApplicationService.rejectAllPendingApplicationsOfEvent(event);
+
+            //send notification to all the volunteer that has PENDING applications
+            notificationService.sendEventApplicationRejectedNotification(applications, event.getName());
+
             //update event status to ONGOING
             event.setStatus(EEventStatus.ONGOING);
             eventRepository.save(event);
