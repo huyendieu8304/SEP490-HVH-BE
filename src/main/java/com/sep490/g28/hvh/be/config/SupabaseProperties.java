@@ -19,4 +19,6 @@ public class SupabaseProperties {
     private String url;
     private String apiSecretKey; // aka service role key/ service key...
     private String bucket;
+    private int uploadUrlExpireTimInSeconds= 600; //seconds = 10 minutes
+    private int viewUrlExpireTimeInSeconds = 900; //15 minutes
 }
