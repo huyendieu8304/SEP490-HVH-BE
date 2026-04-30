@@ -174,7 +174,7 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
     List<EventApplication> findApprovedApplicationBySessionId(UUID sessionId);
 
     @Query("""
-            SELECT new com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse (
+            SELECT new com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse (
             v.id,
             v.fullName,
             v.bio,
