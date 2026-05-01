@@ -78,7 +78,8 @@ public class SecurityConfig {
                                         "/api/v1/organizations/**",
                                         "/api/v1/certificates/**",
                                         "/api/v1/activity-domains",
-                                        "/volunteers/public-information/**"
+                                        "/volunteers/public-information/**",
+                                        "/api/v1/volunteer-reviews/*"
                                 ).permitAll() //public endpoint
                                 .anyRequest().authenticated() //all other request require authentication
                         )

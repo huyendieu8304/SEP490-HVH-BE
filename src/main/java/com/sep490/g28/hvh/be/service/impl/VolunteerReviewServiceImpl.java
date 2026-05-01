@@ -3,6 +3,7 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.volunteerreview.request.ReviewVolunteerRequest;
+import com.sep490.g28.hvh.be.dto.volunteerreview.response.VolunteerReviewResponse;
 import com.sep490.g28.hvh.be.entity.Event;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.Volunteer;
@@ -19,8 +20,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -104,5 +110,12 @@ public class VolunteerReviewServiceImpl implements VolunteerReviewService {
         recalculateAverageRatingOfVolunteer(volunteer, review);
 
         return review;
+    }
+
+    @Override
+    public Page<VolunteerReviewResponse> getReviewsOfVolunteer(UUID volunteerId, int pageSize, int pageNumber) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        return volunteerReviewRepository.getReviewsOfVolunteer(volunteerId, pageable);
     }
 }
