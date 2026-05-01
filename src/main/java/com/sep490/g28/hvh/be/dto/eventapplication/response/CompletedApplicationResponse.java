@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.dto.eventapplication.response;
 
+import com.sep490.g28.hvh.be.entity.VolunteerReview;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,6 +33,8 @@ public class CompletedApplicationResponse {
     OffsetDateTime checkInTime;
     OffsetDateTime checkOutTime;
 
+    boolean isReviewed = false;
+
     public CompletedApplicationResponse(
             UUID volunteerId,
             String fullName,
@@ -46,7 +49,8 @@ public class CompletedApplicationResponse {
             Short avgRating,
             UUID eventApplicationId,
             OffsetDateTime checkInTime,
-            OffsetDateTime checkOutTime
+            OffsetDateTime checkOutTime,
+            VolunteerReview volunteerReview
     ) {
         this.volunteerId = volunteerId;
         this.fullName = fullName;
@@ -62,5 +66,9 @@ public class CompletedApplicationResponse {
         this.eventApplicationId = eventApplicationId;
         this.checkInTime = checkInTime;
         this.checkOutTime = checkOutTime;
+
+        if (volunteerReview != null) {
+            this.isReviewed = true;
+        }
     }
 }
