@@ -17,8 +17,8 @@ public class StatsScheduler {
     OrganizationStatsService organizationStatsService;
     SystemStatsService systemStatsService;
 
-    //4AM at the first day of month
-    @Scheduled(cron = "0 0 4 1 * *", zone = "Asia/Ho_Chi_Minh")
+    //3:15AM at the first day of month
+    @Scheduled(cron = "0 15 3 1 * *", zone = "Asia/Ho_Chi_Minh")
     public void compileOrganizationsMonthlyStatistics() {
 
         //recalculate previous month's stats
@@ -27,7 +27,7 @@ public class StatsScheduler {
         log.info("Done organization monthly stats compile cron job");
     }
 
-    @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 45 3 * * *", zone = "Asia/Ho_Chi_Minh")
     public void compileSystemStatisticsDaily() {
         //recalculate previous month's stats
         log.info("Start system statistic daily compile cron job");

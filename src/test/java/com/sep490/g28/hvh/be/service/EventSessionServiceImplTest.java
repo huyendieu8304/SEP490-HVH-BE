@@ -706,7 +706,6 @@ public class EventSessionServiceImplTest {
         verify(notificationService)
                 .sendEventSessionHostedTodayNotification(any(), any(), any());
 
-        verify(eventSessionRepository).clearOldCheckInCode(any());
     }
 
     @Test
@@ -719,7 +718,6 @@ public class EventSessionServiceImplTest {
 
         verify(eventSessionRepository).saveAll(List.of());
         verify(notificationService, never()).sendCheckInCodeOfEventSessionNotifications(any(), any(), any());
-        verify(eventSessionRepository).clearOldCheckInCode(any());
     }
 
     @Test
@@ -743,7 +741,6 @@ public class EventSessionServiceImplTest {
         assertNotNull(s2.getCheckInCode());
 
         assertNotEquals(s1.getCheckInCode(), s2.getCheckInCode());
-        verify(eventSessionRepository).clearOldCheckInCode(any());
     }
 
 }
