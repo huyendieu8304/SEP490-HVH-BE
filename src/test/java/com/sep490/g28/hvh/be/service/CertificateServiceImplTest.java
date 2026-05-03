@@ -51,6 +51,8 @@ public class CertificateServiceImplTest {
     PlaywrightManager playwrightManager;
     @Mock
     CurrentUserProvider currentUserProvider;
+    @Mock
+    DigitalSignatureService digitalSignatureService;
 
     @InjectMocks
     @Spy
@@ -193,27 +195,26 @@ public class CertificateServiceImplTest {
         var volunteer = mockVolunteer();
         var event = mockEvent();
 
-        // mock path
         when(storagePathGenerator.volunteerCertificate(any(), any(), any()))
                 .thenReturn("path");
 
-        // mock template engine
         when(templateEngine.process(eq("template-cert"), any()))
                 .thenReturn("<html></html>");
 
-        // mock playwright
         com.microsoft.playwright.Page page = mock(com.microsoft.playwright.Page.class);
 
         when(playwrightManager.newPage()).thenReturn(page);
         doNothing().when(page).setContent(any());
         doNothing().when(page).waitForLoadState(any());
         when(page.pdf(any())).thenReturn(new byte[]{1,2,3});
-
-        // IMPORTANT: mock close() vì try-with-resources
         doNothing().when(page).close();
+
+        when(digitalSignatureService.signPdf(any()))
+                .thenReturn(new byte[]{9,9,9});
 
         service.generateCertificate(volunteer, event);
 
+        verify(digitalSignatureService).signPdf(any());
         verify(certificateRepository).save(any());
         verify(storageService).upload((byte[]) any(), eq("path"));
     }
