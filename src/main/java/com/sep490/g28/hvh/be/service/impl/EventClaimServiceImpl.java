@@ -57,7 +57,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         UUID volunteerId = currentUserProvider.getId();
 
         EventApplication eventApplication = eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, UUID.fromString(request.getEventSessionId()));
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, UUID.fromString(request.getEventSessionId()));
 
         //check if event application exists
         if (eventApplication == null) {
