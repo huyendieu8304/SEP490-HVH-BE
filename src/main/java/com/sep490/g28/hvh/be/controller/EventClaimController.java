@@ -60,7 +60,7 @@ public class EventClaimController {
     }
 
     @PreAuthorize("hasRole('HOST') and @eventClaimAuthorizer.isEventClaimManagedByHost(#claimId)")
-    @GetMapping("/host/event-claims/{claimId}")
+    @GetMapping("/host/event-claims/{claimId}/claim-details")
     public ResponseEntity<EventClaimDetailResponse> getEventClaimDetail(
             @PathVariable(name = "claimId")
             @UUID(message = "INVALID_UUID")

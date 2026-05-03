@@ -108,7 +108,7 @@ public class EventClaimServiceImplTest {
         session.setEvent(event);
 
         when(eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, sessionId))
                 .thenReturn(app);
 
         when(eventSessionRepository.findById(sessionId))
@@ -140,7 +140,7 @@ public class EventClaimServiceImplTest {
         when(currentUserProvider.getId()).thenReturn(volunteerId);
 
         when(eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, sessionId))
                 .thenReturn(null);
 
         ClaimEventHourRequest request = validClaimEventHourRequest();
@@ -161,7 +161,7 @@ public class EventClaimServiceImplTest {
         app.setId(applicationId);
 
         when(eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, sessionId))
                 .thenReturn(app);
 
         when(eventSessionRepository.findById(sessionId))
@@ -189,7 +189,7 @@ public class EventClaimServiceImplTest {
         session.setEndDateTime(OffsetDateTime.now().minusDays(10)); // > 7 days
 
         when(eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, sessionId))
                 .thenReturn(app);
 
         when(eventSessionRepository.findById(sessionId))
@@ -218,7 +218,7 @@ public class EventClaimServiceImplTest {
         session.setEndDateTime(OffsetDateTime.now().minusDays(1).minusHours(1));
 
         when(eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, sessionId))
                 .thenReturn(app);
 
         when(eventSessionRepository.findById(sessionId))
@@ -253,7 +253,7 @@ public class EventClaimServiceImplTest {
         session.setEvent(event);
 
         when(eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, sessionId))
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, sessionId))
                 .thenReturn(app);
 
         when(eventSessionRepository.findById(sessionId))
