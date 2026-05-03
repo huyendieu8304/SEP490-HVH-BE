@@ -200,10 +200,12 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             v.avgRating,
             a.id,
             c.checkInTime,
-            c.checkOutTime
+            c.checkOutTime,
+            r
             ) FROM EventApplication a
             LEFT JOIN CheckInLog c ON a.id = c.eventApplication.id
             LEFT JOIN Volunteer v ON a.volunteer.id = v.id
+            LEFT JOIN VolunteerReview r ON a.id = r.eventApplication.id
             WHERE a.session.id = :sessionId
                 AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.COMPLETED
             """)

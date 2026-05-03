@@ -39,4 +39,6 @@ public interface EventSessionService {
 
     void createCheckInCode();
 
+    void cleanCheckInCodeOfYesterday();
+
 }
