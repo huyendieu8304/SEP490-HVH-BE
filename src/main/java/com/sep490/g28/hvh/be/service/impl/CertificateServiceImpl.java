@@ -19,6 +19,7 @@ import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.CertificateRepository;
 import com.sep490.g28.hvh.be.service.CertificateService;
+import com.sep490.g28.hvh.be.service.DigitalSignatureService;
 import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +60,8 @@ public class CertificateServiceImpl implements CertificateService {
     PlaywrightManager playwrightManager;
 
     CurrentUserProvider currentUserProvider;
+
+    DigitalSignatureService digitalSignatureService;
 
     @Value("${front-end.web.cert-url}")
     @NonFinal
@@ -124,11 +127,12 @@ public class CertificateServiceImpl implements CertificateService {
         String html = renderHtml(payload);
 
         //generate PDF
-        byte[] pdfBytes = generatePdf(html);
+        byte[] unsignedPdf = generatePdf(html);
+        byte[] signedPdf = digitalSignatureService.signPdf(unsignedPdf);
 
         certificateRepository.save(cert);
         // 5. upload file
-        storageService.upload(pdfBytes, cert.getCertificatePath());
+        storageService.upload(signedPdf, cert.getCertificatePath());
         log.info("Generate certificate successfully, certPath={}", cert.getCertificatePath());
     }
 
