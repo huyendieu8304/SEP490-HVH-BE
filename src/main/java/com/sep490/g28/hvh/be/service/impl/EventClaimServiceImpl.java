@@ -144,6 +144,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         newEventClaim.setReason(request.getReason());
         newEventClaim.setDetailReason(request.getDetailReason());
         newEventClaim.setEvidences(evidencesPaths);
+        newEventClaim.setStatus(EEventClaimStatus.PENDING);
         eventClaimRepository.save(newEventClaim);
 
         return ClaimEventHourResponse.builder()
