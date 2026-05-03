@@ -30,7 +30,7 @@ import java.lang.annotation.*;
  */
 @Documented
 @Constraint(validatedBy = LongitudeValidator.class)
-@Target({ElementType.FIELD})
+@Target({ElementType.PARAMETER, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidLongitude {
 

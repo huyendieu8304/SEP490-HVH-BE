@@ -74,13 +74,20 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFeedResponse getEventFeeds(int pageNumber, int pageSize, boolean refresh,
                                            String name, String address, LocalDate startDate,
-                                           LocalDate endDate, List<Short> activitySubDomains) {
+                                           LocalDate endDate, List<Short> activitySubDomains,
+                                           Double currentPlaceLat, Double currentPlaceLng,
+                                           Double distance) {
 
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
+
+        Point currentPosition = null;
+        if(currentPlaceLat != null && currentPlaceLng != null) {
+            currentPosition = GeoUtils.toPoint(currentPlaceLat, currentPlaceLng);
+        }
 
         //Get the slice based on the current action is refresh (swipe up) or load more (scroll end)
         Page<Event> page = null;
@@ -91,17 +98,19 @@ public class EventServiceImpl implements EventService {
             //If the action is refresh, get the slice within 1 hour ago
             if (refresh) {
                 OffsetDateTime oneHourAgo = OffsetDateTime.now().minusHours(1);
-                page = eventRepository.refresh(name, address, startDate, endDate, oneHourAgo, pageable);
+                page = eventRepository.refresh(name, address, startDate, endDate, oneHourAgo, currentPosition, distance, pageable);
                 //Else if the action is load more, keep getting the slice with current searching params
             } else {
-                page = eventRepository.search(name, address, startDate, endDate, pageable);
+                page = eventRepository.search(name, address, startDate, endDate, currentPosition, distance, pageable);
             }
         } else {
             if (refresh) {
                 OffsetDateTime oneHourAgo = OffsetDateTime.now().minusHours(1);
-                page = eventRepository.refreshWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains,oneHourAgo, pageable);
+                page = eventRepository
+                        .refreshWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains, oneHourAgo, currentPosition, distance, pageable);
             } else {
-                page = eventRepository.searchWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains, pageable);
+                page = eventRepository
+                        .searchWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains, currentPosition, distance, pageable);
             }
         }
 
