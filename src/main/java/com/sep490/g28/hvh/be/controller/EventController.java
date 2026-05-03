@@ -5,6 +5,8 @@ import com.sep490.g28.hvh.be.dto.event.response.*;
 import com.sep490.g28.hvh.be.dto.notification.request.AnnounceVolunteerRequest;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.validation.EventStatus;
+import com.sep490.g28.hvh.be.validation.ValidLatitude;
+import com.sep490.g28.hvh.be.validation.ValidLongitude;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.Valid;
@@ -57,9 +59,31 @@ public class EventController {
             LocalDate endDate,
 
             @RequestParam(required = false)
-            List<Short> activitySubDomainIds
+            List<Short> activitySubDomainIds,
+
+            @RequestParam(defaultValue = "0", required = false)
+            @ValidLatitude
+            Double currentPlaceLat,
+
+            @RequestParam(defaultValue = "0", required = false)
+            @ValidLongitude
+            Double currentPlaceLng,
+
+            @RequestParam(defaultValue = "3000", required = false)
+            Double distance
     ) {
-        return ResponseEntity.ok(eventService.getEventFeeds(pageNumber, pageSize, refresh, name, address, startDate, endDate, activitySubDomainIds));
+        return ResponseEntity.ok(eventService.getEventFeeds(
+                pageNumber,
+                pageSize,
+                refresh,
+                name,
+                address,
+                startDate,
+                endDate,
+                activitySubDomainIds,
+                currentPlaceLat,
+                currentPlaceLng,
+                distance));
     }
 
     @PreAuthorize("hasRole('HOST')")

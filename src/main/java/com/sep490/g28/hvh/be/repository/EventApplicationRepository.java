@@ -140,6 +140,15 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
     EventApplication findByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
 
     @Query("""
+            SELECT e
+            FROM EventApplication e
+            WHERE e.volunteer.id = :volunteerId
+            AND e.session.id = :sessionId
+            AND e.status = 'COMPLETED'
+            """)
+    EventApplication findEventApplicationByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
+
+    @Query("""
             SELECT new com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse (
             v.id,
             v.fullName,

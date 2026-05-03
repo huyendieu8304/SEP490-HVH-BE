@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.controller;
 
+import com.sep490.g28.hvh.be.constant.ENotificationType;
 import com.sep490.g28.hvh.be.dto.notification.request.RegisterNotificationTokenRequest;
 import com.sep490.g28.hvh.be.dto.notification.response.NotificationResponse;
+import com.sep490.g28.hvh.be.notification.entity.Notification;
 import com.sep490.g28.hvh.be.notification.messageque.NotificationPublisher;
 import com.sep490.g28.hvh.be.repository.UserRepository;
 import com.sep490.g28.hvh.be.service.NotificationService;
@@ -14,6 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Controller for notification
@@ -54,22 +59,26 @@ public class NotificationController {
 //        return ResponseEntity.ok().build();
 //    }
 //
-//    @PostMapping("/send-to-user")
-//    public ResponseEntity<Void> sendNotiToUser(@RequestParam UUID userId) {
-////        UUID userId = UUID.fromString("57fa7839-375d-4298-a319-cbea49d22ce7");
-////        UUID userId = UUID.fromString("a67dabdc-ea8e-4c58-8312-c9aec971a38a");
-//
-//        Notification notification = new Notification();
-//        notification.setId(UUID.randomUUID());
-//        notification.setTitle("test-notification send to user");
-//        notification.setBody("test-notification body muhaha");
-//        notification.setData(Map.of("action", "OPEN"));
-//        notification.setType(ENotificationType.EVENT_REJECTED_BY_MNG);
-//
-//
-//        notificationPublisher.enqueueNotification(notification, userId);
-//        return ResponseEntity.ok().build();
-//    }
+    @PostMapping("/notifications/send-to-user")
+    public ResponseEntity<Void> sendNotiToUser(
+            @RequestParam UUID userId,
+            @RequestParam String title,
+            @RequestParam String body
+    ) {
+//        UUID userId = UUID.fromString("57fa7839-375d-4298-a319-cbea49d22ce7");
+//        UUID userId = UUID.fromString("a67dabdc-ea8e-4c58-8312-c9aec971a38a");
+
+        Notification notification = new Notification();
+        notification.setId(UUID.randomUUID());
+        notification.setTitle(title);
+        notification.setBody(body);
+        notification.setData(Map.of("action", "OPEN"));
+        notification.setType(ENotificationType.VOL_APPLICATION_REJECTED);
+
+
+        notificationPublisher.enqueueNotification(notification, userId);
+        return ResponseEntity.ok().build();
+    }
 
     //get the notification of a specific user
     @GetMapping("/notifications/user")

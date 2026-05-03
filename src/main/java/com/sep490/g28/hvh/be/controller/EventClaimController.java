@@ -55,12 +55,15 @@ public class EventClaimController {
             String inputSessionId
     ) {
         java.util.UUID eventId = java.util.UUID.fromString(inputEventId);
-        java.util.UUID sessionId = java.util.UUID.fromString(inputSessionId);
+        java.util.UUID sessionId = null;
+        if (inputSessionId != null) {
+            sessionId = java.util.UUID.fromString(inputSessionId);
+        }
         return ResponseEntity.ok(eventClaimService.getEventClaims(pageNumber, pageSize, eventId, sessionId));
     }
 
     @PreAuthorize("hasRole('HOST') and @eventClaimAuthorizer.isEventClaimManagedByHost(#claimId)")
-    @GetMapping("/host/event-claims/{claimId}")
+    @GetMapping("/host/event-claims/{claimId}/claim-details")
     public ResponseEntity<EventClaimDetailResponse> getEventClaimDetail(
             @PathVariable(name = "claimId")
             @UUID(message = "INVALID_UUID")
