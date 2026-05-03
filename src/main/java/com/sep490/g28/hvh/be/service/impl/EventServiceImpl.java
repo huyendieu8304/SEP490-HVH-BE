@@ -84,9 +84,11 @@ public class EventServiceImpl implements EventService {
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        Point currentPosition = null;
+        Point currentPosition;
         if(currentPlaceLat != null && currentPlaceLng != null) {
             currentPosition = GeoUtils.toPoint(currentPlaceLat, currentPlaceLng);
+        } else {
+            currentPosition = null;
         }
 
         //Get the slice based on the current action is refresh (swipe up) or load more (scroll end)
@@ -141,15 +143,22 @@ public class EventServiceImpl implements EventService {
                                         }
                                     }
 
-                                    return new EventSimpleResponse(
-                                            e.getId(),
-                                            e.getOrganization().getName(),
-                                            e.getName(),
-                                            firstEventImageUrl,
-                                            e.getAddress(),
-                                            e.getStartDate(),
-                                            e.getRecruitmentEndDate()
-                                    );
+                                    double distanceFromCurrentPosition = 0;
+
+                                    if(currentPosition != null) {
+                                        distanceFromCurrentPosition = GeoUtils.distanceMeters(currentPosition, e.getCheckInLocation());
+                                    }
+
+                                    return EventSimpleResponse.builder()
+                                            .id(e.getId())
+                                            .orgName(e.getOrganization().getName())
+                                            .name(e.getName())
+                                            .imageUrl(firstEventImageUrl)
+                                            .address(e.getAddress())
+                                            .startDate(e.getStartDate())
+                                            .recruitmentEndDate(e.getRecruitmentEndDate())
+                                            .distanceFromCurrentPosition(distanceFromCurrentPosition)
+                                            .build();
                                 }
 
                         ).toList())
@@ -1851,15 +1860,15 @@ public class EventServiceImpl implements EventService {
                 }
             }
 
-            return new EventSimpleResponse(
-                    e.getId(),
-                    e.getOrganization().getName(),
-                    e.getName(),
-                    firstEventImageUrl,
-                    e.getAddress(),
-                    e.getStartDate(),
-                    e.getRecruitmentEndDate()
-            );
+            return EventSimpleResponse.builder()
+                    .id(e.getId())
+                    .orgName(e.getOrganization().getName())
+                    .name(e.getName())
+                    .imageUrl(firstEventImageUrl)
+                    .address(e.getAddress())
+                    .startDate(e.getStartDate())
+                    .recruitmentEndDate(e.getRecruitmentEndDate())
+                    .build();
         });
     }
 
@@ -1902,15 +1911,15 @@ public class EventServiceImpl implements EventService {
                 }
             }
 
-        return new EventSimpleResponse(
-                    e.getId(),
-                    e.getOrganization().getName(),
-                    e.getName(),
-                    firstEventImageUrl,
-                    e.getAddress(),
-                    e.getStartDate(),
-                    e.getRecruitmentEndDate()
-            );
+            return EventSimpleResponse.builder()
+                    .id(e.getId())
+                    .orgName(e.getOrganization().getName())
+                    .name(e.getName())
+                    .imageUrl(firstEventImageUrl)
+                    .address(e.getAddress())
+                    .startDate(e.getStartDate())
+                    .recruitmentEndDate(e.getRecruitmentEndDate())
+                    .build();
         });
     }
 
