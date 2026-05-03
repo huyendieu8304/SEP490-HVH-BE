@@ -19,7 +19,10 @@ public interface EventService {
                                     String address,
                                     LocalDate startDate,
                                     LocalDate endDate,
-                                    List<Short> activitySubDomains);
+                                    List<Short> activitySubDomains,
+                                    Double currentPlaceLat,
+                                    Double currentPlaceLng,
+                                    Double distance);
 
     EditEventResponse draftEvent(EditEventRequest request);
 

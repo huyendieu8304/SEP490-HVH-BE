@@ -4,6 +4,7 @@ import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.event.projection.EventOrganizationProjection;
 import com.sep490.g28.hvh.be.dto.organizationstats.response.OrganizationCountHostsAndEventsResponse;
 import com.sep490.g28.hvh.be.entity.Event;
+import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,12 +26,15 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (CAST(:startDate AS DATE) IS NULL OR e.startDate >= :startDate)
             AND (CAST(:endDate AS DATE) IS NULL OR e.startDate <= :endDate)
             AND e.status = 'RECRUITING'
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             """)
     Page<Event> search(
             @Param("name") String name,
             @Param("address") String address,
             @Param("startDate")LocalDate startDate,
             @Param("endDate") LocalDate endDate,
+            @Param("position") Point position,
+            @Param("distance") Double distance,
             Pageable pageable);
 
     @Query("""
@@ -42,6 +46,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (CAST(:endDate AS DATE) IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
             AND e.status = 'RECRUITING'
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             """)
     Page<Event> searchWithActivitySubDomain(
             @Param("name") String name,
@@ -49,6 +54,8 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             @Param("startDate")LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             @Param("activitySubDomainIds") List<Short> activitySubDomainIds,
+            @Param("position") Point position,
+            @Param("distance") Double distance,
             Pageable pageable);
 
     @Query("""
@@ -59,6 +66,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:startDate IS NULL OR e.startDate >= :startDate)
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND e.status = 'RECRUITING'
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             AND e.createdAt > :since
             """)
     Page<Event> refresh(
@@ -67,6 +75,8 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             @Param("startDate")LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             OffsetDateTime since,
+            @Param("position") Point position,
+            @Param("distance") Double distance,
             Pageable pageable);
 
     @Query("""
@@ -78,6 +88,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
             AND e.status = 'RECRUITING'
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             AND e.createdAt > :since
             """)
     Page<Event> refreshWithActivitySubDomain(
@@ -87,6 +98,8 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             @Param("endDate") LocalDate endDate,
             @Param("activitySubDomainIds") List<Short> activitySubDomainIds,
             OffsetDateTime since,
+            @Param("position") Point position,
+            @Param("distance") Double distance,
             Pageable pageable);
 
     @Query(value = """

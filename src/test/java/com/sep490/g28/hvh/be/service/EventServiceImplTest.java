@@ -16,11 +16,14 @@ import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
+import com.sep490.g28.hvh.be.util.GeoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Point;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
@@ -159,11 +162,19 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
         when(storageService.getSignedUrlAsync("img1"))
                 .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+
+            geoMock.when(() -> GeoUtils.toPoint(any(), any()))
+                    .thenReturn(mock(Point.class));
+        }
 
         EventFeedResponse response = eventService.getEventFeeds(
                 0,
@@ -173,6 +184,9 @@ public class EventServiceImplTest {
                 "Hà Nội",
                 LocalDate.of(2026, 3, 5),
                 LocalDate.of(2026, 3, 10),
+                null,
+                null,
+                null,
                 null
         );
 
@@ -180,6 +194,8 @@ public class EventServiceImplTest {
         assertEquals("signed-url", response.getEvents().getFirst().getImageUrl());
 
         verify(eventRepository).search(
+                any(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -202,6 +218,8 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
@@ -216,12 +234,17 @@ public class EventServiceImplTest {
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
                 null
         );
 
         assertEquals(1, response.getEvents().size());
 
         verify(eventRepository).refresh(
+                any(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -246,6 +269,8 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
@@ -257,7 +282,10 @@ public class EventServiceImplTest {
                 null,
                 LocalDate.of(2026, 3, 5),
                 null,
-                List.of(Short.valueOf("1"), Short.valueOf("2"))
+                List.of(Short.valueOf("1"), Short.valueOf("2")),
+                null,
+                null,
+                null
         );
 
         assertNull(response.getEvents().getFirst().getImageUrl());
@@ -281,6 +309,8 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
@@ -291,6 +321,9 @@ public class EventServiceImplTest {
                 0,
                 10,
                 false,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,
