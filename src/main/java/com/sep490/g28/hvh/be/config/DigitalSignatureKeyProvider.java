@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -28,6 +27,7 @@ public class DigitalSignatureKeyProvider {
 
     private static final Path PRIVATE_PATH = Path.of("keys/private_key.pem");
     private static final Path PUBLIC_PATH = Path.of("keys/public_key.pem");
+    private static final Path CERT_PATH = Path.of("keys/certificate.crt");
 
     @PostConstruct
     public void init() {
@@ -76,7 +76,7 @@ public class DigitalSignatureKeyProvider {
     }
 
     private Certificate[] loadCertificateChain() throws Exception {
-        try (InputStream is = Files.newInputStream(Paths.get("keys/certificate.crt"))) {
+        try (InputStream is = Files.newInputStream(CERT_PATH)) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             Certificate cert = cf.generateCertificate(is);
             return new Certificate[]{cert};
