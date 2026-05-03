@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Chứng Nhận Tình Nguyện Viên - Hoa Văn Nổi Bật</title>
+    <title th:text="'Chứng nhận Tình Nguyện Viên - ' + ${certPayload.eventName}"></title>
     <style>
 
         @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700;800&family=Dancing+Script:wght@700&display=swap');
@@ -240,12 +240,10 @@
 
         <div class="footer">
             <div class="qr-section">
-<!--                todo-->
                 <img th:src="'data:image/png;base64,' + *{qrBase64}" alt="QR Code"/>
             </div>
             
             <div class="signature-section">
-<!--                todo-->
 <!--                <p class="date-line"-->
 <!--                   th:text="'Hà Nội, ngày ' + *{issuedDate.dayOfMonth} +-->
 <!--                            ' tháng ' + *{issuedDate.monthValue} +-->

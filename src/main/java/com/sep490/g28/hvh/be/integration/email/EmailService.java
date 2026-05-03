@@ -15,7 +15,6 @@ package com.sep490.g28.hvh.be.integration.email;
  */
 public interface EmailService {
 
-    //todo sửa lại tên param, vì không nhất quán
     /**
      * Send approval email after volunteer account registration is accepted.
      *

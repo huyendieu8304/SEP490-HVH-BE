@@ -68,7 +68,7 @@ public class SupabaseStorageService implements StorageService {
 
         //expired in 1 hour
         Map<String, Object> body = Map.of(
-                "expiresIn", 600
+                "expiresIn", supabaseProperties.getUploadUrlExpireTimInSeconds()
         );
 
         try {
@@ -134,7 +134,7 @@ public class SupabaseStorageService implements StorageService {
                 + "/" + path;
         //expired in 1 hour
         Map<String, Object> body = Map.of(
-                "expiresIn", 3600
+                "expiresIn", supabaseProperties.getViewUrlExpireTimeInSeconds()
         );
 
         try {

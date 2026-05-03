@@ -1,7 +1,6 @@
 package com.sep490.g28.hvh.be.controller;
 
-import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
+import com.sep490.g28.hvh.be.dto.volunteer.request.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.service.VolunteerService;
 import com.sep490.g28.hvh.be.validation.VolunteerVerificationStatus;
@@ -39,7 +38,7 @@ public class VolunteerController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/volunteers/registrations")
-    public ResponseEntity<Page<VolunteerRegistrationSimpleResponse>> getRegistrations(
+    public ResponseEntity<Page<VolunteerRegistrationSimpleResponse>> getVolRegistrations(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER")
             int pageNumber,
@@ -64,14 +63,14 @@ public class VolunteerController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/volunteers/registrations/{id}")
-    public ResponseEntity<VolunteerRegistrationDetailsResponse> getRegistrationsDetails(
+    public ResponseEntity<VolunteerRegistrationDetailsResponse> getVolRegistrationsDetails(
             @PathVariable(name = "id") UUID id) {
         return ResponseEntity.ok(volunteerService.getVolRegistrationDetails(id));
     }
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @PostMapping("/sys-admin/volunteers/registrations/{id}/verify")
-    public ResponseEntity<String> verifyRegistration(
+    public ResponseEntity<String> verifyVolRegistration(
             @PathVariable(name = "id") UUID id,
             @RequestBody @Valid VolunteerRegistrationVerifyRequest request
     ) {
@@ -130,8 +129,47 @@ public class VolunteerController {
 
     @PreAuthorize("hasRole('VOL')")
     @PostMapping("/vol/volunteers/register-face-id")
-    public ResponseEntity<Void> registerVolunteerFace(@RequestPart("file") MultipartFile file) {
-        volunteerService.registerVolunteerFace(file);
+    public ResponseEntity<Void> registerVolunteerFace(
+            @RequestPart("deviceId") String deviceId,
+            @RequestPart("file") MultipartFile file) {
+        volunteerService.registerVolunteerFace(deviceId, file);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @PutMapping("/vol/volunteers/update-profile")
+    public ResponseEntity<UpdateVolunteerProfileResponse> updateVolunteerProfile(
+            @RequestBody @Valid UpdateVolunteerProfileRequest request
+    ) {
+        return ResponseEntity.ok(volunteerService.updateVolunteerProfile(request));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PutMapping("/sys-admin/volunteers/{id}/update-vol-profile")
+    public ResponseEntity<UpdateVolunteerProfileResponse> updateVolunteerProfileBySystemAdmin(
+            @PathVariable UUID id,
+
+            @RequestBody
+            @Valid
+            UpdateVolunteerProfileBySystemAdminRequest request
+    ) {
+        return ResponseEntity.ok(volunteerService.updateVolunteerProfileBySystemAdmin(id, request));
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PostMapping("/sys-admin/volunteers")
+    public ResponseEntity<String> createVolunteerAccountByAdmin(
+            @RequestBody @Valid CreateVolunteerAccountByAdminRequest request
+    ) {
+        volunteerService.createVolunteerAccountByAdmin(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @GetMapping("/sys-admin/volunteers/{id}")
+    public ResponseEntity<VolunteerAccountInformationResponse> getVolunteerAccountInformationByAdmin(
+            @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(volunteerService.getVolunteerAccountInformationByAdmin(id));
     }
 }

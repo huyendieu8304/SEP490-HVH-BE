@@ -3,7 +3,9 @@ package com.sep490.g28.hvh.be.scheduler;
 import com.sep490.g28.hvh.be.service.EventService;
 import com.sep490.g28.hvh.be.service.EventSessionService;
 import com.sep490.g28.hvh.be.service.OrganizationService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventStatusScheduler {
     EventService eventService;
     EventSessionService eventSessionService;
@@ -22,7 +25,7 @@ public class EventStatusScheduler {
         runStep("endRecruitment", eventService::endRecruitment);
         runStep("endEvents", eventService::endEvents);
         runStep("startEvents", eventService::startEvents);
-        runStep("createCheckIn", eventSessionService::createCheckInCode);
+        runStep("createCheckIn", eventSessionService::cleanCheckInCodeOfYesterday);
     }
 
     private void runStep(String name, Runnable step) {
@@ -46,14 +49,21 @@ public class EventStatusScheduler {
         log.info("Done completing events cron job");
     }
 
-    //4AM every day
-    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Ho_Chi_Minh")
+    //3AM every day
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Ho_Chi_Minh")
     public void calculateOrganizationsAvgRating(){
         log.info("Start calculating organization avg rating cron job");
         organizationService.calculateOrganizationsAvgRating();
         log.info("Done calculating organization avg rating cron job");
     }
 
+    //3 hour between each, start at 4 am, 7, 10, 13, 16, 19, 22
+    @Scheduled(cron = "0 0 4,7,10,13,16,19,22 * * *", zone = "Asia/Ho_Chi_Minh")
+    public void createCheckInCode(){
+        log.info("Start creating check in code cron job");
+        eventSessionService.createCheckInCode();
+        log.info("Done creating check in code cron job");
+    }
 
 
 }

@@ -17,6 +17,10 @@ public class StoragePathGenerator {
     private static final String ORG_REGISTRATION_FOLDER = "/org-registration";
     private static final String EVENT_FOLDER = "/event";
     private static final String VOL_FOLDER = "/volunteer";
+    private static final String HOST_FOLDER = "/host";
+    private static final String ORG_MANAGER_FOLDER = "/org_manager";
+    private static final String SYS_ADMIN_FOLDER = "/sys_admin";
+    private static final String ORG_FOLDER = "/organization";
 
     private static final String EVENT_IMAGE_DIR = "/image";
     private static final String EVENT_CLAIM_DIR = "/claim";
@@ -29,7 +33,8 @@ public class StoragePathGenerator {
     private final static String LEGAL_DOCUMENTS_FILE_NAME = "/legal-docs_";
     private static final String OTHER_EVIDENCES_FILE_NAME = "/others_";
 
-
+    private static final String AVATAR_FILE_NAME = "/avatar";
+    private static final String COVER_FILE_NAME = "/cover";
 
     public String identityVerificationCidFront(UUID verificationId, String fileExtension){
         return  IDENTITY_VERIFICATION_FOLDER + "/" + verificationId + CID_FRONT_FILE_NAME + fileExtension;
@@ -81,5 +86,29 @@ public class StoragePathGenerator {
     //================================================================================================
     public String volunteerCertificate(UUID volId, String certCode, String fileExtension) {
         return VOL_FOLDER+ "/" + volId + VOL_CERT_DIR + "/" + certCode + fileExtension;
+    }
+
+    public String volunteerAvatar(UUID volId, String fileExtension) {
+        return VOL_FOLDER+ "/" + volId + "/" + AVATAR_FILE_NAME + fileExtension;
+    }
+
+    public String organizationAvatar(UUID orgId, String fileExtension) {
+        return ORG_FOLDER+ "/" + orgId + "/" + AVATAR_FILE_NAME + fileExtension;
+    }
+
+    public String organizationCover(UUID orgId, String fileExtension) {
+        return ORG_FOLDER+ "/" + orgId + "/" + COVER_FILE_NAME + fileExtension;
+    }
+
+    public String hostAvatar(UUID hostId, String fileExtension) {
+        return HOST_FOLDER + "/" + hostId + "/" + AVATAR_FILE_NAME + fileExtension;
+    }
+
+    public String orgManagerAvatar(UUID orgManagerId, String fileExtension) {
+        return ORG_MANAGER_FOLDER + "/" + orgManagerId + "/" + AVATAR_FILE_NAME + fileExtension;
+    }
+
+    public String sysAdminAvatar(UUID sysAdminId, String fileExtension) {
+        return SYS_ADMIN_FOLDER + "/" + sysAdminId + "/" + AVATAR_FILE_NAME + fileExtension;
     }
 }

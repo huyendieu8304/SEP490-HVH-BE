@@ -1,10 +1,8 @@
 package com.sep490.g28.hvh.be.service.impl;
 
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
-import com.sep490.g28.hvh.be.constant.ERole;
-import com.sep490.g28.hvh.be.constant.EVolunteerVerificationStatus;
-import com.sep490.g28.hvh.be.dto.volunteer.request.RegisterVolunteerAccountRequest;
-import com.sep490.g28.hvh.be.dto.volunteer.request.VolunteerRegistrationVerifyRequest;
+import com.sep490.g28.hvh.be.constant.*;
+import com.sep490.g28.hvh.be.dto.volunteer.request.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.*;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -14,12 +12,13 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.authServer.AuthClient;
 import com.sep490.g28.hvh.be.integration.cache.OtpService;
 import com.sep490.g28.hvh.be.integration.email.EmailService;
-import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
-import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceRegisterResponse;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceAuthClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.RegisterFaceResponse;
 import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.VolunteerService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.RandomStringUtil;
 import com.sep490.g28.hvh.be.util.StringNormalizeUtil;
 import lombok.AccessLevel;
@@ -31,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -53,7 +53,7 @@ public class VolunteerServiceImpl implements VolunteerService {
     StoragePathGenerator storagePathGenerator;
     OtpService otpService;
     AuthClient authClient;
-    FaceClient faceClient;
+    FaceAuthClient faceAuthClient;
     SystemAdminRepository systemAdminRepository;
     CurrentUserProvider currentUserProvider;
     EmailService emailService;
@@ -175,6 +175,7 @@ public class VolunteerServiceImpl implements VolunteerService {
                 .cid(identityVerification.getCid())
                 .email(identityVerification.getEmail())
                 .phone(identityVerification.getPhone())
+                .fullName(identityVerification.getFullName())
                 .status(identityVerification.getStatus())
                 .rejectionReason(identityVerification.getRejectionReason())
                 .createdAt(identityVerification.getCreatedAt())
@@ -281,12 +282,7 @@ public class VolunteerServiceImpl implements VolunteerService {
         try {
             CompletableFuture.allOf(f1, f2, f3).join();
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae && ae.getHttpStatus().value() == 400) {
-                //todo: this case is the file not exist in sb (only for test) change later, need to have picture to approve
-            } else {
-                throw (RuntimeException) e.getCause(); // propagate, transaction fail
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
         identityVerification.setCidFront("");
         identityVerification.setCidBack("");
@@ -296,7 +292,6 @@ public class VolunteerServiceImpl implements VolunteerService {
         identityVerificationRepository.save(identityVerification);
     }
 
-    //todo unit test
     @Override
     public Page<VolunteerSimpleResponseForAdmin> getVolunteersByAdmin(int pageNumber, int pageSize, String email) {
         Pageable pageable = PageRequest.of(
@@ -307,30 +302,23 @@ public class VolunteerServiceImpl implements VolunteerService {
         Page<VolunteerSimpleResponseForAdmin> page =
                 volunteerRepository.findVolunteersByAdmin(pageable, email);
 
-        //get avatar signed urls
-        List<CompletableFuture<VolunteerSimpleResponseForAdmin>> futures =
+        List<VolunteerSimpleResponseForAdmin> content =
                 page.getContent().stream()
-                        .map(v -> {
-                            if (v.getAvatarUrl() == null) {
-                                return CompletableFuture.completedFuture(v);
+                        .map(volunteer -> {
+                            if (volunteer.getAvatarUrl() == null) return volunteer;
+                            //get signed url for volunteer avatar
+                            String path = volunteer.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                volunteer.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                volunteer.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
                             }
-                            return storageService.getSignedUrlAsync(v.getAvatarUrl())
-                                    .thenApply(url -> {
-                                        v.setAvatarUrl(url);
-                                        return v;
-                                    })
-                                    //todo this might be put into some todos
-                                    .exceptionally(ex -> {
-                                        log.warn("Failed to get signed url for path: {}", v.getAvatarUrl(), ex);
-                                        v.setAvatarUrl(null);
-                                        return v;
-                                    });
+                            return volunteer;
                         })
                         .toList();
-
-        List<VolunteerSimpleResponseForAdmin> content =
-                futures.stream().map(CompletableFuture::join).toList();
-
         return new PageImpl<>(content, pageable, page.getTotalElements());
 
     }
@@ -355,13 +343,10 @@ public class VolunteerServiceImpl implements VolunteerService {
         Volunteer volunteer = volunteerRepository.findById(volunteerId)
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
-
-
         //get certificates of volunteer
         List<Certificate> certificateList = certificateRepository.findByVolunteerId(volunteerId);
 
         //get signed URL of certificates and volunteer's avatar
-        String avatarUrl = null;
         CompletableFuture<String> avatarFuture = null;
         //check if volunteer has avatar
         if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
@@ -377,6 +362,7 @@ public class VolunteerServiceImpl implements VolunteerService {
             }
         }
 
+        String avatarUrl = null;
         List<String> certificatesUrls = new ArrayList<>();
         try {
             if (avatarFuture != null) {
@@ -389,13 +375,8 @@ public class VolunteerServiceImpl implements VolunteerService {
                 certificatesUrls.add(certificateFuture.join());
             }
 
-        } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+        } catch (CompletionException ex) {
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
         }
 
         return new VolunteerPublicInformationResponse(
@@ -431,12 +412,7 @@ public class VolunteerServiceImpl implements VolunteerService {
                 CompletableFuture.allOf(avatarFuture).join();
                 avatarUrl = avatarFuture.join();
             } catch (CompletionException ex) {
-                Throwable cause = ex.getCause();
-                if (cause instanceof AppException ae) {
-                    //todo: handle app exception in viewEventFeeds
-                } else {
-                    throw cause instanceof RuntimeException re ? re : ex;
-                }
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
             }
         }
 
@@ -468,7 +444,7 @@ public class VolunteerServiceImpl implements VolunteerService {
     }
 
     @Override
-    public void registerVolunteerFace(MultipartFile file) {
+    public void registerVolunteerFace(String deviceId, MultipartFile file) {
         UUID volunteerId = currentUserProvider.getId();
 
         User user = userRepository.findById(volunteerId)
@@ -483,14 +459,239 @@ public class VolunteerServiceImpl implements VolunteerService {
                 .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
 
         //call face api server to register face
-        FaceRegisterResponse response = faceClient
-                .faceRegister(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
+        RegisterFaceResponse response = faceAuthClient
+                .registerFaceBiometric(convertToValidUsername(volunteer.getFullName()), volunteerId, file);
 
         //check if response success
         if(response.success()) {
             user.setFaceRegistered(true);
             userRepository.save(user);
+
+            volunteer.setDeviceId(deviceId);
+            volunteerRepository.save(volunteer);
+        } else {
+            throw new AppException(FaceApiErrorCode.FACE_REGISTER_FAILED);
         }
+    }
+
+    @Override
+    public UpdateVolunteerProfileResponse updateVolunteerProfile(UpdateVolunteerProfileRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        String newAvatarUploadUrl = null;
+        if(request.getAvatarExtension() != null) {
+            if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+                //delete exist avatar image
+                CompletableFuture<Void> avatarFuture =
+                        storageService.deleteFileAsync(volunteer.getAvatarUrl());
+
+                try {
+                    CompletableFuture.allOf(avatarFuture).join();
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
+                }
+            }
+
+            //get signed URL of file
+            String newAvatarPath = storagePathGenerator.volunteerAvatar(volunteerId, request.getAvatarExtension());
+
+            CompletableFuture<String> newAvatarFuture =
+                    storageService.getUploadUrlAsync(newAvatarPath);
+
+            try {
+                CompletableFuture.allOf(newAvatarFuture).join();
+                newAvatarUploadUrl = newAvatarFuture.join();
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
+            }
+
+            volunteer.setAvatarUrl(newAvatarPath);
+        }
+
+        EEmployStatus employStatus =
+                (request.getEmployStatus() == null || request.getEmployStatus().isBlank())
+                        ? null
+                        : EEmployStatus.valueOf(request.getEmployStatus());
+
+        EEducationLevel educationLevel =
+                (request.getEducationLevel() == null || request.getEducationLevel().isBlank())
+                        ? null
+                        : EEducationLevel.valueOf(request.getEducationLevel());
+
+        volunteer.setNickname(request.getNickName());
+        volunteer.setFullName(request.getFullName());
+        volunteer.setBio(request.getBio());
+        volunteer.setGender(request.isGender());
+        volunteer.setDob(request.getDob());
+        volunteer.setAddress(request.getAddress());
+        volunteer.setDetailAddress(request.getDetailAddress());
+        volunteer.setEmployStatus(employStatus);
+        volunteer.setWorkAddress(request.getWorkAddress());
+        volunteer.setEducationLevel(educationLevel);
+        volunteer.setSid(request.getSid());
+        volunteer.setUpdatedAt(OffsetDateTime.now());
+
+        volunteerRepository.save(volunteer);
+
+        return UpdateVolunteerProfileResponse.builder()
+                .avatarUploadUrl(newAvatarUploadUrl)
+                .build();
+    }
+
+    @Override
+    public UpdateVolunteerProfileResponse updateVolunteerProfileBySystemAdmin(UUID volunteerId, UpdateVolunteerProfileBySystemAdminRequest request) {
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        String newAvatarUploadUrl = null;
+        if(request.getAvatarExtension() != null) {
+            if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+                //delete exist avatar image
+                CompletableFuture<Void> avatarFuture =
+                        storageService.deleteFileAsync(volunteer.getAvatarUrl());
+
+                try {
+                    CompletableFuture.allOf(avatarFuture).join();
+                } catch (CompletionException ex) {
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
+                }
+            }
+
+            //get signed URL of file
+            String newAvatarPath = storagePathGenerator.volunteerAvatar(volunteerId, request.getAvatarExtension());
+
+            CompletableFuture<String> newAvatarFuture =
+                    storageService.getUploadUrlAsync(newAvatarPath);
+
+            try {
+                CompletableFuture.allOf(newAvatarFuture).join();
+                newAvatarUploadUrl = newAvatarFuture.join();
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
+            }
+
+            volunteer.setAvatarUrl(newAvatarPath);
+        }
+
+        EEmployStatus employStatus =
+                (request.getEmployStatus() == null || request.getEmployStatus().isBlank())
+                        ? null
+                        : EEmployStatus.valueOf(request.getEmployStatus());
+
+        EEducationLevel educationLevel =
+                (request.getEducationLevel() == null || request.getEducationLevel().isBlank())
+                        ? null
+                        : EEducationLevel.valueOf(request.getEducationLevel());
+
+        volunteer.setEmail(request.getEmail());
+        volunteer.setPhone(request.getPhone());
+        volunteer.setCid(request.getCid());
+        volunteer.setNickname(request.getNickName());
+        volunteer.setFullName(request.getFullName());
+        volunteer.setBio(request.getBio());
+        volunteer.setGender(request.isGender());
+        volunteer.setDob(request.getDob());
+        volunteer.setAddress(request.getAddress());
+        volunteer.setDetailAddress(request.getDetailAddress());
+        volunteer.setEmployStatus(employStatus);
+        volunteer.setWorkAddress(request.getWorkAddress());
+        volunteer.setEducationLevel(educationLevel);
+        volunteer.setSid(request.getSid());
+        volunteer.setDeviceId(request.getDeviceId());
+        volunteer.setUpdatedAt(OffsetDateTime.now());
+
+        volunteerRepository.save(volunteer);
+
+        return UpdateVolunteerProfileResponse.builder()
+                .avatarUploadUrl(newAvatarUploadUrl)
+                .build();
+    }
+
+    @Override
+    public void createVolunteerAccountByAdmin(CreateVolunteerAccountByAdminRequest request) {
+        checkUniqueEmailCidPhone(request.getEmail(), request.getCid(), request.getPhone());
+
+        //get the current admin who make the request
+        SystemAdmin currentAdmin = systemAdminRepository.getReferenceById(currentUserProvider.getId());
+
+        //Create account in auth server
+        String defaultPassword = RandomStringUtil.random8AlphaNumeric();
+        UUID volunteerId = authClient.createAccount(
+                ERole.VOL,
+                request.getEmail(),
+                defaultPassword,
+                request.getPhone()
+        );
+
+        //create volunteer in the db
+        Volunteer volunteer = new Volunteer();
+        volunteer.setId(volunteerId);
+        volunteer.setVid(UUID.randomUUID());
+        volunteer.setCid(request.getCid());
+        volunteer.setEmail(request.getEmail());
+        volunteer.setPhone(request.getPhone());
+        if (request.getFullName() != null ) {
+            volunteer.setFullName(normalizeVietnameseName(request.getFullName()));
+        }
+        volunteer.setCreatedBy(currentAdmin);
+
+        volunteerRepository.save(volunteer);
+
+        //send mail to the volunteer
+        emailService.sendApproveRegisterVolAccountEmail(request.getEmail(), defaultPassword);
+        log.info("Admin with id={}, create volunteer account id={}", currentUserProvider.getId(), volunteerId);
+    }
+
+    @Override
+    public VolunteerAccountInformationResponse getVolunteerAccountInformationByAdmin(UUID volunteerId) {
+
+        Volunteer volunteer = volunteerRepository.findById(volunteerId)
+                .orElseThrow(() -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED));
+
+        //get signed URL of volunteer avatar
+        String avatarUrl = null;
+        if (volunteer.getAvatarUrl() != null && !volunteer.getAvatarUrl().isEmpty()) {
+
+            CompletableFuture<String> avatarFuture =
+                    storageService.getSignedUrlAsync(volunteer.getAvatarUrl());
+
+            try {
+                CompletableFuture.allOf(avatarFuture).join();
+                avatarUrl = avatarFuture.join();
+            } catch (CompletionException ex) {
+                AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
+            }
+        }
+
+        return new VolunteerAccountInformationResponse(
+                volunteerId,
+                volunteer.getVid(),
+                volunteer.getCid(),
+                volunteer.getEmail(),
+                volunteer.getPhone(),
+                volunteer.isPhoneVerified(),
+                volunteer.getNickname(),
+                volunteer.getFullName(),
+                volunteer.getBio(),
+                volunteer.isGender(),
+                volunteer.getDob(),
+                volunteer.getLevel(),
+                avatarUrl,
+                volunteer.getAddress(),
+                volunteer.getDetailAddress(),
+                volunteer.getEmployStatus(),
+                volunteer.getWorkAddress(),
+                volunteer.getEducationLevel(),
+                volunteer.getSid(),
+                volunteer.getCreditScore(),
+                volunteer.getHonorScore(),
+                volunteer.getAvgRating(),
+                volunteer.getActivityCount()
+        );
     }
 
     //convert name to valid username

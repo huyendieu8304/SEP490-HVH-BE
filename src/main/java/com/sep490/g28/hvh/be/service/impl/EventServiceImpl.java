@@ -19,6 +19,7 @@ import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.EventRepository;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.*;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.GeoUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -73,13 +74,22 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFeedResponse getEventFeeds(int pageNumber, int pageSize, boolean refresh,
                                            String name, String address, LocalDate startDate,
-                                           LocalDate endDate, List<Short> activitySubDomains) {
+                                           LocalDate endDate, List<Short> activitySubDomains,
+                                           Double currentPlaceLat, Double currentPlaceLng,
+                                           Double distance) {
 
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
+
+        Point currentPosition;
+        if(currentPlaceLat != null && currentPlaceLng != null) {
+            currentPosition = GeoUtils.toPoint(currentPlaceLat, currentPlaceLng);
+        } else {
+            currentPosition = null;
+        }
 
         //Get the slice based on the current action is refresh (swipe up) or load more (scroll end)
         Page<Event> page = null;
@@ -90,24 +100,25 @@ public class EventServiceImpl implements EventService {
             //If the action is refresh, get the slice within 1 hour ago
             if (refresh) {
                 OffsetDateTime oneHourAgo = OffsetDateTime.now().minusHours(1);
-                page = eventRepository.refresh(name, address, startDate, endDate, oneHourAgo, pageable);
+                page = eventRepository.refresh(name, address, startDate, endDate, oneHourAgo, currentPosition, distance, pageable);
                 //Else if the action is load more, keep getting the slice with current searching params
             } else {
-                page = eventRepository.search(name, address, startDate, endDate, pageable);
+                page = eventRepository.search(name, address, startDate, endDate, currentPosition, distance, pageable);
             }
         } else {
             if (refresh) {
                 OffsetDateTime oneHourAgo = OffsetDateTime.now().minusHours(1);
-                page = eventRepository.refreshWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains,oneHourAgo, pageable);
+                page = eventRepository
+                        .refreshWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains, oneHourAgo, currentPosition, distance, pageable);
             } else {
-                page = eventRepository.searchWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains, pageable);
+                page = eventRepository
+                        .searchWithActivitySubDomain(name, address, startDate, endDate, activitySubDomains, currentPosition, distance, pageable);
             }
         }
 
         for(Event e : page.getContent()) {
             log.info("CONTENT OF SLICE: {a}" + e.getStatus());
         }
-
 
         //map the slice content (list of events) to EventSimpleResponse
         List<EventSimpleResponse> eventSimpleResponseList = Optional.of(page.getContent())
@@ -124,31 +135,30 @@ public class EventServiceImpl implements EventService {
 
                                         List<EventImage> eventImageList = e.getImages();
 
-                                        CompletableFuture<String> firstEventImageFuture =
-                                                storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
-
                                         try {
-                                            CompletableFuture.allOf(firstEventImageFuture).join();
-                                            firstEventImageUrl = firstEventImageFuture.join();
+                                            firstEventImageUrl =
+                                                    storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath()).join();
                                         } catch (CompletionException ex) {
-                                            Throwable cause = ex.getCause();
-                                            if (cause instanceof AppException ae) {
-                                                //todo: handle app exception in viewEventFeeds
-                                            } else {
-                                                throw cause instanceof RuntimeException re ? re : ex;
-                                            }
+                                            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                                         }
                                     }
 
-                                    return new EventSimpleResponse(
-                                            e.getId(),
-                                            e.getOrganization().getName(),
-                                            e.getName(),
-                                            firstEventImageUrl,
-                                            e.getAddress(),
-                                            e.getStartDate(),
-                                            e.getRecruitmentEndDate()
-                                    );
+                                    double distanceFromCurrentPosition = 0;
+
+                                    if(currentPosition != null) {
+                                        distanceFromCurrentPosition = GeoUtils.distanceMeters(currentPosition, e.getCheckInLocation());
+                                    }
+
+                                    return EventSimpleResponse.builder()
+                                            .id(e.getId())
+                                            .orgName(e.getOrganization().getName())
+                                            .name(e.getName())
+                                            .imageUrl(firstEventImageUrl)
+                                            .address(e.getAddress())
+                                            .startDate(e.getStartDate())
+                                            .recruitmentEndDate(e.getRecruitmentEndDate())
+                                            .distanceFromCurrentPosition(distanceFromCurrentPosition)
+                                            .build();
                                 }
 
                         ).toList())
@@ -180,7 +190,6 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(request.getEventId()).orElseThrow(
                     () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
             );
-            //todo check host of event
             return editEvent(request, event, EEventStatus.EDITING);
         } else {
             return createEvent(request, EEventStatus.EDITING);
@@ -195,7 +204,6 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(request.getEventId()).orElseThrow(
                     () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
             );
-            //todo check host of event
             return editEvent(request, event, EEventStatus.SUBMITTED);
         } else {
             return createEvent(request, EEventStatus.SUBMITTED);
@@ -328,12 +336,7 @@ public class EventServiceImpl implements EventService {
             }
 
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
         String hostPhone = "";
@@ -359,6 +362,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
@@ -392,7 +396,6 @@ public class EventServiceImpl implements EventService {
                 .build();
     }
 
-    //todo
     @Override
     public void saveEvent(SaveEventRequest request) {
 
@@ -773,7 +776,6 @@ public class EventServiceImpl implements EventService {
 
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForManager> getPendingEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -800,7 +802,6 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForManager);
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForManager> getApprovedEventsByManager(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -830,7 +831,6 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForManager);
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForAdmin> getPendingEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -851,7 +851,6 @@ public class EventServiceImpl implements EventService {
         ).map(eventMapper::toEventSimpleResponseForAdmin);
     }
 
-    //todo unit test for this method
     @Override
     public Page<EventSimpleResponseForAdmin> getRunningEventsByAdmin(int pageNumber, int pageSize, String eventName) {
         Pageable pageable = PageRequest.of(
@@ -900,19 +899,12 @@ public class EventServiceImpl implements EventService {
 
         List<String> imagesUrls = new ArrayList<>();
         try {
-
             CompletableFuture.allOf(imagesFutures.toArray(new CompletableFuture[0])).join();
             for (CompletableFuture<String> imageFuture : imagesFutures) {
                 imagesUrls.add(imageFuture.join());
             }
-
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
         UUID hostId = null;
@@ -939,6 +931,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
@@ -958,6 +951,7 @@ public class EventServiceImpl implements EventService {
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
                                 es.getExpectedSerAmount(),
+                                es.getCheckInCode(),
                                 es.getApprovedApplicationCount()
                         )).toList()).orElse(Collections.emptyList());;
 
@@ -1013,6 +1007,7 @@ public class EventServiceImpl implements EventService {
                 .status(eventStatus)
                 .eventSessions(eventSessions)
                 .conflictSessions(conflictSessions)
+                .updateEventPayload(event.getUpdateEventPayload())
                 .note(note.toString())
                 .build();
     }
@@ -1049,12 +1044,7 @@ public class EventServiceImpl implements EventService {
             }
 
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
 
@@ -1077,6 +1067,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
@@ -1096,8 +1087,9 @@ public class EventServiceImpl implements EventService {
                                 es.getEndDateTime(),
                                 es.getExpectedVolAmount(),
                                 es.getExpectedSerAmount(),
+                                es.getCheckInCode(),
                                 es.getApprovedApplicationCount()
-                        )).toList()).orElse(Collections.emptyList());;
+                        )).toList()).orElse(Collections.emptyList());
 
         if (!conflictSession.isEmpty()) {
             note.append(EventErrorCode.DUPLICATE_HOSTED_DATE.getMessage()).append("\n");
@@ -1139,6 +1131,7 @@ public class EventServiceImpl implements EventService {
                 .status(eventStatus)
                 .eventSessions(eventSessions)
                 .conflictSessions(conflictSessions)
+                .updateEventPayload(event.getUpdateEventPayload())
                 .note(note.toString())
                 .build();
     }
@@ -1183,12 +1176,7 @@ public class EventServiceImpl implements EventService {
                     CompletableFuture.allOf(firstEventImageFuture).join();
                     firstEventImageUrl = firstEventImageFuture.join();
                 } catch (CompletionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (cause instanceof AppException ae) {
-                        //todo: handle app exception in viewEventFeeds
-                    } else {
-                        throw cause instanceof RuntimeException re ? re : ex;
-                    }
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
@@ -1212,8 +1200,7 @@ public class EventServiceImpl implements EventService {
                 () -> new AppException(EventErrorCode.EVENT_NOT_EXISTED)
         );
 
-        //todo check if event belongs to host
-
+        //todo cái note này có tác dụng gì v Kien? t thấy có khai báo, nhưng ko có set cho nó, nhưng lại có trả về
         StringBuilder note = new StringBuilder();
 
         //get regular information of event
@@ -1239,12 +1226,7 @@ public class EventServiceImpl implements EventService {
             }
 
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo: handle exception at getEventDetails
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(e);
         }
 
         String activitySubDomainName = "";
@@ -1260,6 +1242,7 @@ public class EventServiceImpl implements EventService {
                         es.getEndDateTime(),
                         es.getExpectedVolAmount(),
                         es.getExpectedSerAmount(),
+                        es.getCheckInCode(),
                         es.getApprovedApplicationCount()
                 )).toList();
 
@@ -1569,91 +1552,22 @@ public class EventServiceImpl implements EventService {
         Set<Volunteer> receiveCertVolunteerSet = new HashSet<>();
         List<VolunteerReview> newReviews = new ArrayList<>();
         for (Event event : events) {
-            int countEventApprovedApplications = 0;
-            int countEventAttendedApplications = 0;
-
-            List<EventSession> sessions = event.getSessions();
-            for (EventSession session : sessions) {
-                    Duration duration = Duration.between(session.getStartDateTime(), session.getEndDateTime());
-                    double requiredHours = duration.toMinutes() / 60.0 / 3;
-
-                    //get applications that has checked in and checked out info
-                    List<EligibleApplicationProjection> eligibleApplications =
-                            eventApplicationRepository
-                                    .findEligibleApplicationProjection(session.getId());
-
-                    // count APPROVED applications of a session
-                    countEventApprovedApplications += session.getApprovedApplicationCount();
-
-                    //count the application that the volunteer really participated
-                    countEventAttendedApplications += eligibleApplications.size();
-
-                    for (EligibleApplicationProjection projection : eligibleApplications) {
-                        Volunteer volunteer = projection.getVolunteer();
-                        EventApplication application = projection.getApplication();
-
-                        //the application is legit but host has not reviewed it yet
-                        if (projection.getReview() == null){
-                            //auto review 5 stars for all legit participant
-                            VolunteerReview review = volunteerReviewService
-                                    .reviewAutomatically(volunteer, application);
-
-                            //add the new review to the list for batch updating
-                            newReviews.add(review);
-                            projection.setReview(review);
-                        }
-
-                        int creditHour = application.getCreditHour();
-                        double creditScore = (double) (projection.getReview().getAvgRating() * creditHour) /5;
-
-                        //check the vol eligible to get cert
-                        if (creditScore >= requiredHours) {
-                            receiveCertVolunteerSet.add(volunteer);
-                        }
-
-                        //update the credit score of the volunteer
-                        int creditToAdd = (int) Math.round(creditScore);
-                        volunteer.setCreditScore(volunteer.getCreditScore() + creditToAdd);
-                        updateVolunteerSet.add(volunteer);
-
-                    }
-                    //update batch in db of this session
-                    //review for vol
-                    volunteerReviewRepository.saveAll(newReviews);
-                    log.info("Create automatic review for eligible volunteers of session, sessionId={}",session.getId());
-                    newReviews.clear();
+            if (event.isServingActivity()) {
+                completeServingEvent(event, updateVolunteerSet, receiveCertVolunteerSet, newReviews);
+            } else {
+                completeNonServingEvent(event, updateVolunteerSet, receiveCertVolunteerSet, newReviews);
             }
 
-            //update credit score for vol
+            //update batch in db of this session
+            //review for vol
+            volunteerReviewRepository.saveAll(newReviews);
+            log.info("Create automatic review for eligible volunteers of event, eventId={}",event.getId());
+            newReviews.clear();
+
+            //update score for vol
             volunteerRepository.saveAll(updateVolunteerSet);
-            log.info("Add credit score for volunteers of event, eventId={}",event.getId());
+            log.info("Add score for volunteers of event, eventId={}",event.getId());
             updateVolunteerSet.clear();
-
-            //update credit hour for organization
-            Organization organization = event.getOrganization();
-            int eventCreditHour = 0;
-            for (EventSession session : sessions) {
-                eventCreditHour += (int) Math.round(
-                        Duration.between(session.getStartDateTime(), session.getEndDateTime())
-                                .toMinutes() / 60.0
-                );
-            }
-            organization.setCreditHour(organization.getCreditHour() + eventCreditHour);
-            organizationRepository.save(organization);
-
-            LocalDate eventEndedDate = event.getEndDate();
-            int month = eventEndedDate.getMonthValue();
-            int year = eventEndedDate.getYear();
-
-            //update organization stats
-            organizationStatsService.updateOrganizationCreditHoursAndCountApplicationsAndCountCompletedEventStats(
-                    organization.getId(),
-                    month,
-                    year,
-                    countEventApprovedApplications,
-                    countEventAttendedApplications,
-                    eventCreditHour
-            );
 
             //generate certificates for volunteers
             certificateService.generateCertificates(receiveCertVolunteerSet.stream().toList(), event);
@@ -1663,9 +1577,6 @@ public class EventServiceImpl implements EventService {
             receiveCertVolunteerSet.clear();
 
             //update event status after process all the cert and vol score
-            event.setTotalCreditHours(eventCreditHour);
-            event.setTotalApprovedApplications(countEventApprovedApplications);
-            event.setTotalAttendedApplications(countEventAttendedApplications);
             event.setStatus(EEventStatus.COMPLETED);
             eventRepository.save(event);
             log.info("Event completed, eventId={}", event.getId());
@@ -1678,6 +1589,160 @@ public class EventServiceImpl implements EventService {
             );
             log.info("Send event complete notification to org manager and host of event, eventId={}", event.getId());
         }
+    }
+
+    private void completeServingEvent(
+            Event event,
+            Set<Volunteer> updateVolunteerSet,
+            Set<Volunteer> receiveCertVolunteerSet,
+            List<VolunteerReview> newReviews
+    ){
+        int countEventApprovedApplications = 0;
+        int countEventAttendedApplications = 0;
+
+        List<EventSession> sessions = event.getSessions();
+        for (EventSession session : sessions) {
+            Duration duration = Duration.between(session.getStartDateTime(), session.getEndDateTime());
+            double requiredHours = duration.toMinutes() / 60.0 / 3;
+
+            //get applications that has checked in and checked out info
+            List<EligibleApplicationProjection> eligibleApplications =
+                    eventApplicationRepository
+                            .findEligibleApplicationProjection(session.getId());
+
+            // count APPROVED applications of a session
+            countEventApprovedApplications += session.getApprovedApplicationCount();
+
+            //count the application that the volunteer really participated
+            countEventAttendedApplications += eligibleApplications.size();
+
+            for (EligibleApplicationProjection projection : eligibleApplications) {
+                Volunteer volunteer = projection.getVolunteer();
+                EventApplication application = projection.getApplication();
+
+                //the application is legit but host has not reviewed it yet
+                if (projection.getReview() == null){
+                    //auto review 5 stars for all legit participant
+                    VolunteerReview review = volunteerReviewService
+                            .reviewAutomatically(volunteer, application);
+
+                    //add the new review to the list for batch updating
+                    newReviews.add(review);
+                    projection.setReview(review);
+                }
+
+                int creditHour = application.getCreditHour();
+                double creditScore = (double) (projection.getReview().getAvgRating() * creditHour) /5;
+
+                //check the vol eligible to get cert
+                if (creditScore >= requiredHours) {
+                    receiveCertVolunteerSet.add(volunteer);
+                }
+
+                //update the credit score of the volunteer
+                int creditToAdd = (int) Math.round(creditScore);
+                volunteer.setCreditScore(volunteer.getCreditScore() + creditToAdd);
+                updateVolunteerSet.add(volunteer);
+            }
+        }
+
+        //update credit hour for organization
+        Organization organization = event.getOrganization();
+        int eventCreditHour = 0;
+        for (EventSession session : sessions) {
+            eventCreditHour += (int) Math.round(
+                    Duration.between(session.getStartDateTime(), session.getEndDateTime())
+                            .toMinutes() / 60.0
+            );
+        }
+        organization.setCreditHour(organization.getCreditHour() + eventCreditHour);
+        organizationRepository.save(organization);
+
+        LocalDate eventEndedDate = event.getEndDate();
+        int month = eventEndedDate.getMonthValue();
+        int year = eventEndedDate.getYear();
+        //update organization stats
+        organizationStatsService.updateOrganizationCreditHoursAndCountApplicationsAndCountCompletedEventStats(
+                organization.getId(),
+                month,
+                year,
+                countEventApprovedApplications,
+                countEventAttendedApplications,
+                eventCreditHour
+        );
+
+        //update event
+        event.setTotalCreditHours(eventCreditHour);
+        event.setTotalApprovedApplications(countEventApprovedApplications);
+        event.setTotalAttendedApplications(countEventAttendedApplications);
+    }
+
+    private void completeNonServingEvent(
+            Event event,
+            Set<Volunteer> updateVolunteerSet,
+            Set<Volunteer> receiveCertVolunteerSet,
+            List<VolunteerReview> newReviews
+    ){
+        int countEventApprovedApplications = 0;
+        int countEventAttendedApplications = 0;
+
+        List<EventSession> sessions = event.getSessions();
+        for (EventSession session : sessions) {
+
+            //get applications that has checked in and checked out info
+            List<EligibleApplicationProjection> eligibleApplications =
+                    eventApplicationRepository
+                            .findEligibleApplicationProjection(session.getId());
+
+            // count APPROVED applications of a session
+            countEventApprovedApplications += session.getApprovedApplicationCount();
+
+            //count the application that the volunteer really participated
+            countEventAttendedApplications += eligibleApplications.size();
+
+            for (EligibleApplicationProjection projection : eligibleApplications) {
+                Volunteer volunteer = projection.getVolunteer();
+                EventApplication application = projection.getApplication();
+
+                //the application is legit but host has not reviewed it yet
+                if (projection.getReview() == null){
+                    //auto review 5 stars for all legit participant
+                    VolunteerReview review = volunteerReviewService
+                            .reviewAutomatically(volunteer, application);
+
+                    //add the new review to the list for batch updating
+                    newReviews.add(review);
+                    projection.setReview(review);
+                }
+
+                //check the vol eligible to get cert
+                if (((double) (projection.getReview().getAvgRating() * 3) /5) >= 1) {
+                    receiveCertVolunteerSet.add(volunteer);
+                }
+
+                //update the honor score of the volunteer (default add 3 for non serving activity)
+                volunteer.setHonorScore(volunteer.getHonorScore() + 3);
+                updateVolunteerSet.add(volunteer);
+            }
+        }
+
+        LocalDate eventEndedDate = event.getEndDate();
+        int month = eventEndedDate.getMonthValue();
+        int year = eventEndedDate.getYear();
+        //update organization stats
+        organizationStatsService.updateOrganizationCreditHoursAndCountApplicationsAndCountCompletedEventStats(
+                event.getOrganization().getId(),
+                month,
+                year,
+                countEventApprovedApplications,
+                countEventAttendedApplications,
+                0
+        );
+
+        //update event
+        event.setTotalCreditHours(0);
+        event.setTotalApprovedApplications(countEventApprovedApplications);
+        event.setTotalAttendedApplications(countEventAttendedApplications);
     }
 
     @Override
@@ -1724,6 +1789,12 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findUpcomingEventsAndStartDateToday(targetDate);
 
         for (Event event : events){
+            //reject all PENDING applications of event
+            List<EventApplication> applications = eventApplicationService.rejectAllPendingApplicationsOfEvent(event);
+
+            //send notification to all the volunteer that has PENDING applications
+            notificationService.sendEventApplicationRejectedNotification(applications, event.getName());
+
             //update event status to ONGOING
             event.setStatus(EEventStatus.ONGOING);
             eventRepository.save(event);
@@ -1781,29 +1852,23 @@ public class EventServiceImpl implements EventService {
 
                 CompletableFuture<String> firstEventImageFuture =
                         storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
-
                 try {
                     CompletableFuture.allOf(firstEventImageFuture).join();
                     firstEventImageUrl = firstEventImageFuture.join();
                 } catch (CompletionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (cause instanceof AppException ae) {
-                        //todo: handle app exception in viewEventFeeds
-                    } else {
-                        throw cause instanceof RuntimeException re ? re : ex;
-                    }
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
-            return new EventSimpleResponse(
-                    e.getId(),
-                    e.getOrganization().getName(),
-                    e.getName(),
-                    firstEventImageUrl,
-                    e.getAddress(),
-                    e.getStartDate(),
-                    e.getRecruitmentEndDate()
-            );
+            return EventSimpleResponse.builder()
+                    .id(e.getId())
+                    .orgName(e.getOrganization().getName())
+                    .name(e.getName())
+                    .imageUrl(firstEventImageUrl)
+                    .address(e.getAddress())
+                    .startDate(e.getStartDate())
+                    .recruitmentEndDate(e.getRecruitmentEndDate())
+                    .build();
         });
     }
 
@@ -1813,11 +1878,15 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(
                 pageNumber,
                 pageSize,
-                Sort.by(Sort.Direction.DESC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "created_at")
         );
 
         List<String> approvedStatus = Stream.of(
-                EEventStatus.COMPLETED
+                EEventStatus.RECRUITING,
+                EEventStatus.UPCOMING,
+                EEventStatus.ONGOING,
+                EEventStatus.UPCOMING,
+                EEventStatus.ENDED
         ).map(Enum::name).toList();
 
         //Map events to EventSimpleResponse
@@ -1834,33 +1903,36 @@ public class EventServiceImpl implements EventService {
             if (e.getImages() != null && !e.getImages().isEmpty()) {
 
                 List<EventImage> eventImageList = e.getImages();
-
-                CompletableFuture<String> firstEventImageFuture =
-                        storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath());
-
                 try {
-                    CompletableFuture.allOf(firstEventImageFuture).join();
-                    firstEventImageUrl = firstEventImageFuture.join();
+                    firstEventImageUrl =
+                            storageService.getSignedUrlAsync(eventImageList.getFirst().getImagePath()).join();
                 } catch (CompletionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (cause instanceof AppException ae) {
-                        //todo: handle app exception in viewEventFeeds
-                    } else {
-                        throw cause instanceof RuntimeException re ? re : ex;
-                    }
+                    AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                 }
             }
 
-            return new EventSimpleResponse(
-                    e.getId(),
-                    e.getOrganization().getName(),
-                    e.getName(),
-                    firstEventImageUrl,
-                    e.getAddress(),
-                    e.getStartDate(),
-                    e.getRecruitmentEndDate()
-            );
+            return EventSimpleResponse.builder()
+                    .id(e.getId())
+                    .orgName(e.getOrganization().getName())
+                    .name(e.getName())
+                    .imageUrl(firstEventImageUrl)
+                    .address(e.getAddress())
+                    .startDate(e.getStartDate())
+                    .recruitmentEndDate(e.getRecruitmentEndDate())
+                    .build();
         });
+    }
+
+    @Override
+    public void unSaveEvent(UnSaveEventRequest request) {
+        UUID volunteerId = currentUserProvider.getId();
+        UUID eventId = UUID.fromString(request.getEventId());
+
+        VolunteerSavedEvent volunteerSavedEvent = volunteerSavedEventRepository.findByVolunteerIdAndEventId(volunteerId, eventId);
+
+        if (volunteerSavedEvent != null) {
+            volunteerSavedEventRepository.delete(volunteerSavedEvent);
+        }
     }
 }
 

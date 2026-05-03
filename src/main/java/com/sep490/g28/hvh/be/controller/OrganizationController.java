@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.organization.request.OrganizationRegistrationVerifyRequest;
 import com.sep490.g28.hvh.be.dto.organization.request.RegisterOrganizationRequest;
+import com.sep490.g28.hvh.be.dto.organization.request.UpdateOrganizationBySystemAdminRequest;
 import com.sep490.g28.hvh.be.dto.organization.response.*;
 import com.sep490.g28.hvh.be.service.OrganizationService;
 import com.sep490.g28.hvh.be.validation.OrganizationRegistrationStatus;
@@ -38,7 +39,7 @@ public class OrganizationController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/organizations/registrations")
-    public ResponseEntity<Page<OrganizationRegistrationSimpleResponse>> getRegistrations(
+    public ResponseEntity<Page<OrganizationRegistrationSimpleResponse>> getOrgRegistrations(
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "INVALID_PAGE_NUMBER") int pageNumber,
             @RequestParam(defaultValue = "10")
@@ -52,7 +53,7 @@ public class OrganizationController {
 
     @PreAuthorize("hasRole('SYS_ADMIN')")
     @GetMapping("/sys-admin/organizations/registrations/{id}")
-    public ResponseEntity<OrganizationRegistrationDetailsResponse> getRegistrationsDetails(
+    public ResponseEntity<OrganizationRegistrationDetailsResponse> getOrgRegistrationDetails(
             @PathVariable(name = "id") @UUID(message = "INVALID_UUID") String inputId
     ) {
         java.util.UUID id = java.util.UUID.fromString(inputId);
@@ -114,4 +115,18 @@ public class OrganizationController {
         return ResponseEntity.ok(organizationService.getOrganizationsBySystemAdmin(pageNumber, pageSize, name, orgTypes));
     }
 
+    @PreAuthorize("hasRole('SYS_ADMIN')")
+    @PutMapping("/sys-admin/organizations/{id}/update-profile")
+    public ResponseEntity<UpdateOrganizationBySystemAdminResponse> updateOrganizationBySystemAdmin(
+            @PathVariable(name = "id")
+            @UUID(message = "INVALID_UUID")
+            String inputId,
+
+            @RequestBody
+            @Valid
+            UpdateOrganizationBySystemAdminRequest request
+    ) {
+        java.util.UUID id = java.util.UUID.fromString(inputId);
+        return ResponseEntity.ok(organizationService.updateOrganizationBySystemAdmin(id, request));
+    }
 }

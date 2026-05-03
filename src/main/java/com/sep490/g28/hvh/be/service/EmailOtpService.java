@@ -4,5 +4,5 @@ public interface EmailOtpService {
     void sendVerifyVolAccountRegistrationOtp(String email);
     void sendVerifyOrganizationRegistrationOtp(String email);
     void sendVerifyForgotPasswordOtp (String email);
-    void sendVerifyChangePhoneNumberOtp();
+//    void sendVerifyChangePhoneNumberOtp();
 }

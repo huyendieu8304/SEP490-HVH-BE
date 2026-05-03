@@ -19,6 +19,8 @@ import com.sep490.g28.hvh.be.integration.storage.StoragePathGenerator;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.CertificateRepository;
 import com.sep490.g28.hvh.be.service.CertificateService;
+import com.sep490.g28.hvh.be.service.DigitalSignatureService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -42,6 +44,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 @Slf4j
 @Service
@@ -58,9 +61,11 @@ public class CertificateServiceImpl implements CertificateService {
 
     CurrentUserProvider currentUserProvider;
 
-    @Value("${front-end.web.baseUrl}")
+    DigitalSignatureService digitalSignatureService;
+
+    @Value("${front-end.web.cert-url}")
     @NonFinal
-    String frontendBaseUrl;
+    String frontendCertUrl;
 
     @Override
     public Page<VolunteerCertificateResponse> getCertificatesByVolunteer(int pageNumber, int pageSize, String eventName) {
@@ -75,28 +80,26 @@ public class CertificateServiceImpl implements CertificateService {
                 eventName
         );
 
-        //get signed urls of certificates
-        List<CompletableFuture<VolunteerCertificateResponse>> futures =
+        List<VolunteerCertificateResponse> content =
                 page.getContent().stream()
                         .map(cert -> {
                             if (cert.getCertSignedUrl() == null){
-                                return CompletableFuture.completedFuture(cert);
+                                return cert;
                             }
-                            return storageService.getSignedUrlAsync(cert.getCertSignedUrl())
-                                    .thenApply(url -> {
-                                        cert.setCertSignedUrl(url);
-                                        return cert;
-                                    })
-                                    .exceptionally(ex -> {
-                                        log.warn("Failed to get signed url for path: {}", cert.getCertSignedUrl(), ex);
-                                        cert.setCertSignedUrl(null);
-                                        return cert;
-                                    });
+                            //get signed Url for certificate
+                            String path = cert.getCertSignedUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                cert.setCertSignedUrl(url);
+                            } catch (CompletionException e) {
+                                cert.setCertSignedUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
+                            }
+                            return cert;
 
                         }).toList();
-
-        List<VolunteerCertificateResponse> responses = futures.stream().map(CompletableFuture::join).toList();
-        return new PageImpl<>(responses, pageable, page.getTotalElements());
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
     @Override
@@ -124,11 +127,12 @@ public class CertificateServiceImpl implements CertificateService {
         String html = renderHtml(payload);
 
         //generate PDF
-        byte[] pdfBytes = generatePdf(html);
+        byte[] unsignedPdf = generatePdf(html);
+        byte[] signedPdf = digitalSignatureService.signPdf(unsignedPdf);
 
         certificateRepository.save(cert);
         // 5. upload file
-        storageService.upload(pdfBytes, cert.getCertificatePath());
+        storageService.upload(signedPdf, cert.getCertificatePath());
         log.info("Generate certificate successfully, certPath={}", cert.getCertificatePath());
     }
 
@@ -156,7 +160,7 @@ public class CertificateServiceImpl implements CertificateService {
         payload.setHostFullName(event.getHost().getFullName());
         payload.setIssuedDate(LocalDate.now());
 
-        String verifyUrl = frontendBaseUrl + "/verify/certificate/" + cert.getCode();
+        String verifyUrl = frontendCertUrl + "/verify/certificate/" + cert.getCode();
 
         payload.setVerifyUrl(verifyUrl);
 

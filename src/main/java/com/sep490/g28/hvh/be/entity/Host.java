@@ -74,4 +74,5 @@ public class Host {
     @JoinColumn(name = "organization_id", referencedColumnName = "id", nullable = false)
     private Organization organization;
 
+
 }

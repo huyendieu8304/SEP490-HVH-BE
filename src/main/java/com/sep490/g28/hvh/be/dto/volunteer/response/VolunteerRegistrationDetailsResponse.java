@@ -18,6 +18,7 @@ public class VolunteerRegistrationDetailsResponse {
     private String cid;
     private String email;
     private String phone;
+    private String fullName;
     private String cidFrontUrl;
     private String cidBackUrl;
     private String cidHoldingUrl;

@@ -33,8 +33,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${front-end.web.baseUrl}")
-    private String frontendBaseUrl;
+    @Value("#{'${front-end.web.base-urls}'.split(',')}")
+    private List<String> frontendBaseUrls;
 
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
@@ -78,7 +78,8 @@ public class SecurityConfig {
                                         "/api/v1/organizations/**",
                                         "/api/v1/certificates/**",
                                         "/api/v1/activity-domains",
-                                        "/volunteers/public-information/**"
+                                        "/volunteers/public-information/**",
+                                        "/api/v1/volunteer-reviews/*"
                                 ).permitAll() //public endpoint
                                 .anyRequest().authenticated() //all other request require authentication
                         )
@@ -103,7 +104,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(frontendBaseUrl)); //allow only fe-web base url
+        configuration.setAllowedOriginPatterns(frontendBaseUrls); //allow only fe-web base url
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(false);

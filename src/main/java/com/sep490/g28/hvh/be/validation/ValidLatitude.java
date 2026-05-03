@@ -29,7 +29,7 @@ import java.lang.annotation.*;
  */
 @Documented
 @Constraint(validatedBy = LatitudeValidator.class)
-@Target({ElementType.FIELD})
+@Target({ElementType.PARAMETER, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidLatitude {
 

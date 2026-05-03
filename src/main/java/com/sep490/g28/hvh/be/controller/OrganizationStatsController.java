@@ -26,13 +26,13 @@ public class OrganizationStatsController {
 
     //get six months stats
     @PreAuthorize("hasRole('ORG_MANAGER')")
-    @GetMapping("/org-stats")
+    @GetMapping("/org-manager/org-stats")
     public ResponseEntity<List<OrganizationStatsResponseForManager>> getOrganizationStats6Months() {
         return ResponseEntity.ok(organizationStatsService.getOrganizations6MonthsStatistics());
     }
 
     @PreAuthorize("hasRole('ORG_MANAGER')")
-    @GetMapping("/org-stats/count-hosts-events")
+    @GetMapping("/org-manager/org-stats/count-hosts-events")
     public ResponseEntity<OrganizationCountHostsAndEventsResponse> countHostsAndEvents() {
         return ResponseEntity.ok(organizationStatsService.countHostsAndEvents());
     }

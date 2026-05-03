@@ -1,7 +1,7 @@
 package com.sep490.g28.hvh.be.service;
 
 import com.sep490.g28.hvh.be.dto.eventclaim.request.ClaimEventHourRequest;
-import com.sep490.g28.hvh.be.dto.eventclaim.request.EventClaimVerifyRequest;
+import com.sep490.g28.hvh.be.dto.eventclaim.request.VerifyEventClaimRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.ClaimEventHourResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimDetailResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimSimpleResponse;
@@ -16,5 +16,5 @@ public interface EventClaimService {
 
     EventClaimDetailResponse getEventClaimDetail(UUID claimId);
 
-    void verifyEventClaim(UUID claimId, EventClaimVerifyRequest request);
+    void verifyEventClaim(UUID claimId, VerifyEventClaimRequest request);
 }

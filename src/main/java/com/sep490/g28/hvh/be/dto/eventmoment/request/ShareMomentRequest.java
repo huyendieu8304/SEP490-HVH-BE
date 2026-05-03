@@ -1,6 +1,7 @@
 package com.sep490.g28.hvh.be.dto.eventmoment.request;
 
 import com.sep490.g28.hvh.be.validation.AllowedFileExtension;
+import com.sep490.g28.hvh.be.validation.ImageFileExtension;
 import com.sep490.g28.hvh.be.validation.RequiredField;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;

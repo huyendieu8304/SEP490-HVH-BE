@@ -13,13 +13,17 @@ import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
+import com.sep490.g28.hvh.be.mapper.EventMapper;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.impl.EventServiceImpl;
+import com.sep490.g28.hvh.be.util.GeoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Point;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
@@ -64,8 +68,16 @@ public class EventServiceImplTest {
     @Mock
     NotificationService notificationService;
 
+    @Mock
+    EventMapper eventMapper;
+
+    @Mock
+    OrganizationManagerRepository organizationManagerRepository;
+
     @InjectMocks
     EventServiceImpl eventService;
+
+
 
     UUID volunteerId;
     UUID eventId;
@@ -150,11 +162,19 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
         when(storageService.getSignedUrlAsync("img1"))
                 .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        try (MockedStatic<GeoUtils> geoMock = mockStatic(GeoUtils.class)) {
+
+            geoMock.when(() -> GeoUtils.toPoint(any(), any()))
+                    .thenReturn(mock(Point.class));
+        }
 
         EventFeedResponse response = eventService.getEventFeeds(
                 0,
@@ -164,6 +184,9 @@ public class EventServiceImplTest {
                 "Hà Nội",
                 LocalDate.of(2026, 3, 5),
                 LocalDate.of(2026, 3, 10),
+                null,
+                null,
+                null,
                 null
         );
 
@@ -171,6 +194,8 @@ public class EventServiceImplTest {
         assertEquals("signed-url", response.getEvents().getFirst().getImageUrl());
 
         verify(eventRepository).search(
+                any(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -193,6 +218,8 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
@@ -207,12 +234,17 @@ public class EventServiceImplTest {
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
                 null
         );
 
         assertEquals(1, response.getEvents().size());
 
         verify(eventRepository).refresh(
+                any(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -237,6 +269,8 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
@@ -248,7 +282,10 @@ public class EventServiceImplTest {
                 null,
                 LocalDate.of(2026, 3, 5),
                 null,
-                List.of(Short.valueOf("1"), Short.valueOf("2"))
+                List.of(Short.valueOf("1"), Short.valueOf("2")),
+                null,
+                null,
+                null
         );
 
         assertNull(response.getEvents().getFirst().getImageUrl());
@@ -272,6 +309,8 @@ public class EventServiceImplTest {
                 any(),
                 any(),
                 any(),
+                any(),
+                any(),
                 any(Pageable.class)
         )).thenReturn(page);
 
@@ -282,6 +321,9 @@ public class EventServiceImplTest {
                 0,
                 10,
                 false,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -941,5 +983,345 @@ public class EventServiceImplTest {
                 () -> eventService.announceVolunteersOfEvent(event.getId(), req()));
 
         verifyNoInteractions(notificationService);
+    }
+
+    // ==== getPendingEventsByManager ===================================
+    private OrganizationManager manager(UUID orgId) {
+        Organization org = new Organization();
+        org.setId(orgId);
+
+        OrganizationManager m = new OrganizationManager();
+        m.setOrganization(org);
+        return m;
+    }
+
+    private Event mockEventWithOnlyUUID() {
+        Event e = new Event();
+        e.setId(UUID.randomUUID());
+        return e;
+    }
+
+    private EventSimpleResponseForManager res() {
+        return new EventSimpleResponseForManager();
+    }
+
+    @Test
+    void getPendingEvents_normal() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        Event e = mockEventWithOnlyUUID();
+
+        Page<Event> page = new PageImpl<>(List.of(e));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(page);
+
+        when(eventMapper.toEventSimpleResponseForManager(e))
+                .thenReturn(res());
+
+        Page<EventSimpleResponseForManager> result =
+                eventService.getPendingEventsByManager(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByOrganizationIdAnd(
+                eq(orgId),
+                argThat(list -> list.contains("SUBMITTED")),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getPendingEvents_empty() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                any(), anyList(), any(), any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getPendingEventsByManager(0, 10, "x");
+
+        assertTrue(result.isEmpty());
+    }
+
+    // ==== getApprovedEventsByManager ===================================
+    @Test
+    void getApprovedEvents_normal() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        Event e = mockEventWithOnlyUUID();
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(e)));
+
+        when(eventMapper.toEventSimpleResponseForManager(e))
+                .thenReturn(res());
+
+        Page<?> result = eventService.getApprovedEventsByManager(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByOrganizationIdAnd(
+                eq(orgId),
+                argThat(list -> list.contains("RECRUITING")),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getApprovedEvents_empty() {
+
+        UUID userId = UUID.randomUUID();
+        UUID orgId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(userId);
+        when(organizationManagerRepository.getReferenceById(userId))
+                .thenReturn(manager(orgId));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                any(), anyList(), any(), any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getApprovedEventsByManager(0, 10, "abc");
+
+        assertTrue(result.isEmpty());
+    }
+    // ==== getPendingEventsByAdmin ===================================
+    private EventSimpleResponseForAdmin eventSimpleResponseForAdmin() {
+        return new EventSimpleResponseForAdmin();
+    }
+
+    @Test
+    void getPendingEventsByAdmin_normal() {
+
+        Event e = mockEventWithOnlyUUID();
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(e)));
+
+        when(eventMapper.toEventSimpleResponseForAdmin(e))
+                .thenReturn(eventSimpleResponseForAdmin());
+
+        Page<?> result = eventService.getPendingEventsByAdmin(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByAdminAnd(
+                argThat(list ->
+                        list.contains("APPROVED_BY_MNG") &&
+                                list.contains("REJECTED_BY_AD")
+                ),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getPendingEventsByAdmin_empty() {
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                any(),
+                any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getPendingEventsByAdmin(0, 10, "x");
+
+        assertTrue(result.isEmpty());
+    }
+
+    // ==== getRunningEventsByAdmin ===================================
+
+    @Test
+    void getRunningEventsByAdmin_normal() {
+
+        Event e = mockEventWithOnlyUUID();
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                eq("abc"),
+                any(Pageable.class)
+        )).thenReturn(new PageImpl<>(List.of(e)));
+
+        when(eventMapper.toEventSimpleResponseForAdmin(e))
+                .thenReturn(eventSimpleResponseForAdmin());
+
+        Page<?> result = eventService.getRunningEventsByAdmin(0, 10, "abc");
+
+        assertEquals(1, result.getContent().size());
+
+        verify(eventRepository).findEventsByAdminAnd(
+                argThat(list ->
+                        list.contains("RECRUITING") &&
+                                list.contains("ONGOING")
+                ),
+                eq("abc"),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void getRunningEventsByAdmin_empty() {
+
+        when(eventRepository.findEventsByAdminAnd(
+                anyList(),
+                any(),
+                any()
+        )).thenReturn(Page.empty());
+
+        Page<?> result = eventService.getRunningEventsByAdmin(0, 10, "abc");
+
+        assertTrue(result.isEmpty());
+    }
+
+    // ==== getSavedEventsByVolunteer ===================================
+    // ===== TC1 =====
+    @Test
+    void getSavedEventsByVolunteer_success() {
+
+        UUID volunteerId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        EventImage image = new EventImage();
+        image.setImagePath("img-path");
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("Event 1");
+        event.setAddress("addr");
+        event.setStartDate(LocalDate.now());
+        event.setRecruitmentEndDate(LocalDate.now());
+        event.setImages(List.of(image));
+
+        Organization org = new Organization();
+        org.setName("Org");
+        event.setOrganization(org);
+
+        Page<Event> page = new PageImpl<>(List.of(event));
+
+        when(volunteerSavedEventRepository
+                .findAllSavedEventsByVolunteerId(any(), any(), any()))
+                .thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("img-path"))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        Page<EventSimpleResponse> res =
+                eventService.getSavedEventsByVolunteer(0, 10, "Event 1");
+
+        assertEquals(1, res.getContent().size());
+        assertEquals("signed-url", res.getContent().getFirst().getImageUrl());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getSavedEventsByVolunteer_empty() {
+
+        UUID volunteerId = UUID.randomUUID();
+
+        when(currentUserProvider.getId()).thenReturn(volunteerId);
+
+        Page<Event> page = new PageImpl<>(Collections.emptyList());
+
+        when(volunteerSavedEventRepository
+                .findAllSavedEventsByVolunteerId(any(), any(), any()))
+                .thenReturn(page);
+
+        Page<EventSimpleResponse> res =
+                eventService.getSavedEventsByVolunteer(0, 10, null);
+
+        assertTrue(res.getContent().isEmpty());
+    }
+
+    // ==== getHostedEventsOfOrganization ===================================
+    // ===== TC1 =====
+    @Test
+    void getHostedEventsOfOrganization_success() {
+
+        UUID orgId = UUID.randomUUID();
+
+        EventImage img = new EventImage();
+        img.setImagePath("img-path");
+
+        Organization org = new Organization();
+        org.setName("Org");
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setName("Event 1");
+        event.setAddress("addr");
+        event.setStartDate(LocalDate.now());
+        event.setRecruitmentEndDate(LocalDate.now());
+        event.setImages(List.of(img));
+        event.setOrganization(org);
+
+        Page<Event> page = new PageImpl<>(List.of(event));
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                any(),
+                any(),
+                any()
+        )).thenReturn(page);
+
+        when(storageService.getSignedUrlAsync("img-path"))
+                .thenReturn(CompletableFuture.completedFuture("signed-url"));
+
+        Page<EventSimpleResponse> res =
+                eventService.getHostedEventsOfOrganization(0, 10, orgId, "Event 1");
+
+        assertEquals(1, res.getContent().size());
+        assertEquals("signed-url", res.getContent().getFirst().getImageUrl());
+    }
+
+    // ===== TC2 =====
+    @Test
+    void getHostedEventsOfOrganization_empty() {
+
+        UUID orgId = UUID.randomUUID();
+
+        when(eventRepository.findEventsByOrganizationIdAnd(
+                eq(orgId),
+                any(),
+                any(),
+                any()
+        )).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        Page<EventSimpleResponse> res =
+                eventService.getHostedEventsOfOrganization(0, 10, orgId, null);
+
+        assertTrue(res.getContent().isEmpty());
     }
 }

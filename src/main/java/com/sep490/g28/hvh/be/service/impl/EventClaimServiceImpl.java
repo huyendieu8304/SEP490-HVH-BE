@@ -3,9 +3,8 @@ package com.sep490.g28.hvh.be.service.impl;
 import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventClaimStatus;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.request.ClaimEventHourRequest;
-import com.sep490.g28.hvh.be.dto.eventclaim.request.EventClaimVerifyRequest;
+import com.sep490.g28.hvh.be.dto.eventclaim.request.VerifyEventClaimRequest;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.ClaimEventHourResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimDetailResponse;
 import com.sep490.g28.hvh.be.dto.eventclaim.response.EventClaimSimpleResponse;
@@ -22,6 +21,7 @@ import com.sep490.g28.hvh.be.repository.EventClaimRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.repository.VolunteerRepository;
 import com.sep490.g28.hvh.be.service.EventClaimService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -57,7 +57,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         UUID volunteerId = currentUserProvider.getId();
 
         EventApplication eventApplication = eventApplicationRepository
-                .findByVolunteerIdAndSessionId(volunteerId, UUID.fromString(request.getEventSessionId()));
+                .findEventApplicationByVolunteerIdAndSessionId(volunteerId, UUID.fromString(request.getEventSessionId()));
 
         //check if event application exists
         if (eventApplication == null) {
@@ -144,6 +144,7 @@ public class EventClaimServiceImpl implements EventClaimService {
         newEventClaim.setReason(request.getReason());
         newEventClaim.setDetailReason(request.getDetailReason());
         newEventClaim.setEvidences(evidencesPaths);
+        newEventClaim.setStatus(EEventClaimStatus.PENDING);
         eventClaimRepository.save(newEventClaim);
 
         return ClaimEventHourResponse.builder()
@@ -200,12 +201,7 @@ public class EventClaimServiceImpl implements EventClaimService {
                         CompletableFuture.allOf(avatarFuture).join();
                         avatarUrl = avatarFuture.join();
                     } catch (CompletionException ex) {
-                        Throwable cause = ex.getCause();
-                        if (cause instanceof AppException ae) {
-                            //todo: handle app exception in viewEventFeeds
-                        } else {
-                            throw cause instanceof RuntimeException re ? re : ex;
-                        }
+                        AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
                     }
                 }
             }
@@ -290,13 +286,8 @@ public class EventClaimServiceImpl implements EventClaimService {
                 evidencesUrls.add(evidencesFuture.join());
             }
 
-        } catch (CompletionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof AppException ae) {
-                //todo handle here
-            } else {
-                throw cause instanceof RuntimeException re ? re : e;
-            }
+        } catch (CompletionException ex) {
+            AsyncExceptionUtils.resolveExceptionIgnoreIfFileNotExisted(ex);
         }
 
         return EventClaimDetailResponse.builder()
@@ -320,7 +311,7 @@ public class EventClaimServiceImpl implements EventClaimService {
     }
 
     @Override
-    public void verifyEventClaim(UUID claimId, EventClaimVerifyRequest request) {
+    public void verifyEventClaim(UUID claimId, VerifyEventClaimRequest request) {
         OffsetDateTime verifyTime = OffsetDateTime.now();
 
         EventClaim eventClaim = eventClaimRepository.findById(claimId)

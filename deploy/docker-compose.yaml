@@ -12,6 +12,7 @@ services:
     # mount file firebase key vào container
     volumes:
       - ./FCM_SAKey.json:/app/FCM_SAKey.json
+      - ./keys:/app/keys
     # override env in file env if need
     environment:
       - FIREBASE_SA_KEY_PATH=/app/FCM_SAKey.json

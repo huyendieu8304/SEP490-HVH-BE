@@ -13,6 +13,7 @@ import java.util.Optional;
 @AllArgsConstructor
 @Builder
 public class ActivityDomainDetailsResponse {
+    private Short id;
     private String name;
     Short specialSessionMaxTime;
     Boolean active;
@@ -20,6 +21,7 @@ public class ActivityDomainDetailsResponse {
 
     public static ActivityDomainDetailsResponse from(ActivityDomain ad) {
         return new ActivityDomainDetailsResponse(
+                ad.getId(),
                 ad.getName(),
                 ad.getSpecialSessionMaxTime(),
                 ad.getActive(),

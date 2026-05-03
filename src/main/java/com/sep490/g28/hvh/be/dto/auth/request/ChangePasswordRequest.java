@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.dto.auth.request;
 
+import com.sep490.g28.hvh.be.validation.RequiredField;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
@@ -12,7 +13,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChangePasswordRequest {
 
-    @NotBlank(message = "INVALID_PASSWORD")
+    @RequiredField(fieldName = "Mật khẩu cũ")
     String oldPassword;
 
     @NotBlank(message = "INVALID_PASSWORD")

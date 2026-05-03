@@ -19,7 +19,10 @@ public interface EventService {
                                     String address,
                                     LocalDate startDate,
                                     LocalDate endDate,
-                                    List<Short> activitySubDomains);
+                                    List<Short> activitySubDomains,
+                                    Double currentPlaceLat,
+                                    Double currentPlaceLng,
+                                    Double distance);
 
     EditEventResponse draftEvent(EditEventRequest request);
 
@@ -76,4 +79,6 @@ public interface EventService {
     Page<EventSimpleResponse> getSavedEventsByVolunteer(int pageNumber, int pageSize, String inputName);
 
     Page<EventSimpleResponse> getHostedEventsOfOrganization(int pageNumber, int pageSize, UUID organizationId, String eventName);
+
+    void unSaveEvent(UnSaveEventRequest request);
 }

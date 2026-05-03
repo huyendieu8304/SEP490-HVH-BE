@@ -1,7 +1,9 @@
 package com.sep490.g28.hvh.be.controller;
 
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.AccountCheckInStatusResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
@@ -118,7 +120,7 @@ public class EventApplicationController {
 
     @PreAuthorize("hasRole('VOL')")
     @PostMapping("/vol/event-applications/check-out")
-    public ResponseEntity<Void> quickCheckIn(@Valid @RequestBody CheckOutEventRequest request) {
+    public ResponseEntity<Void> checkOutEvent(@Valid @RequestBody CheckOutEventRequest request) {
         eventApplicationService.checkOutEvent(request);
         return ResponseEntity.ok().build();
     }
@@ -143,7 +145,7 @@ public class EventApplicationController {
 
     @PreAuthorize("hasRole('VOL')")
     @PostMapping("/vol/event-applications/face-check-in")
-    public ResponseEntity<Void> faceCheckIn(
+    public ResponseEntity<Void> faceCheckInEvent(
             @Valid
             @RequestPart("request")
             FaceCheckInEventRequest request,
@@ -153,5 +155,29 @@ public class EventApplicationController {
     ) {
         eventApplicationService.faceCheckInEvent(request, file);
         return ResponseEntity.ok().build();
+    }
+
+    //get COMPLETED application
+    @PreAuthorize("hasRole('HOST') and @eventSessionAuthorizer.isHostOfEventSession(#sessionId)")
+    @GetMapping("/host/event-sessions/{sessionId}/completed-applications")
+    public ResponseEntity<Page<CompletedApplicationResponse>> getCompletedApplications(
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "INVALID_PAGE_NUMBER")
+            int pageNumber,
+
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "INVALID_PAGE_SIZE")
+            @Max(value = 100, message = "INVALID_PAGE_SIZE")
+            int pageSize,
+
+            @PathVariable UUID sessionId
+    ){
+        return ResponseEntity.ok(eventApplicationService.getCompletedApplications(sessionId, pageNumber, pageSize));
+    }
+
+    @PreAuthorize("hasRole('VOL')")
+    @GetMapping("/vol/event-applications/check-in-status")
+    public ResponseEntity<AccountCheckInStatusResponse> getAccountCheckInStatus() {
+        return ResponseEntity.ok(eventApplicationService.getAccountCheckInStatus());
     }
 }

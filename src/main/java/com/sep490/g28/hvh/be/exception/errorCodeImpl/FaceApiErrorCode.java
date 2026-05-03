@@ -14,6 +14,7 @@ public enum FaceApiErrorCode implements ErrorCode {
     FACE_RECOGNITION_FAILED(10003, "Không tìm thấy khuôn mặt của bạn, vui lòng thử lại", HttpStatus.NOT_FOUND),
     FACE_RECOGNITION_NOT_MATCH(10004, "Khuôn mặt được nhận diện không thuộc về tài khoản này, vui lòng thử lại", HttpStatus.CONFLICT),
     ALREADY_REGISTERED_FACE(10005, "Đã đăng ký khuôn mặt cho tài khoản này", HttpStatus.CONFLICT),
+    FACE_REGISTER_FAILED(10006, "Đăng ký khuôn mặt thất bại, vui lòng thử lại", HttpStatus.CONFLICT),
     ;
     private final int code;
     private final String message;

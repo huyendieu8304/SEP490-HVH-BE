@@ -16,11 +16,9 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateActivityDomainRequest {
 
-    @RequiredField(fieldName = "Tên lĩnh vực tình nguyện")
     @Length(max = 50)
     String name;
 
-    @RequiredField(fieldName = "Thời gian giới hạn với lý do")
     @Min(value = 4)
     @Max(value = 12)
     Short specialSessionMaxTime;

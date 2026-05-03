@@ -4,9 +4,11 @@ import com.sep490.g28.hvh.be.constant.EUpdateAction;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventPayload;
 import com.sep490.g28.hvh.be.dto.event.payload.UpdateEventSessionPayload;
 import com.sep490.g28.hvh.be.dto.event.request.UpdateEventRequest;
+import com.sep490.g28.hvh.be.dto.eventsession.projection.SessionEventProjection;
 import com.sep490.g28.hvh.be.dto.eventsession.request.EditEventSessionRequest;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
+import com.sep490.g28.hvh.be.repository.EventApplicationRepository;
 import com.sep490.g28.hvh.be.repository.EventSessionRepository;
 import com.sep490.g28.hvh.be.service.impl.EventSessionServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -24,14 +26,19 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class EventSessionServiceImplTest {
 
     @Mock
     private EventSessionRepository eventSessionRepository;
+
+    @Mock
+    EventApplicationRepository eventApplicationRepository;
+
+    @Mock
+    NotificationService notificationService;
 
     @Spy
     @InjectMocks
@@ -654,4 +661,86 @@ public class EventSessionServiceImplTest {
 
         assertTrue(result.isEmpty());
     }
+
+    // ====== createCheckInCode =====
+    private SessionEventProjection projection(EventSession session) {
+        SessionEventProjection p = mock(SessionEventProjection.class);
+
+        when(p.getSession()).thenReturn(session);
+        when(p.getEventId()).thenReturn(UUID.randomUUID());
+        when(p.getHostId()).thenReturn(UUID.randomUUID());
+        when(p.getEventName()).thenReturn("event");
+
+        return p;
+    }
+
+    private EventSession mockEventSessionForCreateCheckInCode() {
+        EventSession s = new EventSession();
+        s.setId(UUID.randomUUID());
+        return s;
+    }
+
+    @Test
+    void createCheckInCode_success_shouldGenerateAndNotify() {
+
+        EventSession s = mockEventSessionForCreateCheckInCode();
+        SessionEventProjection p = projection(s);
+
+        when(eventSessionRepository.findSessionHostedOfOngoingEventBetweenIncluded(any(), any()))
+                .thenReturn(List.of(p));
+
+        when(eventApplicationRepository.findApprovedApplicationBySessionId(s.getId()))
+                .thenReturn(List.of(new EventApplication()));
+
+        service.createCheckInCode();
+
+        // code generated
+        assertNotNull(s.getCheckInCode());
+        assertEquals(6, s.getCheckInCode().length());
+
+        verify(eventSessionRepository).saveAll(anyList());
+
+        verify(notificationService)
+                .sendCheckInCodeOfEventSessionNotifications(anyList(), anyString(), eq(s.getCheckInCode()));
+
+        verify(notificationService)
+                .sendEventSessionHostedTodayNotification(any(), any(), any());
+
+    }
+
+    @Test
+    void createCheckInCode_empty_shouldDoNothing() {
+
+        when(eventSessionRepository.findSessionHostedOfOngoingEventBetweenIncluded(any(), any()))
+                .thenReturn(List.of());
+
+        service.createCheckInCode();
+
+        verify(eventSessionRepository).saveAll(List.of());
+        verify(notificationService, never()).sendCheckInCodeOfEventSessionNotifications(any(), any(), any());
+    }
+
+    @Test
+    void createCheckInCode_multiple_shouldUniqueCodes() {
+
+        EventSession s1 = mockEventSessionForCreateCheckInCode();
+        EventSession s2 = mockEventSessionForCreateCheckInCode();
+
+        SessionEventProjection p1 = projection(s1);
+        SessionEventProjection p2 = projection(s2);
+
+        when(eventSessionRepository.findSessionHostedOfOngoingEventBetweenIncluded(any(), any()))
+                .thenReturn(List.of(p1, p2));
+
+        when(eventApplicationRepository.findApprovedApplicationBySessionId(any()))
+                .thenReturn(List.of());
+
+        service.createCheckInCode();
+
+        assertNotNull(s1.getCheckInCode());
+        assertNotNull(s2.getCheckInCode());
+
+        assertNotEquals(s1.getCheckInCode(), s2.getCheckInCode());
+    }
+
 }

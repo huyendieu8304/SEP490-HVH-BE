@@ -2,6 +2,7 @@ package com.sep490.g28.hvh.be.repository;
 
 import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.dto.eventapplication.projection.EligibleApplicationProjection;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.EventApplication;
 import com.sep490.g28.hvh.be.entity.EventSession;
@@ -103,6 +104,18 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
                 FROM EventApplication e
                 WHERE e.volunteer.id = :volunteerId
                 AND e.sessionDate = :sessionDate
+                And e.session.startDateTime <= :current
+                And e.session.endDateTime >= :current
+            """)
+    EventApplication findByVolunteerIdAndSessionDate(UUID volunteerId,
+                                                     LocalDate sessionDate,
+                                                     OffsetDateTime current);
+
+    @Query("""
+                SELECT e
+                FROM EventApplication e
+                WHERE e.volunteer.id = :volunteerId
+                AND e.sessionDate = :sessionDate
             """)
     List<EventApplication> findAllByVolunteerIdAndSessionDate(UUID volunteerId, LocalDate sessionDate);
 
@@ -125,6 +138,15 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
             AND e.status = 'APPROVED'
             """)
     EventApplication findByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
+
+    @Query("""
+            SELECT e
+            FROM EventApplication e
+            WHERE e.volunteer.id = :volunteerId
+            AND e.session.id = :sessionId
+            AND e.status = 'COMPLETED'
+            """)
+    EventApplication findEventApplicationByVolunteerIdAndSessionId(UUID volunteerId, UUID sessionId);
 
     @Query("""
             SELECT new com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse (
@@ -171,4 +193,42 @@ public interface EventApplicationRepository extends JpaRepository<EventApplicati
              AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.APPROVED
             """)
     List<EventApplication> findApprovedApplicationBySessionId(UUID sessionId);
+
+    @Query("""
+            SELECT new com.sep490.g28.hvh.be.dto.eventapplication.response.CompletedApplicationResponse (
+            v.id,
+            v.fullName,
+            v.bio,
+            v.avatarUrl,
+            v.address,
+            v.nickname,
+            v.email,
+            v.phone,
+            v.creditScore,
+            v.honorScore,
+            v.avgRating,
+            a.id,
+            c.checkInTime,
+            c.checkOutTime,
+            r
+            ) FROM EventApplication a
+            LEFT JOIN CheckInLog c ON a.id = c.eventApplication.id
+            LEFT JOIN Volunteer v ON a.volunteer.id = v.id
+            LEFT JOIN VolunteerReview r ON a.id = r.eventApplication.id
+            WHERE a.session.id = :sessionId
+                AND a.status = com.sep490.g28.hvh.be.constant.EEventApplicationStatus.COMPLETED
+            """)
+    Page<CompletedApplicationResponse> findCompletedApplications(UUID sessionId, Pageable pageable);
+
+    @Modifying
+    @Query(value = """
+            UPDATE event_applications
+            SET status = 'REJECTED'
+            WHERE session_id IN (:sessionIds)
+              AND status  = 'PENDING'
+            RETURNING *
+            """, nativeQuery = true)
+    List<EventApplication> rejectApplicationsBySessions(
+            List<UUID> sessionIds
+    );
 }

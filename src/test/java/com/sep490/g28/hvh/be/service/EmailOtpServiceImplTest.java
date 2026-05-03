@@ -1,5 +1,6 @@
 package com.sep490.g28.hvh.be.service;
 
+import com.sep490.g28.hvh.be.auth.CurrentUserProvider;
 import com.sep490.g28.hvh.be.entity.User;
 import com.sep490.g28.hvh.be.exception.AppException;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
@@ -32,6 +33,8 @@ public class EmailOtpServiceImplTest {
     OtpService otpService;
     @Mock
     EmailService emailService;
+    @Mock
+    CurrentUserProvider currentUserProvider;
 
     @InjectMocks
     EmailOtpServiceImpl emailOtpService;
@@ -168,5 +171,21 @@ public class EmailOtpServiceImplTest {
         verify(otpService, never()).getVerifyForgotPasswordOtp(any());
         verify(emailService, never()).sendVerifyForgotPasswordOtp(any(), any());
     }
+
+    //===== sendVerifyChangePhoneNumberOtp ==============
+//    @Test
+//    void sendVerifyChangePhoneNumberOtp_validFlow_shouldCallOtpAndEmailService() {
+//        String email = "test@gmail.com";
+//        String otp = "123456";
+//
+//        when(currentUserProvider.getEmail()).thenReturn(email);
+//        when(otpService.getVerifyChangePhoneNumberOtp(email)).thenReturn(otp);
+//
+//        emailOtpService.sendVerifyChangePhoneNumberOtp();
+//
+//        verify(currentUserProvider).getEmail();
+//        verify(otpService).getVerifyChangePhoneNumberOtp(email);
+//        verify(emailService).sendVerifyChangePhoneNumberOtp(email, otp);
+//    }
 }
 

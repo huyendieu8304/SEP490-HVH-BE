@@ -17,4 +17,8 @@ public interface EventMomentService {
     void deleteEventMoment(UUID eventMomentId);
 
     Page<EventMomentFeedDetailsResponse> getEventMomentsForVolunteer(int pageNumber, int pageSize, String eventName);
+
+    Page<EventMomentFeedDetailsResponse> getEventMomentsOfEvent(int pageNumber, int pageSize, UUID eventId, String eventName);
+
+
 }

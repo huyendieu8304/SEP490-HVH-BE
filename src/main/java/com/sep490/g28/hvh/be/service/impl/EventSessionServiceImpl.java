@@ -153,7 +153,6 @@ public class EventSessionServiceImpl implements EventSessionService {
         event.setEndDate(endDate);
     }
 
-    //todo unit test for this method
     @Override
     public List<EventSession> findConflictSessionDateOfHost(UUID hostId, UUID checkedEventId, List<EventSession> checkedSessions) {
         if (checkedSessions == null || checkedSessions.isEmpty()) {
@@ -462,48 +461,41 @@ public class EventSessionServiceImpl implements EventSessionService {
     @Override
     @Transactional
     public void createCheckInCode() {
-        ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
+        OffsetDateTime start = OffsetDateTime.now();
+        OffsetDateTime end = start.plusHours(4);
 
-        //clear old check in code
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        OffsetDateTime endOfYesterday = yesterday.atTime(LocalTime.MAX)
-                .atZone(vnZone)
-                .toOffsetDateTime();
-
-        eventSessionRepository.clearOldCheckInCode(endOfYesterday);
-        log.info("Cleared old check in codes");
-
-        //get event session happen today and the event is ONGOING
-        LocalDate today = LocalDate.now();
-
-
-        OffsetDateTime start = today.atStartOfDay(vnZone).toOffsetDateTime();
-        OffsetDateTime end = today.atTime(LocalTime.MAX)
-                .atZone(vnZone)
-                .toOffsetDateTime();
-
-        //find event session that will be hosted to day
+        //find event session that will be hosted in next 4 hours
         List<SessionEventProjection> projections = eventSessionRepository
                 .findSessionHostedOfOngoingEventBetweenIncluded(start, end);
 
-        Set<String> checkInCodes = new HashSet<>();
-        List<EventSession> updateSession = new ArrayList<>();
-        String checkInCode;
-        //iterate through each session to set check in code
+        Set<String> usedCodes = new HashSet<>();
+        List<EventSession> sessionsToUpdate = new ArrayList<>();
+        List<SessionEventProjection> sessionsToNotify = new ArrayList<>();
+
+        //iterate through each session to set check in code for session not having it
         for (SessionEventProjection p : projections) {
             EventSession session = p.getSession();
-            //this loop can only make sure it unique in this batch
+
+            //the session already has check in code
+            if (session.getCheckInCode() != null) {
+                usedCodes.add(session.getCheckInCode());
+                continue;
+            }
+
+            //generate new check in code
+            String code;
             do {
-             checkInCode = RandomStringUtil.random6Numberic();
-            } while (!checkInCodes.add(checkInCode));
+                code = RandomStringUtil.random6Numberic();
+            } while (!usedCodes.add(code));
 
-            session.setCheckInCode(checkInCode);
-            updateSession.add(session);
+            session.setCheckInCode(code);
+            sessionsToUpdate.add(session);
+            sessionsToNotify.add(p);
         }
-        eventSessionRepository.saveAll(updateSession);
+        eventSessionRepository.saveAll(sessionsToUpdate);
 
-        //iterate through each session to send notifications to vols and host
-        for (SessionEventProjection p : projections) {
+        //iterate through each session with check in code generated to send notifications to vols and host
+        for (SessionEventProjection p : sessionsToNotify) {
             EventSession session = p.getSession();
             List<EventApplication> applications =
                     eventApplicationRepository.findApprovedApplicationBySessionId(session.getId());
@@ -515,6 +507,20 @@ public class EventSessionServiceImpl implements EventSessionService {
             notificationService.sendEventSessionHostedTodayNotification(p.getHostId(), p.getEventId(), p.getEventName());
         }
 
-        log.info("Created check in codes and send notification to vol and host of today's event session");
+        log.info("Created check in codes and send notification to vol and host of event session start in next 4 hour");
+    }
+
+    @Override
+    public void cleanCheckInCodeOfYesterday() {
+        ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        //clear old check in code
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        OffsetDateTime endOfYesterday = yesterday.atTime(LocalTime.MAX)
+                .atZone(vnZone)
+                .toOffsetDateTime();
+
+        eventSessionRepository.clearOldCheckInCode(endOfYesterday);
+        log.info("Cleared old check in codes");
     }
 }

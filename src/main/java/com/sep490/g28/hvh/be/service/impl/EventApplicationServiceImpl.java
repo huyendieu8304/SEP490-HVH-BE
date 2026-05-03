@@ -5,10 +5,7 @@ import com.sep490.g28.hvh.be.constant.EEventApplicationStatus;
 import com.sep490.g28.hvh.be.constant.EEventStatus;
 import com.sep490.g28.hvh.be.dto.event.response.EventSessionDetailsResponse;
 import com.sep490.g28.hvh.be.dto.eventapplication.request.*;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.CheckEventCheckInCodeResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.EventApplicationsStatusResponse;
-import com.sep490.g28.hvh.be.dto.eventapplication.response.RegisteredParticipantSimpleResponse;
+import com.sep490.g28.hvh.be.dto.eventapplication.response.*;
 import com.sep490.g28.hvh.be.dto.volunteer.response.ActualParticipantResponse;
 import com.sep490.g28.hvh.be.entity.*;
 import com.sep490.g28.hvh.be.exception.AppException;
@@ -16,12 +13,13 @@ import com.sep490.g28.hvh.be.exception.errorCodeImpl.AppCommonErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.EventErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.FaceApiErrorCode;
 import com.sep490.g28.hvh.be.exception.errorCodeImpl.VolunteerErrorCode;
-import com.sep490.g28.hvh.be.integration.faceServer.FaceClient;
-import com.sep490.g28.hvh.be.integration.faceServer.dto.FaceAuthenticationResponse;
+import com.sep490.g28.hvh.be.integration.faceServer.FaceAuthClient;
+import com.sep490.g28.hvh.be.integration.faceServer.dto.AuthenticateFaceResponse;
 import com.sep490.g28.hvh.be.integration.storage.StorageService;
 import com.sep490.g28.hvh.be.repository.*;
 import com.sep490.g28.hvh.be.service.EventApplicationService;
 import com.sep490.g28.hvh.be.service.NotificationService;
+import com.sep490.g28.hvh.be.util.AsyncExceptionUtils;
 import com.sep490.g28.hvh.be.util.GeoUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +53,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
     CheckInLogRepository checkInLogRepository;
     UserRepository userRepository;
     StorageService storageService;
-    FaceClient faceClient;
+    FaceAuthClient faceAuthClient;
 
     CurrentUserProvider currentUserProvider;
 
@@ -187,8 +185,6 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             throw new AppException(EventErrorCode.EVENT_APPLICATION_NOT_PENDING);
         }
 
-        //todo liệu có cần kiểm tra thông tin status của event ở chỗ này không?
-        //todo có khi thêm cron job, khi event chuyển status qua ONGOING cái là tự động reject hết đơn đăng kí luôn
         eventApplication.setStatus(EEventApplicationStatus.REJECTED);
         eventApplicationRepository.save(eventApplication);
         log.info("Reject event application eventApplicationId={}", eventApplication.getId());
@@ -423,6 +419,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
                     eventSession.getEndDateTime(),
                     eventSession.getExpectedVolAmount(),
                     eventSession.getExpectedSerAmount(),
+                    eventSession.getCheckInCode(),
                     eventSession.getApprovedApplicationCount()
             );
 
@@ -491,6 +488,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         return CheckEventCheckInCodeResponse.builder()
                 .eventId(eventId)
                 .eventSessionId(eventSessionId)
+                .applicationId(eventApplication.getId())
                 .build();
     }
 
@@ -554,10 +552,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         //check if current user's device is not used to check in by another user
-        boolean existsByDevice = checkInLogRepository
-                .existsByDevice(request.getDeviceId(), request.getApVersion(), request.getOsVersion());
+        boolean existsByDeviceAndVolunteerId = checkInLogRepository
+                .existsByDeviceAndEventSession(request.getDeviceId(),
+                        request.getApVersion(), request.getOsVersion(), eventSession.getId());
 
-        if(existsByDevice) {
+        if(existsByDeviceAndVolunteerId) {
             throw new AppException(EventErrorCode.DEVICE_ALREADY_CHECKED_IN);
         }
 
@@ -662,7 +661,9 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         short totalCreditHourToday = 0;
 
         for(EventApplication ea: allEventApplicationToday) {
-            totalCreditHourToday += ea.getCreditHour();
+            if(ea.getCreditHour() != null) {
+                totalCreditHourToday += ea.getCreditHour();
+            }
         }
 
         //Check if total credit hour today is less than 12
@@ -689,26 +690,23 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         Page<ActualParticipantResponse> page = eventApplicationRepository.findCheckedInVolunteer(sessionId, pageable);
 
         //get avatar signed urls
-        List<CompletableFuture<ActualParticipantResponse>> futures =
-                page.getContent().stream()
-                .map(response -> {
-                    if (response.getAvatarUrl() == null) {
-                        return CompletableFuture.completedFuture(response);
-                    }
-                    return storageService.getSignedUrlAsync(response.getAvatarUrl())
-                            .thenApply(url -> {
-                                response.setAvatarUrl(url);
-                                return response;
-                            })
-                            .exceptionally(ex -> {
-                                log.warn("Failed to get signed url for path: {}", response.getAvatarUrl(), ex);
-                                response.setAvatarUrl(null);
-                                return response;
-                            });
-                })
-                .toList();
         List<ActualParticipantResponse> content =
-                futures.stream().map(CompletableFuture::join).toList();
+                page.getContent().stream()
+                        .map(participantResponse -> {
+                            if (participantResponse.getAvatarUrl() == null) return participantResponse;
+                            //get signed url for volunteer avatar
+                            String path = participantResponse.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                participantResponse.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                participantResponse.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
+                            }
+                            return participantResponse;
+                        })
+                        .toList();
         return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
@@ -772,7 +770,7 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         }
 
         //check-in with face authentication
-        FaceAuthenticationResponse response = faceClient.faceAuthentication(file);
+        AuthenticateFaceResponse response = faceAuthClient.authenticateFace(file);
 
         //check if passed liveness check
         if(!response.liveness_passed()) {
@@ -783,6 +781,11 @@ public class EventApplicationServiceImpl implements EventApplicationService {
         if(response.name().equals("Unknown")) {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_FAILED);
         }
+
+        //get logged in vol
+        Volunteer volunteer = volunteerRepository.findById(volunteerId).orElseThrow(
+                () -> new AppException(VolunteerErrorCode.VOLUNTEER_NOT_EXISTED)
+        );
 
         //check if returned face is belong to current vol
         if(volunteerId.equals(UUID.fromString(response.name()))) {
@@ -795,8 +798,82 @@ public class EventApplicationServiceImpl implements EventApplicationService {
             newCheckInLog.setCheckInLocation(currentPosition);
             newCheckInLog.setCheckInTime(checkInTime);
             checkInLogRepository.save(newCheckInLog);
+
+            //update vol device id
+            volunteer.setDeviceId(request.getDeviceId());
+            volunteerRepository.save(volunteer);
         } else {
             throw new AppException(FaceApiErrorCode.FACE_RECOGNITION_NOT_MATCH);
         }
+    }
+
+    @Override
+    public Page<CompletedApplicationResponse> getCompletedApplications(UUID sessionId, int pageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        Page<CompletedApplicationResponse> page = eventApplicationRepository.findCompletedApplications(sessionId, pageable);
+
+        //get avatar signed urls
+        List<CompletedApplicationResponse> content =
+                page.getContent().stream()
+                        .map(participantResponse -> {
+                            if (participantResponse.getAvatarUrl() == null) return participantResponse;
+                            //get signed url for volunteer avatar
+                            String path = participantResponse.getAvatarUrl();
+                            try {
+                                String url = storageService.getSignedUrlAsync(path).join();
+                                participantResponse.setAvatarUrl(url);
+                            } catch (CompletionException e) {
+                                participantResponse.setAvatarUrl(
+                                        AsyncExceptionUtils.resolveExceptionReturnFallbackIfFileNotExisted(e, null)
+                                );
+                            }
+                            return participantResponse;
+                        })
+                        .toList();
+        return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public List<EventApplication> rejectAllPendingApplicationsOfEvent(Event event) {
+        //update all the applications of the volunteer to CANCELLED status
+        List<EventSession> eventSessions = event.getSessions();
+        List<UUID> sessionIds = eventSessions.stream().map(EventSession::getId).toList();
+        List<EventApplication> eventApplications =  eventApplicationRepository.rejectApplicationsBySessions(sessionIds);
+        log.info("All the applications of volunteer has been cancelled");
+        return eventApplications;
+    }
+
+    @Override
+    public AccountCheckInStatusResponse getAccountCheckInStatus() {
+        UUID volunteerId = currentUserProvider.getId();
+
+        EventApplication eventApplication = eventApplicationRepository
+                .findByVolunteerIdAndSessionDate(volunteerId, LocalDate.now(), OffsetDateTime.now());
+
+        UUID applicationId = null;
+        String eventName = null;
+        OffsetDateTime sessionEndDateTime = null;
+        UUID sessionId = null;
+
+        if(eventApplication != null) {
+
+            CheckInLog checkInLog = checkInLogRepository
+                    .findByEventApplicationId(eventApplication.getId());
+
+            if(checkInLog != null) {
+                applicationId = eventApplication.getId();
+                eventName = eventApplication.getSession().getEvent().getName();
+                sessionEndDateTime = eventApplication.getSession().getEndDateTime();
+                sessionId = eventApplication.getSession().getId();
+            }
+        }
+
+        return AccountCheckInStatusResponse.builder()
+                .applicationId(applicationId)
+                .eventName(eventName)
+                .sessionEndDateTime(sessionEndDateTime)
+                .sessionId(sessionId)
+                .build();
     }
 }
