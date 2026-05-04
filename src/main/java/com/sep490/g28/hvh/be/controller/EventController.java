@@ -69,7 +69,7 @@ public class EventController {
             @ValidLongitude
             Double currentPlaceLng,
 
-            @RequestParam(defaultValue = "3000", required = false)
+            @RequestParam(required = false)
             Double distance
     ) {
         return ResponseEntity.ok(eventService.getEventFeeds(
