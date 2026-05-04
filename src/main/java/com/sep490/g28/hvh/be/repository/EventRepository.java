@@ -26,7 +26,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (CAST(:startDate AS DATE) IS NULL OR e.startDate >= :startDate)
             AND (CAST(:endDate AS DATE) IS NULL OR e.startDate <= :endDate)
             AND e.status = 'RECRUITING'
-            AND (:position IS NULL OR :distance IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             """)
     Page<Event> search(
             @Param("name") String name,
@@ -46,7 +46,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (CAST(:endDate AS DATE) IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
             AND e.status = 'RECRUITING'
-            AND (:position IS NULL OR :distance IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             """)
     Page<Event> searchWithActivitySubDomain(
             @Param("name") String name,
@@ -66,7 +66,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:startDate IS NULL OR e.startDate >= :startDate)
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND e.status = 'RECRUITING'
-            AND (:position IS NULL OR :distance IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             AND e.createdAt > :since
             """)
     Page<Event> refresh(
@@ -88,7 +88,7 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
             AND e.status = 'RECRUITING'
-            AND (:position IS NULL OR :distance IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
+            AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
             AND e.createdAt > :since
             """)
     Page<Event> refreshWithActivitySubDomain(
