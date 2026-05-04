@@ -61,11 +61,11 @@ public class EventController {
             @RequestParam(required = false)
             List<Short> activitySubDomainIds,
 
-            @RequestParam(defaultValue = "0", required = false)
+            @RequestParam(required = false)
             @ValidLatitude
             Double currentPlaceLat,
 
-            @RequestParam(defaultValue = "0", required = false)
+            @RequestParam(required = false)
             @ValidLongitude
             Double currentPlaceLng,
 
