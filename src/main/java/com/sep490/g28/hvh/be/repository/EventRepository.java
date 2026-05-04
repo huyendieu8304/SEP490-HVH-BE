@@ -67,7 +67,6 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (:endDate IS NULL OR e.startDate <= :endDate)
             AND e.status = 'RECRUITING'
             AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
-            AND e.createdAt > :since
             """)
     Page<Event> refresh(
             @Param("name") String name,
@@ -89,7 +88,6 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             AND (e.activitySubDomain.id IN (:activitySubDomainIds))
             AND e.status = 'RECRUITING'
             AND (:position IS NULL OR function('ST_DWithin', e.checkInLocation, :position, :distance) = true)
-            AND e.createdAt > :since
             """)
     Page<Event> refreshWithActivitySubDomain(
             @Param("name") String name,
