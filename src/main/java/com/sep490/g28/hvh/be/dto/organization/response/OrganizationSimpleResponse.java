@@ -16,5 +16,5 @@ public class OrganizationSimpleResponse {
     private EOrgType orgType;
     private long numberOfHostedEvents;
     private long creditHour;
-    //todo add rating
+    private Short avgRating;
 }

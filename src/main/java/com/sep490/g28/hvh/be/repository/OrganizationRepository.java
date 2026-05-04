@@ -15,7 +15,7 @@ public interface OrganizationRepository extends JpaRepository<Organization, UUID
 
     @Query(value = """
             SELECT o.id, o.name, o.org_type,
-                   COUNT(DISTINCT e.id) AS totalEvents, o.credit_hour
+                   COUNT(DISTINCT e.id) AS totalEvents, o.credit_hour, o.avg_rating
             FROM organizations o
             LEFT JOIN events e ON e.organization_id = o.id
             WHERE (:name IS NULL OR o.name ILIKE CONCAT('%', :name, '%'))
@@ -30,7 +30,7 @@ public interface OrganizationRepository extends JpaRepository<Organization, UUID
 
     @Query(value = """
             SELECT o.id, o.name, o.org_type,
-                   COUNT(DISTINCT e.id) AS totalEvents, o.credit_hour
+                   COUNT(DISTINCT e.id) AS totalEvents, o.credit_hour, o.avg_rating
             FROM organizations o
             LEFT JOIN events e ON e.organization_id = o.id
             WHERE (:name IS NULL OR o.name ILIKE CONCAT('%', :name, '%'))

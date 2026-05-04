@@ -16,7 +16,8 @@ public class OrganizationMapper {
                 (String) row[1],
                 row[2] != null ? EOrgType.valueOf((String) row[2]) : null,
                 Long.parseLong(row[3].toString()),
-                Long.parseLong(row[4].toString())
+                Long.parseLong(row[4].toString()),
+                Short.parseShort(row[5].toString())
         );
     }
 }
